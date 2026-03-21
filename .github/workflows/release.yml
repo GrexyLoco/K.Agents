@@ -53,6 +53,7 @@ jobs:
           # NuGet V3 Service Index abfragen
           $index = Invoke-RestMethod -Uri "https://nuget.pkg.github.com/$owner/index.json" -Headers $headers
           $baseUrl = ($index.resources | Where-Object { $_.'@type' -eq 'PackageBaseAddress/3.0.0' }).'@id'
+          if (-not $baseUrl.EndsWith('/')) { $baseUrl += '/' }
           Write-Information -InformationAction Continue "✅ NuGet Feed erreichbar, BaseUrl: $baseUrl"
 
           $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
