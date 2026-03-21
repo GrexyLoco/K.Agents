@@ -43,10 +43,14 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $owner = 'GrexyLoco'
-          $secureToken = ConvertTo-SecureString $env:GH_PACKAGES_TOKEN -AsPlainText -Force
-          $cred = [PSCredential]::new($owner, $secureToken)
           $repoName = 'GHPackages-Bootstrap'
-          $uri = "https://nuget.pkg.github.com/$owner/index.json"
+
+          # Token maskieren damit er nicht in Logs erscheint
+          Write-Output "::add-mask::$($env:GH_PACKAGES_TOKEN)"
+
+          # PSResourceGet-Bug-Workaround: Credentials in URI einbetten,
+          # da -Credential beim initialen NuGet V3 index.json Abruf nicht gesendet wird
+          $uri = "https://$($owner):$($env:GH_PACKAGES_TOKEN)@nuget.pkg.github.com/$owner/index.json"
 
           Unregister-PSResourceRepository -Name $repoName -ErrorAction SilentlyContinue
           Register-PSResourceRepository -Name $repoName -Uri $uri -Trusted
@@ -60,7 +64,7 @@ jobs:
 
           foreach ($mod in $modules) {
             Write-Information -InformationAction Continue "📥 Installiere $mod..."
-            Install-PSResource -Name $mod -Repository $repoName -Credential $cred -Scope CurrentUser -TrustRepository
+            Install-PSResource -Name $mod -Repository $repoName -Scope CurrentUser -TrustRepository
 
             # PSResourceGet #1402 Workaround: Lowercase-Ordner auf Linux
             $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
