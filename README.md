@@ -18,48 +18,20 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 
 ## Installation
 
-### Option 1: Copilot CLI Plugin Marketplace (empfohlen)
-```bash
-# Marketplace registrieren
-/plugin marketplace add GrexyLoco/K.Agents
+> **[→ Ausführliche Installationsanleitung](INSTALLATION.md)** — Alle Methoden, Multi-Repo-Setup, Token-FAQ und offizielle Quellen.
 
-# Plugin installieren
+**Schnellstart (Plugin — einmal installieren, in allen Repos verfügbar):**
+```bash
+/plugin marketplace add GrexyLoco/K.Agents
 /plugin install k-agents@k-agents
-
-# Skills und Agents sind sofort verfügbar
-/skills
-/agents
 ```
 
-### Option 2: Symlink (Multi-Repo-Setup)
-```bash
-# Einmal klonen
-git clone https://github.com/GrexyLoco/K.Agents.git ~/K.Agents
-
-# In jedem Consumer-Repo verlinken
-ln -s ~/K.Agents/.github/agents .github/agents
-ln -s ~/K.Agents/.github/skills .github/skills
-cp ~/K.Agents/AGENTS.md ./AGENTS.md
-cp ~/K.Agents/.github/copilot-instructions.md .github/copilot-instructions.md
-```
-
-### Option 3: Direkte Kopie
-```bash
-git clone https://github.com/GrexyLoco/K.Agents.git /tmp/K.Agents
-cp -r /tmp/K.Agents/.github/agents/* .github/agents/
-cp -r /tmp/K.Agents/.github/skills/* .github/skills/
-cp /tmp/K.Agents/AGENTS.md ./AGENTS.md
-cp /tmp/K.Agents/.github/copilot-instructions.md .github/copilot-instructions.md
-```
-
-### Option 4: Claude Code
-```bash
-# Marketplace registrieren
-/plugin marketplace add GrexyLoco/K.Agents
-
-# Oder manuell
-cp -r .github/agents/* .claude/agents/
-cp -r .github/skills/* .claude/skills/
+**Schnellstart (VS Code Settings):**
+```json
+{
+  "chat.plugins.enabled": true,
+  "chat.plugins.marketplaces": ["GrexyLoco/K.Agents"]
+}
 ```
 
 ## Agents
