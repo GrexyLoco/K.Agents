@@ -2,7 +2,7 @@
 name: Pester Tester
 description: PowerShell Tests mit Pester 5.6.x – Unit, Integration, Infrastruktur-Validation. Nutze diesen Agent zum Schreiben von PowerShell-Tests mit dem Pester-Framework.
 tools: ['search', 'usages', 'editFiles', 'runTerminal']
-model: ['Claude Sonnet 4.6', 'GPT-5.2']
+model: Claude Sonnet 4.6
 handoffs:
   - label: Code Review anfordern
     agent: code-reviewer

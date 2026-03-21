@@ -2,7 +2,7 @@
 name: Git Forensics
 description: Git-Historie-Analyse, Commit-Konventionen, Blame, Bisect, Change-Tracking. Nutze diesen Agent um herauszufinden wann, warum und durch wen eine Änderung eingeführt wurde, und für Commit-Konventionen.
 tools: ['search', 'fetch', 'runTerminal', 'githubRepo']
-model: ['Claude Sonnet 4.6', 'GPT-5.2']
+model: Claude Sonnet 4.6
 handoffs:
   - label: Bug fixen (.NET)
     agent: dotnet-developer

@@ -5,7 +5,7 @@
 1. Erstelle `plugins/k-agents/agents/[name].agent.md`
 2. YAML-Frontmatter mit `name`, `description`, `tools`, `model`, optional `handoffs`
 3. Agent-Body in Markdown: Rolle, Kernkompetenzen, Workflow, Regeln
-4. Aktualisiere `plugin.json` (agents-Array)
+4. Aktualisiere `plugins/k-agents/.github/plugin.json`
 5. Aktualisiere `README.md` (Agents-Tabelle)
 
 ## Neuen Skill hinzufügen
@@ -13,7 +13,7 @@
 1. Erstelle Ordner `plugins/k-agents/skills/[skill-name]/`
 2. Erstelle `SKILL.md` mit YAML-Frontmatter (`name`, `description`)
 3. Body: Anleitungen, Code-Beispiele, Best Practices
-4. Aktualisiere `plugin.json` (skills-Array)
+4. Aktualisiere `plugins/k-agents/.github/plugin.json` (skills-Array)
 5. Aktualisiere `README.md` (Skills-Tabelle)
 
 ## OSS-Skill adaptieren

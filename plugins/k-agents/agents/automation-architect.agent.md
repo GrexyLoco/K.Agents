@@ -2,7 +2,7 @@
 name: Automation Architect
 description: CI/CD-Pipeline-Architektur, PowerShell-Modul-Struktur, GitHub Packages, Release-Strategie und Workflow-Run-Analyse. Nutze diesen Agent für Fragen zu Pipelines, Workflows, Releases und Automationsarchitektur.
 tools: ['search', 'usages', 'fetch', 'githubRepo']
-model: ['Claude Opus 4.5', 'GPT-5.2']
+model: Claude Opus 4.5
 handoffs:
   - label: PowerShell implementieren
     agent: powershell-engineer

@@ -2,7 +2,7 @@
 name: Azure Specialist
 description: Azure-Ressourcen, .NET Aspire Integration, Application Insights, OpenTelemetry, Monitoring/Logging/Alerting. Zeigt immer EU-souveräne Alternativen mit Kostenvergleich. Nutze diesen Agent für Cloud-Infrastruktur und Observability.
 tools: ['search', 'usages', 'editFiles', 'runTerminal', 'fetch', 'githubRepo']
-model: ['Claude Sonnet 4.6', 'GPT-5.2']
+model: Claude Sonnet 4.6
 handoffs:
   - label: .NET-Integration implementieren
     agent: dotnet-developer

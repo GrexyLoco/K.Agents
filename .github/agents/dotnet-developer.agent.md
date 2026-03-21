@@ -2,7 +2,7 @@
 name: .NET Developer
 description: C# 14 / .NET 10 Entwicklung – Blazor-Komponenten, MAUI-Views, ASP.NET Core APIs, Services, DTOs. Nutze diesen Agent zum Schreiben, Refactoren und Debuggen von .NET Code.
 tools: ['search', 'usages', 'editFiles', 'runTerminal', 'fetch', 'githubRepo']
-model: ['Claude Sonnet 4.6', 'GPT-5.2']
+model: Claude Sonnet 4.6
 handoffs:
   - label: Tests schreiben (TUnit)
     agent: tunit-tester

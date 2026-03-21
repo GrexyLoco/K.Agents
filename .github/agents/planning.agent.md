@@ -2,7 +2,7 @@
 name: Planning Agent
 description: Feature Planning und GitHub Issue Erstellung – von der vagen Anforderung zu fertigen GitHub Issues mit Milestones und Stories. Nutze diesen Agent wenn neue Features geplant, Anforderungen definiert oder GitHub Issues erstellt werden sollen.
 tools: ['search', 'fetch', 'usages', 'githubRepo']
-model: ['Claude Opus 4.5', 'GPT-5.2']
+model: Claude Opus 4.5
 handoffs:
   - label: App-Architektur klären
     agent: app-architect

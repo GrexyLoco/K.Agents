@@ -2,7 +2,7 @@
 name: App Architect
 description: .NET Applikationsarchitektur – Modular Monolith, Microservices, Clean Architecture für Blazor, MAUI und ASP.NET Core. Nutze diesen Agent für Architekturentscheidungen, Solution-Strukturierung und technische Designfragen.
 tools: ['search', 'usages', 'fetch']
-model: ['Claude Opus 4.5', 'GPT-5.2']
+model: Claude Opus 4.5
 handoffs:
   - label: Feature implementieren (.NET)
     agent: dotnet-developer

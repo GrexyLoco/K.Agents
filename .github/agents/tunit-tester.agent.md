@@ -2,7 +2,7 @@
 name: TUnit Tester
 description: .NET Tests mit TUnit – Unit, Integration, UI-Tests mit TUnit.Playwright. Nutze diesen Agent zum Schreiben und Strukturieren von .NET-Tests mit dem TUnit-Framework.
 tools: ['search', 'usages', 'editFiles', 'runTerminal']
-model: ['Claude Sonnet 4.6', 'GPT-5.2']
+model: Claude Sonnet 4.6
 handoffs:
   - label: Code Review anfordern
     agent: code-reviewer

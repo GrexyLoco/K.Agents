@@ -2,7 +2,7 @@
 name: Database Engineer
 description: EF Core DbContext Design, Migrations, Schema-Design, Query-Optimierung, Seed Data. Nutze diesen Agent für Datenbankschema-Entwurf, Migrationen und Performance-Optimierung.
 tools: ['search', 'usages', 'editFiles', 'runTerminal', 'fetch']
-model: ['Claude Sonnet 4.6', 'GPT-5.2']
+model: Claude Sonnet 4.6
 handoffs:
   - label: Service-Layer implementieren
     agent: dotnet-developer

@@ -2,7 +2,7 @@
 name: Documentation Agent
 description: README, API-Dokumentation, Changelogs, Release Notes, XML-Doc Comments. Nutze diesen Agent für jede Art von technischer Dokumentation.
 tools: ['search', 'usages', 'editFiles', 'fetch']
-model: ['Claude Sonnet 4.6', 'GPT-5.2']
+model: Claude Sonnet 4.6
 ---
 
 # Documentation Agent – Technische Dokumentation

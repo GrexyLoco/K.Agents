@@ -2,7 +2,7 @@
 name: Code Reviewer
 description: Code Review für .NET und PowerShell – Architektur-Konformität, Best Practices, Performance, Naming. Nutze diesen Agent für Code Reviews und Qualitätsprüfungen.
 tools: ['search', 'usages', 'fetch']
-model: ['Claude Opus 4.5', 'GPT-5.2']
+model: Claude Opus 4.5
 handoffs:
   - label: Findings beheben (.NET)
     agent: dotnet-developer

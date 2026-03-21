@@ -2,7 +2,7 @@
 name: Security Auditor
 description: Dependency Scanning, Code Security Review, OWASP Top 10, NuGet Vulnerability Checks. Nutze diesen Agent für Sicherheitsanalysen, Dependency-Audits und Compliance-Prüfungen.
 tools: ['search', 'usages', 'fetch', 'runTerminal', 'githubRepo']
-model: ['Claude Sonnet 4.6', 'GPT-5.2']
+model: Claude Sonnet 4.6
 handoffs:
   - label: Security-Fix (.NET)
     agent: dotnet-developer
