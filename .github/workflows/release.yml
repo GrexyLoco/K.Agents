@@ -36,6 +36,14 @@ jobs:
 
           Write-Information -InformationAction Continue "Version: $($current.ToString(3)) → $newVersion"
 
+      - name: � PSResourceGet aktualisieren
+        shell: pwsh
+        run: |
+          # Stable PSResourceGet hat Bug mit NuGet V3 Credential-Handling
+          Install-PSResource -Name Microsoft.PowerShell.PSResourceGet -Prerelease -Scope CurrentUser -TrustRepository -Reinstall
+          $v = (Get-Module Microsoft.PowerShell.PSResourceGet -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1).Version
+          Write-Information -InformationAction Continue "✅ PSResourceGet $v"
+
       - name: 📦 Smartagr installieren
         shell: pwsh
         env:
@@ -45,12 +53,17 @@ jobs:
           $owner = 'GrexyLoco'
           $repoName = 'GHPackages-Bootstrap'
 
-          # Token maskieren damit er nicht in Logs erscheint
           Write-Output "::add-mask::$($env:GH_PACKAGES_TOKEN)"
 
-          # PSResourceGet-Bug-Workaround: Credentials in URI einbetten,
-          # da -Credential beim initialen NuGet V3 index.json Abruf nicht gesendet wird
-          $uri = "https://$($owner):$($env:GH_PACKAGES_TOKEN)@nuget.pkg.github.com/$owner/index.json"
+          # Prüfe ob der Token funktioniert
+          $basicAuth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${owner}:$($env:GH_PACKAGES_TOKEN)"))
+          $headers = @{ Authorization = "Basic $basicAuth" }
+          $index = Invoke-RestMethod -Uri "https://nuget.pkg.github.com/$owner/index.json" -Headers $headers
+          Write-Information -InformationAction Continue "✅ NuGet Feed erreichbar: v$($index.version)"
+
+          $secureToken = ConvertTo-SecureString $env:GH_PACKAGES_TOKEN -AsPlainText -Force
+          $cred = [PSCredential]::new($owner, $secureToken)
+          $uri = "https://nuget.pkg.github.com/$owner/index.json"
 
           Unregister-PSResourceRepository -Name $repoName -ErrorAction SilentlyContinue
           Register-PSResourceRepository -Name $repoName -Uri $uri -Trusted
@@ -64,7 +77,7 @@ jobs:
 
           foreach ($mod in $modules) {
             Write-Information -InformationAction Continue "📥 Installiere $mod..."
-            Install-PSResource -Name $mod -Repository $repoName -Scope CurrentUser -TrustRepository
+            Install-PSResource -Name $mod -Repository $repoName -Credential $cred -Scope CurrentUser -TrustRepository
 
             # PSResourceGet #1402 Workaround: Lowercase-Ordner auf Linux
             $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
