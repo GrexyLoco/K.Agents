@@ -37,7 +37,7 @@ jobs:
       - name: Smartagr installieren
         shell: pwsh
         env:
-          GH_PACKAGES_TOKEN: ${{ secrets.K_ACTIONS_PAT }}
+          GH_PACKAGES_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
           $owner = 'GrexyLoco'
