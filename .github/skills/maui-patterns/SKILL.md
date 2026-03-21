@@ -1,0 +1,63 @@
+---
+name: maui-patterns
+description: .NET MAUI Patterns für Cross-Platform-Entwicklung. Nutze diesen Skill bei MAUI-Views, MVVM, Shell-Navigation und Platform-spezifischem Code.
+---
+
+# .NET MAUI Patterns
+
+## MVVM mit CommunityToolkit.Mvvm
+
+```csharp
+public partial class UserViewModel(IUserService userService) : ObservableObject
+{
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    private ObservableCollection<User> _users = [];
+
+    [RelayCommand]
+    private async Task SearchAsync()
+    {
+        var results = await userService.SearchAsync(SearchText);
+        Users = new ObservableCollection<User>(results);
+    }
+}
+```
+
+## Shell-Navigation
+```csharp
+// Registrierung
+Routing.RegisterRoute(nameof(UserDetailPage), typeof(UserDetailPage));
+
+// Navigation mit Query Parameters
+await Shell.Current.GoToAsync($"{nameof(UserDetailPage)}?userId={user.Id}");
+
+// Empfang
+[QueryProperty(nameof(UserId), "userId")]
+public partial class UserDetailViewModel : ObservableObject
+{
+    [ObservableProperty] private string _userId = string.Empty;
+}
+```
+
+## Platform-spezifischer Code
+```csharp
+// Partial Classes
+public partial class DeviceService
+{
+    public partial string GetDeviceInfo();
+}
+
+// Platforms/Android/DeviceService.cs
+public partial class DeviceService
+{
+    public partial string GetDeviceInfo() => Android.OS.Build.Model ?? "Unknown";
+}
+```
+
+## Regeln
+- UI-Updates immer auf Main Thread (`MainThread.BeginInvokeOnMainThread`)
+- Lifecycle korrekt: `OnAppearing`/`OnDisappearing` für Subscriptions
+- Keine Business-Logik in Code-Behind — alles im ViewModel
+- Blazor Hybrid: Shared Components zwischen MAUI und Blazor Web nutzen

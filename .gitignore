@@ -1,0 +1,13 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vs/
+.vscode/settings.json
+*.suo
+*.user
+
+# Temp
+*.tmp
+*.bak
