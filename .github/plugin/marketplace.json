@@ -1,15 +1,19 @@
 {
   "name": "k-agents",
-  "owner": "GrexyLoco",
+  "owner": {
+    "name": "GrexyLoco",
+    "email": "noreply@grexyloco.dev"
+  },
+  "metadata": {
+    "description": "13 spezialisierte AI-Agents und 27 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
+    "version": "1.0.0"
+  },
   "plugins": [
     {
       "name": "k-agents",
-      "description": "13 spezialisierte AI-Agents und 27 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
-      "source": {
-        "type": "github",
-        "repo": "GrexyLoco/K.Agents",
-        "directory": "plugins/k-agents"
-      }
+      "description": "13 spezialisierte AI-Agents und 27 Skills für .NET, PowerShell und Azure",
+      "version": "1.0.0",
+      "source": "./plugins/k-agents"
     }
   ]
 }

@@ -1,0 +1,40 @@
+{
+  "name": "k-agents",
+  "description": "13 spezialisierte AI-Agents und 27 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
+  "version": "1.0.0",
+  "author": {
+    "name": "GrexyLoco",
+    "email": "noreply@grexyloco.dev"
+  },
+  "license": "MIT",
+  "keywords": ["dotnet", "blazor", "maui", "powershell", "azure", "tunit", "pester", "releaseflow"],
+  "skills": [
+    "../skills/csharp-patterns",
+    "../skills/blazor-patterns",
+    "../skills/maui-patterns",
+    "../skills/minimal-api-patterns",
+    "../skills/aspire-architecture",
+    "../skills/efcore-patterns",
+    "../skills/tunit-patterns",
+    "../skills/pester-patterns",
+    "../skills/github-actions-patterns",
+    "../skills/powershell-module-design",
+    "../skills/azure-monitoring",
+    "../skills/owasp-dotnet",
+    "../skills/release-management",
+    "../skills/github-actions-debugging",
+    "../skills/conventional-commits",
+    "../skills/releaseflow-domain",
+    "../skills/releaseflow-coding-patterns",
+    "../skills/dotnet-build-diagnosis",
+    "../skills/dotnet-aot-compat",
+    "../skills/maui-blazor-hybrid",
+    "../skills/maui-performance",
+    "../skills/maui-accessibility",
+    "../skills/maui-hot-reload",
+    "../skills/playwright-blazor-testing",
+    "../skills/aspire-integration-testing",
+    "../skills/database-performance",
+    "../skills/csharp-concurrency-patterns"
+  ]
+}
