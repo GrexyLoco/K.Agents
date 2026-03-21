@@ -41,14 +41,17 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $owner = 'GrexyLoco'
-          Write-Output "::add-mask::$($env:GH_PACKAGES_TOKEN)"
-          $apiHeaders = @{
-            Authorization = "token $($env:GH_PACKAGES_TOKEN)"
-            Accept = 'application/vnd.github+json'
-          }
-          $nugetHeaders = @{
-            Authorization = "token $($env:GH_PACKAGES_TOKEN)"
-          }
+          $token = $env:GH_PACKAGES_TOKEN
+          Write-Output "::add-mask::${token}"
+          Write-Information -InformationAction Continue "Token length: $($token.Length), prefix: $($token.Substring(0,4))***"
+          $base64Auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${owner}:${token}"))
+          $headers = @{ Authorization = "Basic $base64Auth" }
+          $feedUrl = "https://nuget.pkg.github.com/${owner}/index.json"
+          Write-Information -InformationAction Continue "Lade NuGet Service Index..."
+          $index = Invoke-RestMethod -Uri $feedUrl -Headers $headers
+          $baseAddress = ($index.resources | Where-Object { $_.'@type' -eq 'PackageBaseAddress/3.0.0' }).'@id'
+          if (-not $baseAddress.EndsWith('/')) { $baseAddress += '/' }
+          Write-Information -InformationAction Continue "PackageBaseAddress: $baseAddress"
           $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
           $modules = @(
             'K.PSGallery.PackageRepoProvider.GitHub',
@@ -57,14 +60,15 @@ jobs:
           )
           foreach ($mod in $modules) {
             Write-Information -InformationAction Continue "Installiere $mod..."
-            $versionsUrl = "https://api.github.com/users/$owner/packages/nuget/$mod/versions"
-            $versions = Invoke-RestMethod -Uri $versionsUrl -Headers $apiHeaders
-            $latestVersion = $versions[0].name
-            Write-Information -InformationAction Continue "  Version: $latestVersion"
             $lowerMod = $mod.ToLower()
-            $nupkgUrl = "https://nuget.pkg.github.com/$owner/download/${lowerMod}/${latestVersion}/${lowerMod}.${latestVersion}.nupkg"
+            $versionsUrl = "${baseAddress}${lowerMod}/index.json"
+            $versionsData = Invoke-RestMethod -Uri $versionsUrl -Headers $headers
+            $latestVersion = $versionsData.versions[-1]
+            Write-Information -InformationAction Continue "  Version: $latestVersion"
+            $nupkgUrl = "${baseAddress}${lowerMod}/${latestVersion}/${lowerMod}.${latestVersion}.nupkg"
+            Write-Information -InformationAction Continue "  Download: $nupkgUrl"
             $tempFile = Join-Path $env:RUNNER_TEMP "${mod}.${latestVersion}.nupkg"
-            Invoke-WebRequest -Uri $nupkgUrl -Headers $nugetHeaders -OutFile $tempFile
+            Invoke-WebRequest -Uri $nupkgUrl -Headers $headers -OutFile $tempFile
             $destPath = Join-Path $modulesPath $mod $latestVersion
             New-Item -Path $destPath -ItemType Directory -Force | Out-Null
             Expand-Archive $tempFile -DestinationPath $destPath -Force
