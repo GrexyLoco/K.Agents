@@ -21,23 +21,51 @@ Es gibt **drei Installationswege** mit unterschiedlichen Eigenschaften:
 > - [Creating Agent Plugins for VS Code and Copilot CLI](https://www.kenmuse.com/blog/creating-agent-plugins-for-vs-code-and-copilot-cli/) — Ken Muse
 > - [Extend your coding agent with .NET Skills](https://devblogs.microsoft.com/dotnet/extend-your-coding-agent-with-dotnet-skills/) — .NET Blog (Microsoft)
 
-### Einrichtung
+### Einrichtung via Copilot CLI
+
+Die folgenden Befehle sind **Slash-Commands** die im **Copilot CLI-Prompt** ausgeführt werden — nicht in PowerShell oder Bash.
 
 ```bash
-# 1. Marketplace registrieren (einmalig)
+# 1. Copilot CLI starten (das hier ist der einzige Terminal-Befehl)
+#    In PowerShell, Bash oder einem beliebigen Terminal:
+copilot
+
+# 2. Im Copilot CLI-Prompt (nicht im Terminal!):
 /plugin marketplace add GrexyLoco/K.Agents
 
-# 2. Plugin installieren (einmalig)
+# 3. Plugin installieren:
 /plugin install k-agents@k-agents
 
-# 3. Verfügbare Skills und Agents prüfen
+# 4. Prüfen:
+/skills
+/agents
+```
+
+### Einrichtung via Claude Code
+
+Die folgenden Befehle werden im **Claude Code CLI-Prompt** ausgeführt — nicht in PowerShell oder Bash.
+
+```bash
+# 1. Claude Code starten (das hier ist der einzige Terminal-Befehl)
+#    In PowerShell, Bash oder einem beliebigen Terminal:
+claude
+
+# 2. Im Claude Code Prompt (nicht im Terminal!):
+/plugin marketplace add GrexyLoco/K.Agents
+
+# 3. Plugin installieren:
+/plugin install k-agents@k-agents
+
+# 4. Prüfen:
 /skills
 /agents
 ```
 
 ### Update
 
-```bash
+Im **Copilot CLI- oder Claude Code-Prompt** (nicht im Terminal):
+
+```
 # Marketplace-Index aktualisieren
 /plugin marketplace update k-agents
 
@@ -75,12 +103,15 @@ Skills verwenden **Progressive Disclosure** — ein dreistufiges Ladesystem:
 
 ### Einrichtung
 
+Alles in **VS Code** (kein Terminal nötig):
+
 1. VS Code Settings öffnen (`Ctrl+,`)
 2. Nach `chat.plugins.enabled` suchen → auf `true` setzen
 3. Nach `chat.plugins.marketplaces` suchen → Array ergänzen:
 
 ```json
 // settings.json (User-Level, nicht Workspace!)
+// Öffnen via: Ctrl+Shift+P → "Preferences: Open User Settings (JSON)"
 {
   "chat.plugins.enabled": true,
   "chat.plugins.marketplaces": [
@@ -89,7 +120,7 @@ Skills verwenden **Progressive Disclosure** — ein dreistufiges Ladesystem:
 }
 ```
 
-4. Extensions-Sidebar öffnen → `@agentPlugins` in die Suche eingeben
+4. Extensions-Sidebar öffnen (`Ctrl+Shift+X`) → `@agentPlugins` in die Suche eingeben
 5. `k-agents` auswählen und installieren
 
 ### Wichtige Hinweise
@@ -111,41 +142,47 @@ Skills verwenden **Progressive Disclosure** — ein dreistufiges Ladesystem:
 > - [Agent Skills in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-skills)
 > - [Custom Instructions](https://code.visualstudio.com/docs/copilot/customization/custom-instructions)
 
-### Option A: Install-Script (empfohlen)
+### Option A: Install-Script
+
+Im **Terminal** (PowerShell Core / Bash), ausgeführt im Verzeichnis des K.Agents-Repos:
 
 ```powershell
-# Aus dem K.Agents-Repo heraus:
+# Copy-Modus (Standard)
 ./scripts/Install-KAgents.ps1 -TargetPath C:\Users\dein-user\source\repos\MeinProjekt
 
-# Mit Symlink (automatische Updates, erfordert ggf. Admin-Rechte)
+# Symlink-Modus (automatische Updates, erfordert ggf. Admin-Rechte auf Windows)
 ./scripts/Install-KAgents.ps1 -TargetPath ~/projects/mein-app -Mode symlink
 
-# Dry-Run (zeigt was passieren würde)
+# Dry-Run (zeigt was passieren würde, ohne Änderungen)
 ./scripts/Install-KAgents.ps1 -TargetPath ~/projects/mein-app -WhatIf
 ```
 
 ### Option B: Manuell kopieren
 
+Im **Terminal** (PowerShell Core / Bash):
+
 ```bash
-# Einmal klonen
+# Einmal klonen (beliebiges Verzeichnis)
 git clone https://github.com/GrexyLoco/K.Agents.git ~/K.Agents
 
-# In jedes Consumer-Repo kopieren
-cp -r ~/K.Agents/.github/agents/* mein-repo/.github/agents/
-cp -r ~/K.Agents/.github/skills/* mein-repo/.github/skills/
-cp ~/K.Agents/AGENTS.md mein-repo/AGENTS.md
-cp ~/K.Agents/.github/copilot-instructions.md mein-repo/.github/copilot-instructions.md
+# In jedes Consumer-Repo kopieren (im Verzeichnis des Consumer-Repos ausführen)
+cp -r ~/K.Agents/.github/agents/* .github/agents/
+cp -r ~/K.Agents/.github/skills/* .github/skills/
+cp ~/K.Agents/AGENTS.md ./AGENTS.md
+cp ~/K.Agents/.github/copilot-instructions.md .github/copilot-instructions.md
 ```
 
 ### Option C: Symlink (Multi-Repo, ein Update reicht)
+
+Im **Terminal** (PowerShell Core / Bash), im Verzeichnis jedes Consumer-Repos:
 
 ```bash
 # Einmal klonen
 git clone https://github.com/GrexyLoco/K.Agents.git ~/K.Agents
 
 # In jedem Consumer-Repo verlinken
-ln -s ~/K.Agents/.github/agents mein-repo/.github/agents
-ln -s ~/K.Agents/.github/skills mein-repo/.github/skills
+ln -s ~/K.Agents/.github/agents .github/agents
+ln -s ~/K.Agents/.github/skills .github/skills
 ```
 
 **Vorteil:** Ein `git pull` im K.Agents-Repo aktualisiert alle verlinkten Repos.
@@ -155,10 +192,11 @@ ln -s ~/K.Agents/.github/skills mein-repo/.github/skills
 
 Bei einem Workspace mit 10 Repos musst du die Dateien in **jedes Repo** kopieren. Das ist der Hauptnachteil gegenüber der Plugin-Methode.
 
-**Alternativ:** Nutze die VS Code Setting `chat.agentFilesLocations` um einen zentralen Ordner zu definieren:
+**Alternativ:** Nutze VS Code Settings um einen zentralen Ordner zu definieren (in **VS Code Settings**, nicht im Terminal):
 
 ```json
 // settings.json (User-Level)
+// Öffnen via: Ctrl+Shift+P → "Preferences: Open User Settings (JSON)"
 {
   "chat.agentFilesLocations": [
     "~/K.Agents/.github/agents"
@@ -177,12 +215,24 @@ So werden die Agents und Skills aus dem zentralen K.Agents-Ordner geladen, ohne 
 
 ## Methode 4: Claude Code
 
+Im **Terminal** (PowerShell Core / Bash):
+
 ```bash
-# Plugin Marketplace (gleiche Syntax wie Copilot CLI)
+# Claude Code starten
+claude
+```
+
+Dann im **Claude Code Prompt** (nicht im Terminal):
+
+```
+# Plugin Marketplace
 /plugin marketplace add GrexyLoco/K.Agents
 /plugin install k-agents@k-agents
+```
 
-# Oder: Manuell in Claude-Verzeichnisse kopieren
+Oder manuell im **Terminal**:
+
+```bash
 cp -r .github/agents/* .claude/agents/
 cp -r .github/skills/* .claude/skills/
 ```
@@ -197,7 +247,7 @@ cp -r .github/skills/* .claude/skills/
 
 Wenn du in VS Code nur einen Unterordner eines Monorepos öffnest, werden Customizations im Repo-Root standardmäßig **nicht** gefunden.
 
-Aktiviere dazu:
+Aktiviere dazu in **VS Code Settings** (`Ctrl+,`):
 
 ```json
 // settings.json
@@ -238,3 +288,6 @@ Ja, sobald installiert. Die Plugin-Dateien liegen lokal. Nur für Updates wird I
 
 ### Kann ich eigene Skills ergänzen ohne K.Agents zu forken?
 Ja. Lege zusätzliche Skills in `.github/skills/` deines eigenen Repos an. Sie werden neben den Plugin-Skills erkannt. Lokale Skills haben Vorrang bei Namenskonflikten.
+
+### Was ist der Unterschied zwischen `/plugin` und Terminal-Befehlen?
+`/plugin`-Befehle sind **Slash-Commands** die im Chat-Eingabefeld von Copilot CLI oder Claude Code ausgeführt werden — nicht in PowerShell oder Bash. Terminal-Befehle wie `git`, `cp`, `ln -s` werden in deinem normalen Terminal ausgeführt.
