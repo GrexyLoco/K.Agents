@@ -123,4 +123,4 @@ OSS-Skills adaptiert von:
 
 [MIT](LICENSE) © GrexyLoco
 
-<!-- trigger -->
+
