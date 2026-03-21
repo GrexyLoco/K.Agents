@@ -1,10 +1,15 @@
 {
-  "marketplaceName": "k-agents",
+  "name": "k-agents",
+  "owner": "GrexyLoco",
   "plugins": [
     {
       "name": "k-agents",
       "description": "13 spezialisierte AI-Agents und 27 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
-      "directory": "plugins/k-agents"
+      "source": {
+        "type": "github",
+        "repo": "GrexyLoco/K.Agents",
+        "directory": "plugins/k-agents"
+      }
     }
   ]
 }
