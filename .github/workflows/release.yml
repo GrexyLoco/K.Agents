@@ -44,12 +44,26 @@ jobs:
           $token = $env:GH_PACKAGES_TOKEN
           Write-Output "::add-mask::${token}"
 
+          # Token-Diagnostik
+          if (-not $token) { throw "K_ACTIONS_PAT ist leer!" }
+          $prefix = $token.Substring(0, [Math]::Min(4, $token.Length))
+          Write-Information -InformationAction Continue "Token: ${prefix}***, Laenge: $($token.Length)"
+
+          # Token-Scopes pruefen via GitHub API
+          try {
+            $apiResp = Invoke-WebRequest -Uri 'https://api.github.com/user' -Headers @{ Authorization = "Bearer $token" } -ErrorAction Stop
+            $scopes = $apiResp.Headers['X-OAuth-Scopes']
+            $user = ($apiResp.Content | ConvertFrom-Json).login
+            Write-Information -InformationAction Continue "Token gueltig fuer: $user, Scopes: $scopes"
+          } catch {
+            Write-Warning "Token-Check fehlgeschlagen: $($_.Exception.Message)"
+          }
+
           # Bootstrap-Script laden (fuer Repair-PSResourceGetCase)
           . "${{ github.workspace }}/.github/workflows/scripts/Install-PackageRepoProviderBootstrap.ps1"
 
-          # NuGet V3 Feed mit Basic Auth (Install-PSResource -Credential ist bei Cross-Repo broken)
-          $base64Auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${owner}:${token}"))
-          $headers = @{ Authorization = "Basic $base64Auth" }
+          # NuGet V3 Feed mit Bearer Auth (PAT als Bearer Token)
+          $headers = @{ Authorization = "Bearer $token" }
           $feedUrl = "https://nuget.pkg.github.com/${owner}/index.json"
 
           Write-Information -InformationAction Continue "Lade NuGet Service Index..."
