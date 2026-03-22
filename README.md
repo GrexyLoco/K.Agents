@@ -124,13 +124,4 @@ OSS-Skills adaptiert von:
 [MIT](LICENSE) © GrexyLoco
 
 
-trigger
-<!-- ci -->
-
-<!-- release-test 20:04:32 -->
-
-<!-- nuget-v3-test 20:08:49 -->
-
-<!-- github-token-test 20:10:17 -->
-
-<!-- bootstrap-test 15:51:49 -->
+<!-- hybrid-rest-test -->
