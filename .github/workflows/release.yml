@@ -43,11 +43,56 @@ jobs:
           $owner = 'GrexyLoco'
           $token = $env:GH_PACKAGES_TOKEN
           Write-Output "::add-mask::${token}"
-          # 1. Bootstrap PackageRepoProvider (inkl. GitHub-Provider + PSResourceGet #1402 Fix)
+
+          # Bootstrap-Script laden (fuer Repair-PSResourceGetCase)
           . "${{ github.workspace }}/.github/workflows/scripts/Install-PackageRepoProviderBootstrap.ps1"
-          Install-PackageRepoProvider -Token $token -Owner $owner
-          # 2. Smartagr via PackageRepoProvider installieren
-          Install-ModuleViaPackageRepoProvider -ModuleName 'K.PSGallery.Smartagr' -Token $token -Owner $owner
+
+          # NuGet V3 Feed mit Basic Auth (Install-PSResource -Credential ist bei Cross-Repo broken)
+          $base64Auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${owner}:${token}"))
+          $headers = @{ Authorization = "Basic $base64Auth" }
+          $feedUrl = "https://nuget.pkg.github.com/${owner}/index.json"
+
+          Write-Information -InformationAction Continue "Lade NuGet Service Index..."
+          $index = Invoke-RestMethod -Uri $feedUrl -Headers $headers
+          $baseAddress = ($index.resources | Where-Object { $_.'@type' -eq 'PackageBaseAddress/3.0.0' }).'@id'
+          if (-not $baseAddress.EndsWith('/')) { $baseAddress += '/' }
+          Write-Information -InformationAction Continue "PackageBaseAddress: $baseAddress"
+
+          $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
+          $modules = @(
+            'K.PSGallery.PackageRepoProvider.GitHub',
+            'K.PSGallery.PackageRepoProvider',
+            'K.PSGallery.Smartagr'
+          )
+
+          foreach ($mod in $modules) {
+            Write-Information -InformationAction Continue "Installiere $mod..."
+            $lowerMod = $mod.ToLower()
+
+            # Version ermitteln
+            $versionsUrl = "${baseAddress}${lowerMod}/index.json"
+            $versionsData = Invoke-RestMethod -Uri $versionsUrl -Headers $headers
+            $latestVersion = $versionsData.versions[-1]
+            Write-Information -InformationAction Continue "  Version: $latestVersion"
+
+            # .nupkg herunterladen
+            $nupkgUrl = "${baseAddress}${lowerMod}/${latestVersion}/${lowerMod}.${latestVersion}.nupkg"
+            $tempFile = Join-Path $env:RUNNER_TEMP "${mod}.${latestVersion}.nupkg"
+            Invoke-WebRequest -Uri $nupkgUrl -Headers $headers -OutFile $tempFile
+
+            # In Modules-Pfad entpacken
+            $destPath = Join-Path $modulesPath $mod $latestVersion
+            New-Item -Path $destPath -ItemType Directory -Force | Out-Null
+            Expand-Archive $tempFile -DestinationPath $destPath -Force
+
+            # PSResourceGet #1402 Workaround (Linux: lowercase Ordnernamen fixen)
+            Repair-PSResourceGetCase -ModuleName $mod
+
+            # Modul global importieren (-Global fuer ScriptsToProcess Scope)
+            Import-Module $mod -Force -Global -ErrorAction Stop
+            $v = (Get-Module $mod).Version
+            Write-Information -InformationAction Continue "$mod v$v installiert"
+          }
 
       - name: Smart Release erstellen
         shell: pwsh
