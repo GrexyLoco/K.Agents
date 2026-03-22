@@ -37,45 +37,17 @@ jobs:
       - name: Smartagr installieren
         shell: pwsh
         env:
-          GH_PACKAGES_TOKEN: ${{ github.token }}
+          GH_PACKAGES_TOKEN: ${{ secrets.K_ACTIONS_PAT }}
         run: |
           $ErrorActionPreference = 'Stop'
           $owner = 'GrexyLoco'
           $token = $env:GH_PACKAGES_TOKEN
           Write-Output "::add-mask::${token}"
-          Write-Information -InformationAction Continue "Token length: $($token.Length), prefix: $($token.Substring(0,4))***"
-          $base64Auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${owner}:${token}"))
-          $headers = @{ Authorization = "Basic $base64Auth" }
-          $feedUrl = "https://nuget.pkg.github.com/${owner}/index.json"
-          Write-Information -InformationAction Continue "Lade NuGet Service Index..."
-          $index = Invoke-RestMethod -Uri $feedUrl -Headers $headers
-          $baseAddress = ($index.resources | Where-Object { $_.'@type' -eq 'PackageBaseAddress/3.0.0' }).'@id'
-          if (-not $baseAddress.EndsWith('/')) { $baseAddress += '/' }
-          Write-Information -InformationAction Continue "PackageBaseAddress: $baseAddress"
-          $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
-          $modules = @(
-            'K.PSGallery.PackageRepoProvider.GitHub',
-            'K.PSGallery.PackageRepoProvider',
-            'K.PSGallery.Smartagr'
-          )
-          foreach ($mod in $modules) {
-            Write-Information -InformationAction Continue "Installiere $mod..."
-            $lowerMod = $mod.ToLower()
-            $versionsUrl = "${baseAddress}${lowerMod}/index.json"
-            $versionsData = Invoke-RestMethod -Uri $versionsUrl -Headers $headers
-            $latestVersion = $versionsData.versions[-1]
-            Write-Information -InformationAction Continue "  Version: $latestVersion"
-            $nupkgUrl = "${baseAddress}${lowerMod}/${latestVersion}/${lowerMod}.${latestVersion}.nupkg"
-            Write-Information -InformationAction Continue "  Download: $nupkgUrl"
-            $tempFile = Join-Path $env:RUNNER_TEMP "${mod}.${latestVersion}.nupkg"
-            Invoke-WebRequest -Uri $nupkgUrl -Headers $headers -OutFile $tempFile
-            $destPath = Join-Path $modulesPath $mod $latestVersion
-            New-Item -Path $destPath -ItemType Directory -Force | Out-Null
-            Expand-Archive $tempFile -DestinationPath $destPath -Force
-            Import-Module $mod -Force -Global
-            $v = (Get-Module $mod).Version
-            Write-Information -InformationAction Continue "$mod v$v installed"
-          }
+          # 1. Bootstrap PackageRepoProvider (inkl. GitHub-Provider + PSResourceGet #1402 Fix)
+          . "${{ github.workspace }}/.github/workflows/scripts/Install-PackageRepoProviderBootstrap.ps1"
+          Install-PackageRepoProvider -Token $token -Owner $owner
+          # 2. Smartagr via PackageRepoProvider installieren
+          Install-ModuleViaPackageRepoProvider -ModuleName 'K.PSGallery.Smartagr' -Token $token -Owner $owner
 
       - name: Smart Release erstellen
         shell: pwsh
