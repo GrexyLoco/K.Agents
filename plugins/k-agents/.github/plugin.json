@@ -1,13 +1,22 @@
 {
   "name": "k-agents",
   "description": "13 spezialisierte AI-Agents und 27 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "GrexyLoco",
     "email": "noreply@grexyloco.dev"
   },
   "license": "MIT",
-  "keywords": ["dotnet", "blazor", "maui", "powershell", "azure", "tunit", "pester", "releaseflow"],
+  "keywords": [
+    "dotnet",
+    "blazor",
+    "maui",
+    "powershell",
+    "azure",
+    "tunit",
+    "pester",
+    "releaseflow"
+  ],
   "skills": [
     "../skills/csharp-patterns",
     "../skills/blazor-patterns",

@@ -12,7 +12,7 @@
     {
       "name": "k-agents",
       "description": "13 spezialisierte AI-Agents und 27 Skills für .NET, PowerShell und Azure",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "source": "./plugins/k-agents"
     }
   ]
