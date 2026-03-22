@@ -21,18 +21,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Version bumpen
+      - name: Checkout NextPluginVersion
+        uses: actions/checkout@v4
+        with:
+          repository: GrexyLoco/K.Actions.NextPluginVersion
+          token: ${{ secrets.K_ACTIONS_PAT }}
+          path: .github/actions/next-plugin-version
+
+      - name: Version berechnen
         id: version
-        shell: pwsh
-        run: |
-          $pluginPath = Join-Path 'plugins' 'k-agents' '.github' 'plugin.json'
-          $plugin = Get-Content $pluginPath -Raw | ConvertFrom-Json
-          $current = [System.Version]$plugin.version
-          $newVersion = "$($current.Major).$($current.Minor).$($current.Build + 1)"
-          "current=$($current.ToString(3))" >> $env:GITHUB_OUTPUT
-          "new=$newVersion" >> $env:GITHUB_OUTPUT
-          "tag=v$newVersion" >> $env:GITHUB_OUTPUT
-          Write-Information -InformationAction Continue "Version: $($current.ToString(3)) -> $newVersion"
+        uses: ./.github/actions/next-plugin-version
+        with:
+          manifestPath: plugins/k-agents/.github/plugin.json
+          branchName: ${{ github.ref_name }}
 
       - name: Smartagr installieren
         shell: pwsh
@@ -43,21 +44,7 @@ jobs:
           $owner = 'GrexyLoco'
           $token = $env:GH_PACKAGES_TOKEN
           Write-Output "::add-mask::${token}"
-
-          # Token-Diagnostik
           if (-not $token) { throw "K_ACTIONS_PAT ist leer!" }
-          $prefix = $token.Substring(0, [Math]::Min(4, $token.Length))
-          Write-Information -InformationAction Continue "Token: ${prefix}***, Laenge: $($token.Length)"
-
-          # Token-Scopes pruefen via GitHub API
-          try {
-            $apiResp = Invoke-WebRequest -Uri 'https://api.github.com/user' -Headers @{ Authorization = "Bearer $token" } -ErrorAction Stop
-            $scopes = $apiResp.Headers['X-OAuth-Scopes']
-            $user = ($apiResp.Content | ConvertFrom-Json).login
-            Write-Information -InformationAction Continue "Token gueltig fuer: $user, Scopes: $scopes"
-          } catch {
-            Write-Warning "Token-Check fehlgeschlagen: $($_.Exception.Message)"
-          }
 
           # Bootstrap-Script laden (fuer Repair-PSResourceGetCase)
           . "${{ github.workspace }}/.github/workflows/scripts/Install-PackageRepoProviderBootstrap.ps1"
@@ -113,7 +100,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $version = '${{ steps.version.outputs.tag }}'
+          $version = 'v${{ steps.version.outputs.newVersion }}'
           $nl = [Environment]::NewLine
           $notes = "## K.Agents $version" + $nl + $nl
           $notes += "Aktualisierte AI-Agents und Skills." + $nl + $nl
@@ -136,33 +123,49 @@ jobs:
       - name: JSON-Dateien aktualisieren
         shell: pwsh
         run: |
-          $newVersion = '${{ steps.version.outputs.new }}'
+          $ErrorActionPreference = 'Stop'
+          $newVersion = '${{ steps.version.outputs.newVersion }}'
+
+          # 1. Source of Truth: plugin.json
           $pluginPath = Join-Path 'plugins' 'k-agents' '.github' 'plugin.json'
           $plugin = Get-Content $pluginPath -Raw | ConvertFrom-Json
           $plugin.version = $newVersion
           $plugin | ConvertTo-Json -Depth 10 | Set-Content $pluginPath -Encoding utf8
+
+          # 2. Marketplace
           $marketplacePath = Join-Path '.github' 'plugin' 'marketplace.json'
           $marketplace = Get-Content $marketplacePath -Raw | ConvertFrom-Json
+          $marketplace.metadata.version = $newVersion
           $marketplace.plugins[0].version = $newVersion
           $marketplace | ConvertTo-Json -Depth 10 | Set-Content $marketplacePath -Encoding utf8
-          Write-Information -InformationAction Continue "Version in JSON: $newVersion"
+
+          # 3. Claude Code Plugin (Luecke geschlossen)
+          $claudePluginPath = Join-Path '.claude-plugin' 'plugin.json'
+          if (Test-Path $claudePluginPath) {
+            $claudePlugin = Get-Content $claudePluginPath -Raw | ConvertFrom-Json
+            $claudePlugin.version = $newVersion
+            $claudePlugin | ConvertTo-Json -Depth 10 | Set-Content $claudePluginPath -Encoding utf8
+          }
+
+          Write-Information -InformationAction Continue "Alle JSONs auf $newVersion aktualisiert"
 
       - name: Version committen
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add plugins/k-agents/.github/plugin.json .github/plugin/marketplace.json
+          if [ -f ".claude-plugin/plugin.json" ]; then git add .claude-plugin/plugin.json; fi
           git diff --staged --quiet && echo "Keine Aenderungen" && exit 0
-          git commit -m "chore(plugin): Version auf ${{ steps.version.outputs.new }} aktualisiert [skip ci]"
+          git commit -m "chore(plugin): Version auf ${{ steps.version.outputs.newVersion }} aktualisiert [skip ci]"
           git push
 
       - name: Summary
         if: always()
         shell: pwsh
         run: |
-          $current = '${{ steps.version.outputs.current }}'
-          $new = '${{ steps.version.outputs.new }}'
-          $tag = '${{ steps.version.outputs.tag }}'
+          $current = '${{ steps.version.outputs.currentVersion }}'
+          $new = '${{ steps.version.outputs.newVersion }}'
+          $tag = 'v${{ steps.version.outputs.newVersion }}'
           $summary = "## K.Agents Release`n`n"
           $summary += "| Property | Value |`n|----------|-------|`n"
           $summary += "| Version | $current -> $new |`n"
