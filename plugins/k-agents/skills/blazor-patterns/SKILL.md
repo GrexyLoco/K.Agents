@@ -1,7 +1,6 @@
 ---
 name: blazor-patterns
-description: Blazor Server/WASM/Hybrid Patterns für .NET 10. Nutze diesen Skill bei Blazor-Komponenten-Entwicklung, State Management und Render Mode Entscheidungen.
----
+description: Blazor Server/WASM/Hybrid patterns for .NET 10. Use this skill for Blazor component development, state management, and render mode decisions.
 
 # Blazor Patterns (.NET 10)
 
