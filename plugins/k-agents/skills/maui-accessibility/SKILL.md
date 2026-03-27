@@ -1,7 +1,6 @@
 ---
 name: maui-accessibility
-description: .NET MAUI Barrierefreiheit – SemanticProperties, Screen Reader Support, Heading Levels, programmatischer Fokus. Basiert auf davidortinau/maui-skills (Microsoft PM).
----
+description: .NET MAUI accessibility – SemanticProperties, screen reader support, heading levels, programmatic focus. Based on davidortinau/maui-skills (Microsoft PM).
 
 # MAUI Accessibility
 
