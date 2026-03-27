@@ -1,7 +1,6 @@
 ---
 name: releaseflow-coding-patterns
-description: Coding-Konventionen und Patterns aus K.Actions.ReleaseFlow. Nutze diesen Skill als Referenz für PowerShell-Modul-Entwicklung, Pester-Tests und GitHub Actions in diesem Ökosystem.
----
+description: Coding conventions and patterns from K.Actions.ReleaseFlow. Use this skill as a reference for PowerShell module development, Pester tests, and GitHub Actions in this ecosystem.
 
 # ReleaseFlow Coding Patterns
 
