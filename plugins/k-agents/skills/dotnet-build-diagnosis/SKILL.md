@@ -1,7 +1,6 @@
 ---
 name: dotnet-build-diagnosis
-description: .NET Build-Fehler systematisch diagnostizieren und beheben. Nutze diesen Skill bei MSBuild-Fehlern, NuGet-Konflikten, Restore-Problemen und Build-Performance-Optimierung. Basiert auf dotnet/skills (Microsoft).
----
+description: Systematically diagnose and resolve .NET build errors. Use this skill for MSBuild errors, NuGet conflicts, restore issues, and build performance optimization. Based on dotnet/skills (Microsoft).
 
 # .NET Build-Fehler-Diagnose
 
