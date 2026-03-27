@@ -1,7 +1,6 @@
 ---
 name: minimal-api-patterns
-description: ASP.NET Core Minimal API Patterns für .NET 10. Nutze diesen Skill beim Erstellen von REST-APIs mit Minimal API Syntax.
----
+description: ASP.NET Core minimal API patterns for .NET 10. Use this skill when building REST APIs with minimal API syntax.
 
 # Minimal API Patterns (.NET 10)
 
