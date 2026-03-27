@@ -1,7 +1,6 @@
 ---
 name: conventional-commits
-description: Conventional Commits Spezifikation und Regeln. Nutze diesen Skill für Commit-Message-Validierung und Changelog-Generierung.
----
+description: Conventional Commits specification and rules. Use this skill for commit message validation and changelog generation.
 
 # Conventional Commits
 
