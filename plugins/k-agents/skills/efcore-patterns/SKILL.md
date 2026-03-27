@@ -1,7 +1,6 @@
 ---
 name: efcore-patterns
-description: Entity Framework Core Patterns für .NET 10. Nutze diesen Skill für DbContext-Design, Fluent API, Migrations und Query-Optimierung.
----
+description: Entity Framework Core patterns for .NET 10. Use this skill for DbContext design, Fluent API, migrations, and query optimization.
 
 # EF Core Patterns
 
