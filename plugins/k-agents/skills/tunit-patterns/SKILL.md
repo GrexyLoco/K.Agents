@@ -1,7 +1,6 @@
 ---
 name: tunit-patterns
-description: TUnit Testing Framework Patterns und Syntax-Referenz. Nutze diesen Skill beim Schreiben von .NET-Tests mit TUnit.
----
+description: TUnit testing framework patterns and syntax reference. Use this skill when writing .NET tests with TUnit.
 
 # TUnit Patterns
 
