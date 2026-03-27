@@ -1,7 +1,6 @@
 ---
 name: powershell-module-design
-description: PowerShell Core Modul-Design und Cross-Platform Best Practices. Nutze diesen Skill bei der Strukturierung von PowerShell-Modulen, Scripts und CI-Skripten.
----
+description: PowerShell Core module design and cross-platform best practices. Use this skill for structuring PowerShell modules, scripts, and CI scripts.
 
 # PowerShell Module Design
 
