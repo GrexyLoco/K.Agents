@@ -1,7 +1,6 @@
 ---
 name: csharp-patterns
-description: Moderne C# 14 / .NET 10 Patterns und Konventionen. Nutze diesen Skill bei jeder C#-Implementierung für aktuelle Sprachfeatures, Naming Conventions und Best Practices.
----
+description: Modern C# 14 / .NET 10 patterns and conventions. Use this skill for every C# implementation to apply up-to-date language features, naming conventions, and best practices.
 
 # C# 14 / .NET 10 Patterns
 
