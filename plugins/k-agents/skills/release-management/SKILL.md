@@ -1,7 +1,6 @@
 ---
 name: release-management
-description: Release-Prozesse, Versioning und Changelog-Generierung. Nutze diesen Skill für Release-Planung und -Durchführung.
----
+description: Release processes, versioning, and changelog generation. Use this skill for release planning and execution.
 
 # Release Management
 
