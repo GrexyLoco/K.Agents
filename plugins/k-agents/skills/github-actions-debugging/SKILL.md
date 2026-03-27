@@ -1,7 +1,6 @@
 ---
 name: github-actions-debugging
-description: GitHub Actions Workflow-Run Analyse und Debugging. Nutze diesen Skill zum Analysieren fehlgeschlagener Workflows und Performance-Probleme.
----
+description: GitHub Actions workflow run analysis and debugging. Use this skill to analyze failed workflows and performance issues.
 
 # GitHub Actions Debugging
 
