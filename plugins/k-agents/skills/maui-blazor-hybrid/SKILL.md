@@ -1,7 +1,6 @@
 ---
 name: maui-blazor-hybrid
-description: Blazor Hybrid in .NET MAUI – BlazorWebView, JavaScript-C# Interop, Shared Components zwischen MAUI und Blazor Web. Basiert auf davidortinau/maui-skills (Microsoft PM).
----
+description: Blazor Hybrid in .NET MAUI – BlazorWebView, JavaScript-C# interop, shared components between MAUI and Blazor Web. Based on davidortinau/maui-skills (Microsoft PM).
 
 # MAUI Blazor Hybrid
 
