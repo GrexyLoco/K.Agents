@@ -1,7 +1,6 @@
 ---
 name: github-actions-patterns
-description: GitHub Actions Workflow-Patterns und Best Practices. Nutze diesen Skill beim Erstellen, Optimieren und Debuggen von CI/CD-Workflows. Enthält Patterns aus dem K.Actions.ReleaseFlow Projekt.
----
+description: GitHub Actions workflow patterns and best practices. Use this skill for creating, optimizing, and debugging CI/CD workflows. Includes patterns from the K.Actions.ReleaseFlow project.
 
 # GitHub Actions Patterns
 
