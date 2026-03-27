@@ -1,7 +1,6 @@
 ---
 name: pester-patterns
-description: Pester 5.6.x Testing Patterns und Syntax-Referenz. Nutze diesen Skill beim Schreiben von PowerShell-Tests mit Pester. Enthält Patterns aus dem K.Actions.ReleaseFlow Projekt.
----
+description: Pester 5.6.x testing patterns and syntax reference. Use this skill when writing PowerShell tests with Pester. Includes patterns from the K.Actions.ReleaseFlow project.
 
 # Pester 5.6.x Patterns
 
