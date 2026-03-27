@@ -1,7 +1,6 @@
 ---
 name: releaseflow-domain
-description: K.Actions.ReleaseFlow Domänenwissen – Phasen, Guardrails, Branching, Tagging, Freeze-Lifecycle. Nutze diesen Skill bei allem was mit Releases, Branches, Versionierung oder dem Release-Prozess zu tun hat.
----
+description: K.Actions.ReleaseFlow domain knowledge – phases, guardrails, branching, tagging, freeze lifecycle. Use this skill for anything related to releases, branches, versioning, or the release process.
 
 # ReleaseFlow – Domänenwissen
 
