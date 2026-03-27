@@ -1,7 +1,6 @@
 ---
 name: maui-patterns
-description: .NET MAUI Patterns für Cross-Platform-Entwicklung. Nutze diesen Skill bei MAUI-Views, MVVM, Shell-Navigation und Platform-spezifischem Code.
----
+description: .NET MAUI patterns for cross-platform development. Use this skill for MAUI views, MVVM, shell navigation, and platform-specific code.
 
 # .NET MAUI Patterns
 
