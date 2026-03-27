@@ -1,7 +1,6 @@
 ---
 name: owasp-dotnet
-description: OWASP Top 10 Prüfpunkte für .NET und PowerShell. Nutze diesen Skill bei Security Reviews und Code-Audits.
----
+description: OWASP Top 10 checkpoints for .NET and PowerShell. Use this skill for security reviews and code audits.
 
 # OWASP Top 10 für .NET
 
