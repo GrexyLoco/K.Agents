@@ -1,7 +1,6 @@
 ---
 name: aspire-integration-testing
-description: .NET Aspire Integration Testing – DistributedApplicationTestingBuilder, Service-Mocking, Health-Check-Validation. Adaptiert von Aaronontheweb/dotnet-skills für TUnit.
----
+description: .NET Aspire integration testing – DistributedApplicationTestingBuilder, service mocking, health check validation. Adapted from Aaronontheweb/dotnet-skills for TUnit.
 
 # Aspire Integration Testing (TUnit-Adaption)
 
