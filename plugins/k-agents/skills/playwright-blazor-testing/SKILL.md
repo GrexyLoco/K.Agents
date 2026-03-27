@@ -1,7 +1,6 @@
 ---
 name: playwright-blazor-testing
-description: Blazor UI-Tests mit Playwright und TUnit. Nutze diesen Skill für End-to-End-Tests von Blazor-Anwendungen. Adaptiert von Aaronontheweb/dotnet-skills für TUnit.
----
+description: Blazor UI tests with Playwright and TUnit. Use this skill for end-to-end tests of Blazor applications. Adapted from Aaronontheweb/dotnet-skills for TUnit.
 
 # Playwright Blazor Testing (TUnit-Adaption)
 
