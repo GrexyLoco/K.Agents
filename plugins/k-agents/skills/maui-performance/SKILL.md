@@ -1,7 +1,6 @@
 ---
 name: maui-performance
-description: .NET MAUI Performance-Optimierung – Profiling, Compiled Bindings, Layout-Effizienz, Startup-Zeit, Trimming. Basiert auf davidortinau/maui-skills (Microsoft PM).
----
+description: .NET MAUI performance optimization – profiling, compiled bindings, layout efficiency, startup time, trimming. Based on davidortinau/maui-skills (Microsoft PM).
 
 # MAUI Performance
 
