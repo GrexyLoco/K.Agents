@@ -1,7 +1,6 @@
 ---
 name: database-performance
-description: EF Core Query-Performance, N+1-Erkennung, Index-Strategie, Read/Write-Separation. Adaptiert von Aaronontheweb/dotnet-skills.
----
+description: EF Core query performance, N+1 detection, index strategy, read/write separation. Adapted from Aaronontheweb/dotnet-skills.
 
 # Database Performance (EF Core)
 
