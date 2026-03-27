@@ -2,7 +2,7 @@
 name: tunit-patterns
 description: TUnit testing framework patterns and syntax reference. Use this skill when writing .NET tests with TUnit.
 
-# TUnit Patterns
+# TUnit Patterns 
 
 ## Grundstruktur
 ```csharp
