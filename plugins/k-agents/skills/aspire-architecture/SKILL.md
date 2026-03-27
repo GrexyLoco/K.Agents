@@ -1,7 +1,6 @@
 ---
 name: aspire-architecture
-description: .NET Aspire AppHost, Service Defaults und Integrationen. Nutze diesen Skill bei Aspire-Konfiguration, Service Discovery und Cloud-Native Setup.
----
+description: .NET Aspire AppHost, service defaults, and integrations. Use this skill for Aspire configuration, service discovery, and cloud-native setup.
 
 # .NET Aspire Architecture
 
