@@ -1,7 +1,6 @@
 ---
 name: azure-monitoring
-description: Azure Monitor, Application Insights und OpenTelemetry Konfiguration. Nutze diesen Skill für Monitoring, Logging und Alerting Setup.
----
+description: Azure Monitor, Application Insights, and OpenTelemetry configuration. Use this skill for monitoring, logging, and alerting setup.
 
 # Azure Monitoring & OpenTelemetry
 
