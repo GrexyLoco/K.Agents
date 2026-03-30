@@ -1,6 +1,6 @@
 ---
 name: database-performance
-description: EF Core Query-Performance, N+1-Erkennung, Index-Strategie, Read/Write-Separation. Adaptiert von Aaronontheweb/dotnet-skills.
+description: EF Core query performance — N+1 detection, compiled queries, split queries, query tags, AsNoTracking, index strategy (composite, filtered, covering), read/write DbContext separation. USE FOR: diagnosing slow queries, optimizing EF Core performance, designing database indexes. DO NOT USE FOR: DbContext setup or migrations (use efcore-patterns) or general database schema design (use database-engineer agent).
 ---
 
 # Database Performance (EF Core)
