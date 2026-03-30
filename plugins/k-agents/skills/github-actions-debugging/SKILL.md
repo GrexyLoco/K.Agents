@@ -1,6 +1,6 @@
 ---
 name: github-actions-debugging
-description: GitHub Actions workflow run analysis and debugging. Use this skill to analyze failed workflows and performance issues.
+description: GitHub Actions debugging — failed workflow analysis, error pattern diagnosis (exit codes, permissions, rate limiting, timeouts), log downloading, matrix failure isolation, gh CLI, debug re-runs. USE FOR: analyzing why a workflow run failed, diagnosing CI performance issues, reading workflow logs. DO NOT USE FOR: creating new workflows or actions (use github-actions-patterns).
 
 # GitHub Actions Debugging
 
