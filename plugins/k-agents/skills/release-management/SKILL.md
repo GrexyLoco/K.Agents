@@ -1,6 +1,6 @@
 ---
 name: release-management
-description: Release processes, versioning, and changelog generation. Use this skill for release planning and execution.
+description: Release execution — SemVer versioning (MAJOR.MINOR.PATCH), pre-release labels (alpha, beta, rc), changelog generation (Keep a Changelog format), git tagging, GitHub Release creation with gh CLI. USE FOR: executing releases, generating changelogs, creating version tags and GitHub Releases. DO NOT USE FOR: ReleaseFlow branching or phase rules (use releaseflow-domain) or commit message format (use conventional-commits).
 
 # Release Management
 
