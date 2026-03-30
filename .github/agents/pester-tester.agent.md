@@ -1,6 +1,6 @@
 ---
 name: Pester Tester
-description: PowerShell Tests mit Pester 5.6.x – Unit, Integration, Infrastruktur-Validation. Nutze diesen Agent zum Schreiben, Debuggen und Analysieren von PowerShell-Tests mit dem Pester-Framework.
+description: PowerShell testing with Pester 5.6.x — unit tests, integration tests, infrastructure validation, mocking, InModuleScope, debug-first principle. USE FOR: writing, debugging, and analyzing PowerShell tests with Pester. DO NOT USE FOR: .NET tests (use tunit-tester), writing PowerShell production code (use powershell-engineer), or Blazor UI tests (use tunit-tester with playwright-blazor-testing skill).
 tools: ['search', 'usages', 'editFiles', 'runTerminal']
 model: Claude Sonnet 4.6
 handoffs:
