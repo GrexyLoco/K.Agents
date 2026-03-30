@@ -1,6 +1,6 @@
 ---
 name: csharp-concurrency-patterns
-description: C# Concurrency-Patterns – async/await, Channels, SemaphoreSlim, CancellationToken, Task.WhenAll. Adaptiert von Aaronontheweb/dotnet-skills.
+description: "C# concurrency patterns \u2014 async/await, Channel<T>, SemaphoreSlim, CancellationToken, Task.WhenAll, parallel execution, producer/consumer, rate limiting. USE FOR: implementing async workflows, choosing concurrency primitives, fixing deadlocks or async anti-patterns. DO NOT USE FOR: general C# syntax (use csharp-patterns) or EF Core query parallelism (use database-performance)."
 ---
 
 # C# Concurrency Patterns
