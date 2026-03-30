@@ -1,6 +1,6 @@
 ---
 name: tunit-patterns
-description: TUnit testing framework patterns and syntax reference. Use this skill when writing .NET tests with TUnit.
+description: "TUnit testing framework \u2014 [Test], [Arguments], [MatrixDataSource], ClassDataSource<T> (DI fixtures), async assertions (Assert.That), lifecycle hooks (Before/After), parallel-by-default. USE FOR: writing .NET unit and integration tests with TUnit, structuring test projects, using DI in test fixtures. DO NOT USE FOR: PowerShell tests (use pester-patterns), Blazor E2E tests (use playwright-blazor-testing), or Aspire integration tests (use aspire-integration-testing)."
 
 # TUnit Patterns 
 
