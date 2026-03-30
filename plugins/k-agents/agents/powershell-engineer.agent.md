@@ -1,6 +1,6 @@
 ---
 name: PowerShell Engineer
-description: PowerShell Core Scripts & Module, GitHub Actions Workflows – strikt cross-platform. Nutze diesen Agent zum Implementieren von PowerShell-Code, CI/CD-Workflows und Automations-Scripts.
+description: PowerShell Core scripts and modules, GitHub Actions workflows — strictly cross-platform (Windows, Linux, macOS). USE FOR: implementing PowerShell code, CI/CD workflows, and automation scripts. DO NOT USE FOR: PowerShell tests (use pester-tester), pipeline architecture decisions (use automation-architect), or .NET code (use dotnet-developer).
 tools: ['search', 'usages', 'editFiles', 'runTerminal', 'fetch', 'githubRepo']
 model: Claude Sonnet 4.6
 handoffs:
