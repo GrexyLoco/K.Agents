@@ -1,6 +1,6 @@
 ---
 name: owasp-dotnet
-description: OWASP Top 10 Prüfpunkte für .NET und PowerShell. Nutze diesen Skill bei Security Reviews und Code-Audits.
+description: OWASP Top 10 for .NET and PowerShell — injection (SQL, XSS, Invoke-Expression), broken access control ([Authorize], CORS), cryptographic failures (bcrypt, no MD5/SHA1), vulnerable dependencies (dotnet audit), SecureString, TLS 1.2+. USE FOR: reviewing code for security vulnerabilities, auditing dependencies, checking OWASP compliance. DO NOT USE FOR: general code quality review (use code-reviewer agent) or dependency updates (use security-auditor agent).
 ---
 
 # OWASP Top 10 für .NET
