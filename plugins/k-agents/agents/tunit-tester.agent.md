@@ -1,6 +1,6 @@
 ---
 name: TUnit Tester
-description: .NET Tests mit TUnit – Unit, Integration, UI-Tests mit TUnit.Playwright. Nutze diesen Agent zum Schreiben und Strukturieren von .NET-Tests mit dem TUnit-Framework.
+description: .NET testing with TUnit — unit tests, integration tests, UI tests (TUnit.Playwright), async assertions, DI fixtures (ClassDataSource), lifecycle hooks, parallel-by-default. Exclusively TUnit — not xUnit, NUnit, or MSTest. USE FOR: writing and structuring .NET tests with TUnit. DO NOT USE FOR: PowerShell tests (use pester-tester) or Aspire integration tests (load aspire-integration-testing skill).
 tools: ['search', 'usages', 'editFiles', 'runTerminal']
 model: Claude Sonnet 4.6
 handoffs:
