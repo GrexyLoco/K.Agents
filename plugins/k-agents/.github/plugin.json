@@ -17,6 +17,21 @@
     "pester",
     "releaseflow"
   ],
+  "agents": [
+    "../agents/app-architect.agent.md",
+    "../agents/automation-architect.agent.md",
+    "../agents/azure-specialist.agent.md",
+    "../agents/code-reviewer.agent.md",
+    "../agents/database-engineer.agent.md",
+    "../agents/documentation.agent.md",
+    "../agents/dotnet-developer.agent.md",
+    "../agents/git-forensics.agent.md",
+    "../agents/pester-tester.agent.md",
+    "../agents/planning.agent.md",
+    "../agents/powershell-engineer.agent.md",
+    "../agents/security-auditor.agent.md",
+    "../agents/tunit-tester.agent.md"
+  ],
   "skills": [
     "../skills/csharp-patterns",
     "../skills/blazor-patterns",
