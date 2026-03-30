@@ -1,6 +1,6 @@
 ---
 name: maui-hot-reload
-description: .NET MAUI Hot Reload Diagnose und Troubleshooting – C# Hot Reload, XAML Hot Reload, Blazor Hybrid. Basiert auf davidortinau/maui-skills (Microsoft PM).
+description: .NET MAUI Hot Reload — C# hot reload, XAML hot reload, Blazor Hybrid hot reload, dotnet watch, MetadataUpdateHandler, hot reload limitations and workarounds. USE FOR: troubleshooting hot reload failures, configuring dotnet watch for MAUI, understanding C# Hot Reload limitations. DO NOT USE FOR: general MAUI development (use maui-patterns) or build errors (use dotnet-build-diagnosis).
 ---
 
 # MAUI Hot Reload
