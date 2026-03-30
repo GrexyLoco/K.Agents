@@ -1,6 +1,6 @@
 ---
 name: powershell-module-design
-description: PowerShell Core module design and cross-platform best practices. Use this skill for structuring PowerShell modules, scripts, and CI scripts.
+description: PowerShell Core module design — .psd1/.psm1 manifests, Public/Private/Handlers folder structure, dot-sourcing order, CmdletBinding, Set-StrictMode, cross-platform rules (no Write-Host, Join-Path), PSScriptAnalyzer. USE FOR: structuring new PowerShell modules, implementing cross-platform functions, writing CI scripts. DO NOT USE FOR: PowerShell tests (use pester-patterns) or GitHub Actions workflows (use github-actions-patterns).
 
 # PowerShell Module Design
 
