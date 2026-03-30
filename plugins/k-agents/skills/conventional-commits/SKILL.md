@@ -1,6 +1,6 @@
 ---
 name: conventional-commits
-description: Conventional Commits specification and rules. Use this skill for commit message validation and changelog generation.
+description: Conventional Commits — type/scope/description format (feat, fix, docs, refactor, perf, test, chore, ci), breaking changes, scopes (.NET, CI/CD, PowerShell), SemVer mapping. USE FOR: writing commit messages, validating commit format, understanding version-bump rules. DO NOT USE FOR: release process or branching (use releaseflow-domain) or changelog file creation (use release-management).
 
 # Conventional Commits
 
