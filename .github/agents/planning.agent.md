@@ -1,6 +1,6 @@
 ---
 name: Planning Agent
-description: Feature Planning und GitHub Issue Erstellung – von der vagen Anforderung zu fertigen GitHub Issues mit Milestones und Stories. Nutze diesen Agent wenn neue Features geplant, Anforderungen definiert oder GitHub Issues erstellt werden sollen.
+description: Feature planning and GitHub Issue creation — transforms vague requirements into structured GitHub Issues with milestones and user stories. 6-phase workflow: codebase analysis, feature definition, test cases, story cutting, story writing, issue creation. USE FOR: planning features, defining requirements, creating GitHub Issues. DO NOT USE FOR: implementing features (use dotnet-developer or powershell-engineer) or reviewing code (use code-reviewer).
 tools: ['search', 'fetch', 'usages', 'githubRepo']
 model: Claude Opus 4.5
 handoffs:
