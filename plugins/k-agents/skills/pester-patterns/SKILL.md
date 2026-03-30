@@ -1,6 +1,6 @@
 ---
 name: pester-patterns
-description: Pester 5.6.x testing patterns and syntax reference. Use this skill when writing PowerShell tests with Pester. Includes patterns from the K.Actions.ReleaseFlow project.
+description: Pester 5.6.x patterns — Describe/Context/It structure, BeforeAll/AfterAll, Mock, InModuleScope, Should assertions, test helpers, GitHub CLI mocking, exit code testing. USE FOR: writing PowerShell tests, mocking commands, testing private module functions with InModuleScope. DO NOT USE FOR: .NET tests (use tunit-patterns) or PowerShell module structure (use powershell-module-design).
 
 # Pester 5.6.x Patterns
 
