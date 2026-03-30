@@ -1,6 +1,6 @@
 ---
 name: dotnet-build-diagnosis
-description: Systematically diagnose and resolve .NET build errors. Use this skill for MSBuild errors, NuGet conflicts, restore issues, and build performance optimization. Based on dotnet/skills (Microsoft).
+description: .NET build error diagnosis — MSBuild (MSB*), NuGet (NU*), SDK (NETSDK*), compiler (CS*) errors, dependency conflicts, restore failures, Central Package Management, Directory.Build.props. USE FOR: diagnosing build failures, resolving NuGet version conflicts, fixing SDK version mismatches. DO NOT USE FOR: IL/AOT warnings (use dotnet-aot-compat) or runtime exceptions (use dotnet-developer agent).
 
 # .NET Build-Fehler-Diagnose
 
