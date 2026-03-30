@@ -1,6 +1,6 @@
 ---
 name: github-actions-patterns
-description: GitHub Actions workflow patterns and best practices. Use this skill for creating, optimizing, and debugging CI/CD workflows. Includes patterns from the K.Actions.ReleaseFlow project.
+description: GitHub Actions workflow patterns — reusable workflows, composite actions, GitHub App Token, least-privilege permissions, matrix builds, caching, Quality Gate pipelines, pwsh shell. USE FOR: creating CI/CD workflows, optimizing pipeline structure, implementing GitHub Actions best practices. DO NOT USE FOR: analyzing failed workflow runs (use github-actions-debugging) or release branching strategy (use releaseflow-domain).
 
 # GitHub Actions Patterns
 
