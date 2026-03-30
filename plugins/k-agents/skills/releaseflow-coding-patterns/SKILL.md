@@ -1,6 +1,6 @@
 ---
 name: releaseflow-coding-patterns
-description: Coding conventions and patterns from K.Actions.ReleaseFlow. Use this skill as a reference for PowerShell module development, Pester tests, and GitHub Actions in this ecosystem.
+description: K.Actions.ReleaseFlow implementation patterns — unified Result-Objects, version-handler pattern, GitHub Actions output helpers, New-TestContext test factory, dot-sourcing conventions, strict mode boilerplate. USE FOR: implementing or modifying K.Actions.ReleaseFlow module code, following ReleaseFlow-specific coding conventions. DO NOT USE FOR: general PowerShell design (use powershell-module-design), general Pester tests (use pester-patterns), or ReleaseFlow process knowledge (use releaseflow-domain).
 
 # ReleaseFlow Coding Patterns
 
