@@ -1,6 +1,6 @@
 ---
 name: maui-patterns
-description: .NET MAUI patterns for cross-platform development. Use this skill for MAUI views, MVVM, shell navigation, and platform-specific code.
+description: .NET MAUI cross-platform patterns — MVVM (CommunityToolkit.Mvvm, ObservableProperty, RelayCommand), Shell navigation, ContentPage, CollectionView, platform-specific partial classes, state management. USE FOR: building MAUI views, implementing MVVM, configuring Shell navigation. DO NOT USE FOR: performance tuning (use maui-performance), accessibility (use maui-accessibility), or Blazor in MAUI (use maui-blazor-hybrid).
 
 # .NET MAUI Patterns
 
