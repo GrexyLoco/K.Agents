@@ -1,6 +1,6 @@
 ---
 name: dotnet-aot-compat
-description: Make .NET projects AOT and trimming compatible. Use this skill for resolving IL analyzer warnings (IL2026, IL2070, IL3050), enabling IsAotCompatible, and DynamicallyAccessedMembers annotations. Based on dotnet/skills (Microsoft).
+description: Native AOT and trimming compatibility for .NET — IL analyzer warnings (IL2026, IL2070, IL2067, IL2072, IL3050), IsAotCompatible, DynamicallyAccessedMembers, source-generated serialization, reflection-free DI. USE FOR: resolving IL warnings, enabling AOT compilation, making libraries trim-safe. DO NOT USE FOR: general build errors (use dotnet-build-diagnosis) or runtime performance tuning (use database-performance or maui-performance).
 
 # Native AOT & Trimming Kompatibilität
 
