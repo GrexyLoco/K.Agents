@@ -1,6 +1,7 @@
 ---
 name: maui-accessibility
 description: .NET MAUI accessibility — SemanticProperties, AutomationProperties, screen readers (TalkBack, VoiceOver, Narrator), heading levels, programmatic focus, WCAG 2.1 compliance. USE FOR: making MAUI apps accessible, adding screen reader support, validating WCAG compliance. DO NOT USE FOR: general MAUI UI layout (use maui-patterns) or Blazor accessibility (use blazor-patterns).
+---
 
 # MAUI Accessibility
 

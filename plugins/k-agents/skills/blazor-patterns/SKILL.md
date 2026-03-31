@@ -1,6 +1,7 @@
 ---
 name: blazor-patterns
 description: Blazor Server, WASM, Hybrid, Static SSR patterns for .NET 10 — render mode decisions, component architecture, code-behind, state management, EventCallback, cascading values, @key, IDisposable. USE FOR: building Blazor components, choosing render modes, implementing state management. DO NOT USE FOR: Blazor inside MAUI (use maui-blazor-hybrid) or Blazor UI E2E tests (use playwright-blazor-testing).
+---
 
 # Blazor Patterns (.NET 10)
 

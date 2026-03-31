@@ -1,6 +1,7 @@
 ---
 name: minimal-api-patterns
 description: "ASP.NET Core Minimal API for .NET 10 \u2014 MapGroup, endpoint routing, TypedResults, request/response records, IValidator<T>, OpenAPI generation. USE FOR: building REST API endpoints with Minimal API syntax, structuring endpoint groups, implementing request validation. DO NOT USE FOR: Blazor components (use blazor-patterns) or general C# patterns (use csharp-patterns)."
+---
 
 # Minimal API Patterns (.NET 10)
 

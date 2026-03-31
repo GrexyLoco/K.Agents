@@ -1,6 +1,7 @@
 ---
 name: csharp-patterns
 description: C# 14 / .NET 10 patterns — primary constructors, collection expressions, pattern matching, records, required members, nullable reference types, file-scoped namespaces, sealed classes, naming conventions. USE FOR: writing modern C# code, applying .NET 10 language features, enforcing naming and style conventions. DO NOT USE FOR: concurrency (use csharp-concurrency-patterns) or EF Core entities (use efcore-patterns).
+---
 
 # C# 14 / .NET 10 Patterns
 
