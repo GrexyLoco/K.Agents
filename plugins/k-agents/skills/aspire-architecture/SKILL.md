@@ -1,6 +1,6 @@
 ---
 name: aspire-architecture
-description: .NET Aspire AppHost, Service Defaults, integrations (Postgres, Redis), service discovery, health checks, Polly resilience, telemetry pipeline. USE FOR: configuring Aspire orchestration, adding service references, setting up cloud-native distributed applications. DO NOT USE FOR: Aspire integration tests (use aspire-integration-testing) or Azure Monitor alerts (use azure-monitoring).
+description: ".NET Aspire AppHost, Service Defaults, integrations (Postgres, Redis), service discovery, health checks, Polly resilience, telemetry pipeline. USE FOR: configuring Aspire orchestration, adding service references, setting up cloud-native distributed applications. DO NOT USE FOR: Aspire integration tests (use aspire-integration-testing) or Azure Monitor alerts (use azure-monitoring)."
 ---
 
 # .NET Aspire Architecture

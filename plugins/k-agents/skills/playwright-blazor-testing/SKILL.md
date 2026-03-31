@@ -1,6 +1,6 @@
 ---
 name: playwright-blazor-testing
-description: Blazor E2E testing with Playwright and TUnit — TUnit.Playwright, browser automation, WebApplication test fixtures, Blazor rendering waits, screenshot capture on failure. USE FOR: writing end-to-end UI tests for Blazor apps, setting up Playwright test fixtures with TUnit. DO NOT USE FOR: Blazor component logic (use blazor-patterns), unit tests (use tunit-patterns), or Aspire integration tests (use aspire-integration-testing).
+description: "Blazor E2E testing with Playwright and TUnit — TUnit.Playwright, browser automation, WebApplication test fixtures, Blazor rendering waits, screenshot capture on failure. USE FOR: writing end-to-end UI tests for Blazor apps, setting up Playwright test fixtures with TUnit. DO NOT USE FOR: Blazor component logic (use blazor-patterns), unit tests (use tunit-patterns), or Aspire integration tests (use aspire-integration-testing)."
 ---
 
 # Playwright Blazor Testing (TUnit-Adaption)

@@ -1,6 +1,6 @@
 ---
 name: azure-monitoring
-description: Azure Monitor, Application Insights, OpenTelemetry — metrics, traces, logs, custom Meter/Counter/Histogram, SLO-based alerts, Aspire Dashboard. USE FOR: configuring monitoring pipelines, creating alert rules, instrumenting .NET services with OpenTelemetry. DO NOT USE FOR: Aspire AppHost configuration (use aspire-architecture) or general Azure resource provisioning (use azure-specialist agent).
+description: "Azure Monitor, Application Insights, OpenTelemetry — metrics, traces, logs, custom Meter/Counter/Histogram, SLO-based alerts, Aspire Dashboard. USE FOR: configuring monitoring pipelines, creating alert rules, instrumenting .NET services with OpenTelemetry. DO NOT USE FOR: Aspire AppHost configuration (use aspire-architecture) or general Azure resource provisioning (use azure-specialist agent)."
 ---
 
 # Azure Monitoring & OpenTelemetry

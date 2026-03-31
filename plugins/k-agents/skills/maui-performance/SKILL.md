@@ -1,6 +1,6 @@
 ---
 name: maui-performance
-description: .NET MAUI performance — profiling (dotnet trace, dotnet counters), compiled bindings, CollectionView vs ListView, layout optimization, startup time, AOT for Release, PublishTrimmed, image optimization. USE FOR: profiling slow MAUI apps, optimizing layout rendering, reducing startup time, enabling trimming. DO NOT USE FOR: general MAUI patterns (use maui-patterns) or .NET-wide AOT warnings (use dotnet-aot-compat).
+description: ".NET MAUI performance — profiling (dotnet trace, dotnet counters), compiled bindings, CollectionView vs ListView, layout optimization, startup time, AOT for Release, PublishTrimmed, image optimization. USE FOR: profiling slow MAUI apps, optimizing layout rendering, reducing startup time, enabling trimming. DO NOT USE FOR: general MAUI patterns (use maui-patterns) or .NET-wide AOT warnings (use dotnet-aot-compat)."
 ---
 
 # MAUI Performance

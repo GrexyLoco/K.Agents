@@ -1,6 +1,6 @@
 ---
 name: maui-blazor-hybrid
-description: Blazor Hybrid in .NET MAUI — BlazorWebView setup, JavaScript-C# interop (IJSRuntime, JSInvokable), shared Razor Class Libraries, platform-specific DI services, CSS isolation, NavigationManager. USE FOR: embedding Blazor in MAUI apps, sharing UI between MAUI and Blazor Web, implementing JS interop. DO NOT USE FOR: standalone Blazor Server/WASM (use blazor-patterns) or general MAUI views (use maui-patterns).
+description: "Blazor Hybrid in .NET MAUI — BlazorWebView setup, JavaScript-C# interop (IJSRuntime, JSInvokable), shared Razor Class Libraries, platform-specific DI services, CSS isolation, NavigationManager. USE FOR: embedding Blazor in MAUI apps, sharing UI between MAUI and Blazor Web, implementing JS interop. DO NOT USE FOR: standalone Blazor Server/WASM (use blazor-patterns) or general MAUI views (use maui-patterns)."
 ---
 
 # MAUI Blazor Hybrid
