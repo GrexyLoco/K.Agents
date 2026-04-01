@@ -1,6 +1,6 @@
 ---
 name: .NET Developer
-description: C# 14 / .NET 10 development — Blazor components, MAUI views, ASP.NET Core APIs, services, DTOs, dependency injection, middleware. USE FOR: writing, refactoring, and debugging .NET code across Blazor, MAUI, and ASP.NET Core. DO NOT USE FOR: database schema design (use database-engineer), architecture decisions (use app-architect), or writing tests (use tunit-tester).
+description: "C# 14 / .NET 10 development — Blazor components, MAUI views, ASP.NET Core APIs, services, DTOs, dependency injection, middleware. USE FOR: writing, refactoring, and debugging .NET code across Blazor, MAUI, and ASP.NET Core. DO NOT USE FOR: database schema design (use database-engineer), architecture decisions (use app-architect), or writing tests (use tunit-tester)."
 tools: ['search', 'usages', 'editFiles', 'runTerminal', 'fetch', 'githubRepo']
 model: Claude Sonnet 4.6
 handoffs:
