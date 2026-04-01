@@ -1,6 +1,6 @@
 ---
 name: Security Auditor
-description: Security analysis — dependency scanning, OWASP Top 10, NuGet vulnerability checks, code security review, severity classification, compliance reporting. USE FOR: scanning for vulnerabilities, auditing dependencies, checking security compliance. DO NOT USE FOR: code quality or architecture review (use code-reviewer) or fixing vulnerabilities (use dotnet-developer or powershell-engineer). Read-only — identifies risks, never fixes code.
+description: "Security analysis — dependency scanning, OWASP Top 10, NuGet vulnerability checks, code security review, severity classification, compliance reporting. USE FOR: scanning for vulnerabilities, auditing dependencies, checking security compliance. DO NOT USE FOR: code quality or architecture review (use code-reviewer) or fixing vulnerabilities (use dotnet-developer or powershell-engineer). Read-only — identifies risks, never fixes code."
 tools: ['search', 'usages', 'fetch', 'runTerminal', 'githubRepo']
 model: Claude Sonnet 4.6
 handoffs:

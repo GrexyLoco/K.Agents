@@ -1,6 +1,6 @@
 ---
 name: Azure Specialist
-description: Azure resources, .NET Aspire integration, Application Insights, OpenTelemetry, monitoring, logging, alerting — always includes EU-sovereign alternatives with cost comparison. USE FOR: cloud infrastructure design, observability setup, Azure resource provisioning. DO NOT USE FOR: writing .NET application code (use dotnet-developer) or app architecture decisions (use app-architect).
+description: "Azure resources, .NET Aspire integration, Application Insights, OpenTelemetry, monitoring, logging, alerting — always includes EU-sovereign alternatives with cost comparison. USE FOR: cloud infrastructure design, observability setup, Azure resource provisioning. DO NOT USE FOR: writing .NET application code (use dotnet-developer) or app architecture decisions (use app-architect)."
 tools: ['search', 'usages', 'editFiles', 'runTerminal', 'fetch', 'githubRepo']
 model: Claude Sonnet 4.6
 handoffs:
