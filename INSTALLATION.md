@@ -262,13 +262,138 @@ Aktiviere dazu in **VS Code Settings** (`Ctrl+,`):
 
 ## Visual Studio 2026
 
-Custom Agents werden ab Visual Studio 2026 Version 18.4 unterstützt:
+Visual Studio 2026 unterstützt Custom Agents und Skills nativ. Es gibt **keinen Plugin-Marketplace** und **keine Verbindung zu Copilot CLI Plugins** — die Installation erfolgt ausschließlich über das Dateisystem (User-Level Copy).
 
-- Agents in `.github/agents/` werden automatisch erkannt
-- Auswahl über den Agent Picker im Copilot Chat
-- Skills über die `.github + MCP` Extension
+> **Wichtig:** Plugins, die über Copilot CLI (`/plugin install`) oder VS Code Settings (`chat.plugins.marketplaces`) installiert wurden, werden von Visual Studio 2026 **nicht** erkannt. Jede IDE hat ihr eigenes Discovery-System — eine separate Installation ist erforderlich.
 
-> **Quelle:** [Custom Agents in Visual Studio](https://devblogs.microsoft.com/visualstudio/custom-agents-in-visual-studio-built-in-and-build-your-own-agents/)
+> **Mindestversion:** K.Agents erfordert **Visual Studio 2026 Version 18.5** (Insiders) oder höher. Ältere Versionen unterstützen keine User-Level Agents/Skills und werden nicht unterstützt.
+
+| Feature | Verfügbar ab | Quelle |
+|---------|-------------|--------|
+| Custom Agents (Repo-Level) | 18.4.0 (Stable) | [Release Notes 18.4](https://learn.microsoft.com/en-us/visualstudio/releases/2026/release-notes#march-update-1840) |
+| Agent Skills (Repo-Level) | 18.4.1 (Stable) | [Release Notes 18.4.1](https://learn.microsoft.com/en-us/visualstudio/releases/2026/release-notes#18.4.1) |
+| **User-Level Agents** (`%USERPROFILE%\.github\agents\`) | **18.5 (Insiders)** | [Insiders Release Notes](https://learn.microsoft.com/en-us/visualstudio/releases/2026/release-notes-insiders#features) |
+| **User-Level Skills** (`.github/skills/` etc.) | **18.5 (Insiders)** | [Insiders Release Notes](https://learn.microsoft.com/en-us/visualstudio/releases/2026/release-notes-insiders#features) |
+
+> **Offizielle Dokumentation:**
+> - [Use built-in and custom agents with GitHub Copilot](https://learn.microsoft.com/en-us/visualstudio/ide/copilot-specialized-agents?view=visualstudio) — Microsoft Learn (aktualisiert 26.03.2026)
+> - [Custom Agents in Visual Studio: Built in and Build-Your-Own agents](https://devblogs.microsoft.com/visualstudio/custom-agents-in-visual-studio-built-in-and-build-your-own-agents/) — VS Blog (19.02.2026)
+> - [Visual Studio 2026 Release Notes](https://learn.microsoft.com/en-us/visualstudio/releases/2026/release-notes) — Microsoft Learn
+
+### Voraussetzungen
+
+1. **Visual Studio 2026 Version 18.5** (Insiders) oder höher
+2. **GitHub Copilot Subscription** (Free, Pro, Business oder Enterprise)
+3. Copilot Chat muss aktiv sein (Badge unten rechts in der Statusleiste)
+
+### Installation per Script (empfohlen)
+
+Das Install-Script kopiert Agents und Skills auf **User-Level** — sie sind danach in **allen** Solutions/Repos verfügbar, ohne Dateien ins Repo zu kopieren.
+
+Im **Terminal** (PowerShell Core):
+
+```powershell
+# 1. K.Agents klonen (einmalig)
+git clone https://github.com/GrexyLoco/K.Agents.git ~/K.Agents
+
+# 2. Install-Script ausführen
+~/K.Agents/scripts/Install-KAgentsVS.ps1
+
+# 3. Dry-Run (zeigt was passieren würde, ohne Änderungen)
+~/K.Agents/scripts/Install-KAgentsVS.ps1 -WhatIf
+```
+
+Das Script kopiert in folgende Verzeichnisse (laut [Insiders Release Notes](https://learn.microsoft.com/en-us/visualstudio/releases/2026/release-notes-insiders#features)):
+
+| Typ | Ziel-Pfad |
+|-----|-----------|
+| Agents | `%USERPROFILE%\.github\agents\` |
+| Skills | `%USERPROFILE%\.github\skills\` |
+
+Der Agents-Pfad kann in VS angepasst werden unter:
+`Tools → Options → GitHub → Copilot Chat → Custom agents user directory`
+
+### Manuelle Installation
+
+Falls du das Script nicht nutzen willst, kannst du die Dateien manuell kopieren.
+
+Im **Terminal** (PowerShell Core):
+
+```powershell
+# K.Agents klonen (einmalig)
+git clone https://github.com/GrexyLoco/K.Agents.git ~/K.Agents
+
+# User-Level Verzeichnisse erstellen
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.github\agents" -Force
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.github\skills" -Force
+
+# Agents und Skills kopieren
+Copy-Item -Path ~/K.Agents/plugins/k-agents/agents/* -Destination "$env:USERPROFILE\.github\agents\" -Force
+Copy-Item -Path ~/K.Agents/plugins/k-agents/skills/* -Destination "$env:USERPROFILE\.github\skills\" -Recurse -Force
+```
+
+### Update
+
+Voraussetzung: Lokales K.Agents-Repo ist aktuell (`git pull`).
+
+```powershell
+# Repo aktualisieren und Update-Script ausfuehren
+Push-Location ~/K.Agents; git pull; Pop-Location
+~/K.Agents/scripts/Update-KAgentsVS.ps1
+
+# Dry-Run
+~/K.Agents/scripts/Update-KAgentsVS.ps1 -WhatIf
+```
+
+Das Update-Script entfernt zuerst alle K.Agents-Dateien und kopiert dann die aktuelle Version. Eigene Agents/Skills im selben Verzeichnis bleiben erhalten.
+
+### Deinstallation
+
+Entfernt **nur** die Agents und Skills, die aus K.Agents stammen. Eigene Custom Agents/Skills bleiben erhalten.
+
+```powershell
+~/K.Agents/scripts/Uninstall-KAgentsVS.ps1
+
+# Dry-Run
+~/K.Agents/scripts/Uninstall-KAgentsVS.ps1 -WhatIf
+```
+
+### Prüfen ob es funktioniert
+
+1. Visual Studio 2026 öffnen → Solution laden
+2. Copilot Chat öffnen (`Ctrl+\, Ctrl+C` oder über den Copilot-Badge)
+3. **Agent Picker** klicken (Dropdown oben im Chat) → Custom Agents müssen in der Liste erscheinen
+4. Alternativ: `@dotnet-developer Erstelle eine Blazor-Komponente` eingeben
+5. Über das **Tools-Icon** im Chat die verfügbaren Tool-Namen prüfen
+
+> **Quelle:** [Use built-in and custom agents](https://learn.microsoft.com/en-us/visualstudio/ide/copilot-specialized-agents?view=visualstudio#access-custom-agents) — *"In the Copilot Chat window, select the agent picker dropdown to see available agents."*
+
+### Wichtige Unterschiede zu VS Code und Copilot CLI
+
+| Feature | VS Code | Copilot CLI | Visual Studio 2026 |
+|---------|---------|-------------|-------------------|
+| Plugin Marketplace | ✅ `chat.plugins.marketplaces` | ✅ `/plugin install` | ❌ **Nicht verfügbar** |
+| User-Level Agents | `chat.agentFilesLocations` | User-global | `%USERPROFILE%\.github\agents\` |
+| User-Level Skills | `chat.agentSkillsLocations` | User-global | `%USERPROFILE%\.github\skills\` |
+| Plugin-Sharing | ❌ Eigenes System | ❌ Eigenes System | ❌ Eigenes System |
+| Tool-Namen | Tool Sets (`search`, `read`, `edit`, `execute`, `web`) | — | Einzelne Tools (`get_file`, `code_search`, …) |
+
+> **⚠️ Kein Plugin-Sharing:** Jede IDE hat ein eigenes Discovery-System. Agents, die über Copilot CLI oder VS Code Marketplace installiert wurden, sind in VS 2026 **nicht** sichtbar. Umgekehrt genauso.
+
+> **⚠️ Tool-Namen:** VS Code verwendet **Tool Sets** (`search`, `read`, `edit`, `execute`, `web`), VS 2026 verwendet **einzelne Tool-Namen** (`get_file`, `code_search`, `replace_string_in_file`, …). Die Install- und Update-Skripte (`Install-KAgentsVS.ps1`, `Update-KAgentsVS.ps1`) transformieren die Tool-Namen automatisch beim Kopieren. Prüfe über das **Tools-Icon** im Copilot Chat, welche Tools verfügbar sind.
+>
+> **Mapping-Übersicht:**
+>
+> | VS Code Tool Set | VS 2026 Tools |
+> |---|---|
+> | `search` | `code_search`, `file_search`, `find_symbol`, `get_symbols_by_name` |
+> | `read` | `get_file`, `get_errors`, `get_output_window_logs` |
+> | `edit` | `create_file`, `replace_string_in_file`, `multi_replace_string_in_file`, `remove_file` |
+> | `execute` | `run_command_in_terminal`, `run_build`, `run_tests`, `get_tests` |
+> | `web` | `get_web_pages` |
+>
+> Zusätzlich werden `get_projects_in_solution` und `get_files_in_project` automatisch hinzugefügt.
+> `githubRepo` wird entfernt — in VS 2026 wird GitHub als MCP Server konfiguriert.
 
 ---
 

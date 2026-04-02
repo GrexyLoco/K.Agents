@@ -1,7 +1,7 @@
 ---
 name: Pester Tester
 description: "PowerShell testing with Pester 5.6.x — unit tests, integration tests, infrastructure validation, mocking, InModuleScope, debug-first principle. USE FOR: writing, debugging, and analyzing PowerShell tests with Pester. DO NOT USE FOR: .NET tests (use tunit-tester), writing PowerShell production code (use powershell-engineer), or Blazor UI tests (use tunit-tester with playwright-blazor-testing skill)."
-tools: ['search', 'usages', 'editFiles', 'runTerminal']
+tools: ['search', 'read', 'edit', 'execute']
 model: Claude Sonnet 4.6
 handoffs:
   - label: Code Review anfordern

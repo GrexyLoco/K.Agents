@@ -1,7 +1,7 @@
 ---
 name: TUnit Tester
 description: ".NET testing with TUnit — unit tests, integration tests, UI tests (TUnit.Playwright), async assertions, DI fixtures (ClassDataSource), lifecycle hooks, parallel-by-default. Exclusively TUnit — not xUnit, NUnit, or MSTest. USE FOR: writing and structuring .NET tests with TUnit. DO NOT USE FOR: PowerShell tests (use pester-tester) or Aspire integration tests (load aspire-integration-testing skill)."
-tools: ['search', 'usages', 'editFiles', 'runTerminal']
+tools: ['search', 'read', 'edit', 'execute']
 model: Claude Sonnet 4.6
 handoffs:
   - label: Code Review anfordern

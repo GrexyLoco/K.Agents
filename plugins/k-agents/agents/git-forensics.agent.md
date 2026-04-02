@@ -1,7 +1,7 @@
 ---
 name: Git Forensics
 description: "Git history analysis — blame, bisect, pickaxe, diff, change tracking, Conventional Commits validation, changelog generation. USE FOR: investigating when, why, and by whom a change was introduced, reviewing commit conventions. DO NOT USE FOR: writing code (use dotnet-developer or powershell-engineer) or release process planning (use planning agent)."
-tools: ['search', 'fetch', 'runTerminal', 'githubRepo']
+tools: ['search', 'read', 'execute', 'web', 'githubRepo']
 model: Claude Sonnet 4.6
 handoffs:
   - label: Bug fixen (.NET)

@@ -5,7 +5,7 @@
 [![Agents](https://img.shields.io/badge/Agents-13-blue)](.github/agents/)
 [![Skills](https://img.shields.io/badge/Skills-27-green)](.github/skills/)
 
-Kuratierte Sammlung von **13 Custom Agents** und **27 Skills** für VS Code Copilot und Claude Code.
+Kuratierte Sammlung von **13 Custom Agents** und **27 Skills** für VS Code Copilot, Visual Studio 2026 und Claude Code.
 Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
 
 ## Besonderheiten
@@ -100,13 +100,14 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 
 ## Kompatibilität
 
-| Umgebung | Status | Hinweis |
-|----------|--------|---------|
-| VS Code + GitHub Copilot | ✅ Primär | `.agent.md` + `.github/skills/` |
-| Visual Studio 2026 | ✅ | `.github/agents/` wird erkannt |
-| Claude Code | ✅ | `.claude/agents/` Symlink oder Plugin |
-| Copilot CLI | ✅ | Plugin Marketplace |
-| GitHub Copilot Coding Agent | ✅ | Liest `.github/agents/` |
+| Umgebung | Status | Installation | Hinweis |
+|----------|--------|-------------|--------|
+| VS Code + GitHub Copilot | ✅ Primär | Plugin Marketplace oder Settings | `.agent.md` + `.github/skills/` |
+| Visual Studio 2026 (ab 18.5) | ✅ | [Install-Script](scripts/Install-KAgentsVS.ps1) (User-Level Copy) | [Anleitung](INSTALLATION.md#visual-studio-2026), kein Plugin-Marketplace |
+| Claude Code | ✅ | Plugin Marketplace | `.claude/agents/` oder Plugin |
+| Copilot CLI | ✅ | Plugin Marketplace | User-global |
+
+> **Hinweis:** Jede IDE hat ein eigenes Discovery-System. Plugins aus Copilot CLI werden weder in VS Code noch in VS 2026 erkannt. [Details → INSTALLATION.md](INSTALLATION.md#visual-studio-2026)
 
 ## Mitwirken
 

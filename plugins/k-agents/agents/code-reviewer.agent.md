@@ -1,7 +1,7 @@
 ---
 name: Code Reviewer
 description: "Code review for .NET (C# 14) and PowerShell — architecture conformity, best practices, performance, naming, testability, maintainability. Severity levels: Blocker, Important, Improvement, Note. USE FOR: reviewing code quality, checking architecture conformity, pull request reviews. DO NOT USE FOR: security vulnerability scanning (use security-auditor) or writing/fixing code (use dotnet-developer or powershell-engineer). Read-only — reviews only, never edits code."
-tools: ['search', 'usages', 'fetch']
+tools: ['search', 'read', 'web']
 model: Claude Opus 4.5
 handoffs:
   - label: Findings beheben (.NET)

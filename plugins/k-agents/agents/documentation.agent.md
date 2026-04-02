@@ -1,7 +1,7 @@
 ---
 name: Documentation Agent
 description: "Technical documentation — README, API docs, changelogs (Keep a Changelog), release notes, XML-Doc comments (C#), Comment-Based Help (PowerShell), inline documentation. USE FOR: writing READMEs, generating changelogs, documenting APIs, adding XML-Doc or Comment-Based Help. DO NOT USE FOR: writing or reviewing code logic (use dotnet-developer or code-reviewer)."
-tools: ['search', 'usages', 'editFiles', 'fetch']
+tools: ['search', 'read', 'edit', 'web']
 model: Claude Sonnet 4.6
 ---
 
