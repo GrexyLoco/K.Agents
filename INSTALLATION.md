@@ -133,7 +133,7 @@ Alles in **VS Code** (kein Terminal nötig):
 
 ---
 
-## Methode 3: Manuelle Kopie / Symlink
+## Methode 3: Manuelle Kopie (Repo-Level)
 
 **Funktionsprinzip:** Die Dateien werden direkt in das `.github/`-Verzeichnis des Consumer-Repos kopiert. VS Code erkennt `.github/agents/` und `.github/skills/` automatisch.
 
@@ -142,22 +142,7 @@ Alles in **VS Code** (kein Terminal nötig):
 > - [Agent Skills in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-skills)
 > - [Custom Instructions](https://code.visualstudio.com/docs/copilot/customization/custom-instructions)
 
-### Option A: Install-Script
-
-Im **Terminal** (PowerShell Core / Bash), ausgeführt im Verzeichnis des K.Agents-Repos:
-
-```powershell
-# Copy-Modus (Standard)
-./scripts/Install-KAgents.ps1 -TargetPath C:\Users\dein-user\source\repos\MeinProjekt
-
-# Symlink-Modus (automatische Updates, erfordert ggf. Admin-Rechte auf Windows)
-./scripts/Install-KAgents.ps1 -TargetPath ~/projects/mein-app -Mode symlink
-
-# Dry-Run (zeigt was passieren würde, ohne Änderungen)
-./scripts/Install-KAgents.ps1 -TargetPath ~/projects/mein-app -WhatIf
-```
-
-### Option B: Manuell kopieren
+### Manuell kopieren
 
 Im **Terminal** (PowerShell Core / Bash):
 
@@ -166,27 +151,11 @@ Im **Terminal** (PowerShell Core / Bash):
 git clone https://github.com/GrexyLoco/K.Agents.git ~/K.Agents
 
 # In jedes Consumer-Repo kopieren (im Verzeichnis des Consumer-Repos ausführen)
-cp -r ~/K.Agents/.github/agents/* .github/agents/
-cp -r ~/K.Agents/.github/skills/* .github/skills/
+cp -r ~/K.Agents/plugins/k-agents/agents/* .github/agents/
+cp -r ~/K.Agents/plugins/k-agents/skills/* .github/skills/
 cp ~/K.Agents/AGENTS.md ./AGENTS.md
 cp ~/K.Agents/.github/copilot-instructions.md .github/copilot-instructions.md
 ```
-
-### Option C: Symlink (Multi-Repo, ein Update reicht)
-
-Im **Terminal** (PowerShell Core / Bash), im Verzeichnis jedes Consumer-Repos:
-
-```bash
-# Einmal klonen
-git clone https://github.com/GrexyLoco/K.Agents.git ~/K.Agents
-
-# In jedem Consumer-Repo verlinken
-ln -s ~/K.Agents/.github/agents .github/agents
-ln -s ~/K.Agents/.github/skills .github/skills
-```
-
-**Vorteil:** Ein `git pull` im K.Agents-Repo aktualisiert alle verlinkten Repos.
-**Nachteil:** Symlinks funktionieren nicht in ZIP-Distributionen und können auf Windows Admin-Rechte erfordern.
 
 ### Multi-Repo bei manueller Kopie
 
@@ -199,10 +168,10 @@ Bei einem Workspace mit 10 Repos musst du die Dateien in **jedes Repo** kopieren
 // Öffnen via: Ctrl+Shift+P → "Preferences: Open User Settings (JSON)"
 {
   "chat.agentFilesLocations": [
-    "~/K.Agents/.github/agents"
+    "~/K.Agents/plugins/k-agents/agents"
   ],
   "chat.agentSkillsLocations": [
-    "~/K.Agents/.github/skills"
+    "~/K.Agents/plugins/k-agents/skills"
   ]
 }
 ```
@@ -331,6 +300,8 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\.github\skills" -Force
 Copy-Item -Path ~/K.Agents/plugins/k-agents/agents/* -Destination "$env:USERPROFILE\.github\agents\" -Force
 Copy-Item -Path ~/K.Agents/plugins/k-agents/skills/* -Destination "$env:USERPROFILE\.github\skills\" -Recurse -Force
 ```
+
+> **⚠️ Manuelle Kopie übernimmt kein Tool-Mapping.** Die Agent-Dateien enthalten VS Code Tool Sets (`search`, `read`, `edit`), die in VS 2026 nicht funktionieren. Nutze bevorzugt die Scripts (`Install-KAgentsVS.ps1`, `Update-KAgentsVS.ps1`), die das Mapping automatisch durchführen.
 
 ### Update
 
