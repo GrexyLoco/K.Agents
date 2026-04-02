@@ -22,6 +22,12 @@ handoffs:
       Basierend auf der Architekturentscheidung oben: Empfehle die Azure-Infrastruktur
       und Aspire-Konfiguration.
     send: false
+  - label: MVP planen
+    agent: planning
+    prompt: >
+      Basierend auf der Architektur-Entscheidung oben: Schneide das MVP-Feature in
+      User Stories, definiere Milestones und erstelle GitHub Issues.
+    send: false
 ---
 
 # App Architect – .NET Applikationsarchitektur

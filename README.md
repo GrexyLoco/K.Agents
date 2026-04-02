@@ -109,6 +109,177 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 
 > **Hinweis:** Jede IDE hat ein eigenes Discovery-System. Plugins aus Copilot CLI werden weder in VS Code noch in VS 2026 erkannt. [Details → INSTALLATION.md](INSTALLATION.md#visual-studio-2026)
 
+## Agent-Workflow & Handoff-Flows
+
+Die Agents sind über **Handoff-Buttons** miteinander verknüpft. Nach jeder Agent-Antwort erscheinen Buttons, die zum nächsten passenden Agent weiterleiten — inklusive Kontext aus der bisherigen Konversation.
+
+### Übersichtsgraph
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        STRATEGIE & PLANUNG                         │
+│                                                                     │
+│   ┌──────────┐        ┌───────────────┐     ┌────────────────────┐ │
+│   │ Planning │──────→ │ App Architect │     │ Automation         │ │
+│   │ Agent    │──────→ │               │     │ Architect          │ │
+│   └──────────┘        └───────────────┘     └────────────────────┘ │
+│        ▲                │  │  │  │               │  │  │  │        │
+│        │ MVP planen     │  │  │  │  Tasks planen │  │  │  │        │
+│        ╰────────────────╯  │  │  │  ╭────────────╯  │  │  │        │
+│                            │  │  │  │               │  │  │        │
+└────────────────────────────┼──┼──┼──┼───────────────┼──┼──┼────────┘
+                             │  │  │  │               │  │  │
+┌────────────────────────────┼──┼──┼──┼───────────────┼──┼──┼────────┐
+│                        IMPLEMENTIERUNG                              │
+│                            │  │  │  │               │  │  │        │
+│                            ▼  │  ▼  │               ▼  │  ▼        │
+│   ┌──────────────────┐       │     │     ┌──────────────────────┐  │
+│   │  .NET Developer  │ ◄─────┘     │     │ PowerShell Engineer │  │
+│   │                  │─────────────────→ │                      │  │
+│   └──────────────────┘             │     └──────────────────────┘  │
+│      │  │  │  │  │                 │         │  │  │              │
+│      │  │  │  │  │                 │         │  │  │              │
+│      │  │  │  │  ▼                 │         │  │  │              │
+│      │  │  │  │ ┌──────────────┐   │         │  │  │              │
+│      │  │  │  ╰→│ Database     │   │         │  │  │              │
+│      │  │  │    │ Engineer     │───╯         │  │  │              │
+│      │  │  │    └──────────────┘             │  │  │              │
+│      │  │  │                                 │  │  │              │
+│      │  │  ▼    ┌───────────────────┐        │  │  │              │
+│      │  │  ╰───→│ Azure Specialist  │◄───────╯  │  │              │
+│      │  │       └───────────────────┘           │  │              │
+│      │  │                                       │  │              │
+│      │  ▼       ┌───────────────────┐           │  │              │
+│      │  ╰──────→│ Documentation     │◄──────────╯  │              │
+│      │          └───────────────────┘              │              │
+│      │                                             │              │
+└──────┼─────────────────────────────────────────────┼──────────────┘
+       │                                             │
+┌──────┼─────────────────────────────────────────────┼──────────────┐
+│      │             QUALITÄTSSICHERUNG              │              │
+│      │                                             │              │
+│      ▼          ┌──────────────┐                   ▼              │
+│   ┌──────────┐  │ Pester       │◄──── ┌──────────────────┐       │
+│   │ TUnit    │  │ Tester       │      │                  │       │
+│   │ Tester   │  └──────────────┘      │  Code Reviewer   │       │
+│   └──────────┘         │              │                  │       │
+│      │                 │              └──────────────────┘       │
+│      │                 │                │  │  │                   │
+│      ▼                 ▼                │  │  │                   │
+│   ┌────────────────────────────┐        │  │  │                   │
+│   │      Code Reviewer         │◄───────╯  │  │                   │
+│   └────────────────────────────┘           │  │                   │
+│      │  │                                  │  │                   │
+│      │  │   ┌──────────────────┐           │  │                   │
+│      │  ╰──→│ Security Auditor │◄──────────╯  │                   │
+│      │      └──────────────────┘              │                   │
+│      │                                        │                   │
+│      ╰── Findings → dotnet-developer ─────────╯                   │
+│      ╰── Findings → powershell-engineer ──────╯                   │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### Typische Flows
+
+#### Flow 1: Neues Feature (Vision → MVP)
+
+> Empfohlener Einstieg für neue Projekte oder größere Features.
+
+```
+1. Planning Agent     │ Zielbild beschreiben, Scope klären, Anforderungen definieren
+       ↓ Handoff      │
+2. App Architect      │ Solution-Struktur, Patterns, Technologie-Entscheidungen
+       ↓ Handoff      │
+3. Planning Agent     │ MVP-Stories schneiden, GitHub Issues erstellen
+       ↓ Handoff      │
+4. .NET Developer     │ Erste Story implementieren
+       ↓ Handoff      │
+5. TUnit Tester       │ Tests schreiben
+       ↓ Handoff      │
+6. Code Reviewer      │ Review durchführen
+       ↓ Handoff      │
+7. .NET Developer     │ Findings beheben (ggf. mehrere Iterationen)
+```
+
+#### Flow 2: CI/CD-Pipeline aufbauen
+
+```
+1. Planning Agent         │ Automations-Anforderungen definieren
+       ↓ Handoff          │
+2. Automation Architect   │ Workflow-Architektur, Matrix-Builds, Caching
+       ↓ Handoff          │
+3. Planning Agent         │ Tasks als Issues planen
+       ↓ Handoff          │
+4. PowerShell Engineer    │ Scripts und Workflows implementieren
+       ↓ Handoff          │
+5. Pester Tester          │ Tests schreiben
+       ↓ Handoff          │
+6. Code Reviewer          │ Review (Cross-Platform, Performance, Patterns)
+```
+
+#### Flow 3: Feature mit Datenbank
+
+```
+1. App Architect      │ Architektur mit EF Core Layer
+       ↓ Handoff      │
+2. Database Engineer  │ Schema, Migrations, Indizes
+       ↓ Handoff      │
+3. .NET Developer     │ Service/Repository Layer + API
+       ↓ Handoff      │
+4. .NET Developer     │ → Schema/Migration anfordern (bei Änderungen)
+       ↓ Handoff      │
+5. TUnit Tester       │ Integration Tests mit TestContainers
+       ↓ Handoff      │
+6. Code Reviewer      │ Review (N+1, AsNoTracking, Performance)
+```
+
+#### Flow 4: Security-Review-Zyklus
+
+```
+1. Code Reviewer          │ Review findet Sicherheitsbedenken
+       ↓ Handoff          │
+2. Security Auditor       │ OWASP-Audit, Dependency Scan
+       ↓ Handoff          │
+3. .NET Developer         │ Security-Fixes implementieren
+       ↓ Handoff          │
+4. Code Reviewer          │ Re-Review der Fixes
+```
+
+#### Flow 5: Bug-Analyse
+
+```
+1. Git Forensics      │ git blame, bisect — Ursache finden
+       ↓ Handoff      │
+2. .NET Developer     │ Bug fixen
+       ↓ Handoff      │
+3. TUnit Tester       │ Regression-Test schreiben
+       ↓ Handoff      │
+4. Code Reviewer      │ Fix reviewen
+```
+
+### Handoff-Matrix
+
+Vollständige Übersicht aller Handoff-Verbindungen:
+
+| Agent ↓ delegiert an → | planning | app-arch | auto-arch | dotnet | ps-eng | azure | db-eng | tunit | pester | sec-audit | reviewer | docs | git-for |
+|------------------------|:--------:|:--------:|:---------:|:------:|:------:|:-----:|:------:|:-----:|:------:|:---------:|:--------:|:----:|:-------:|
+| **Planning Agent**     |          | ✅       | ✅        |        |        |       |        |       |        |           |          |      |         |
+| **App Architect**      | ✅       |          |           | ✅     |        | ✅    | ✅     |       |        |           |          |      |         |
+| **Automation Architect** | ✅     |          |           |        | ✅*    | ✅    |        |       |        |           |          |      | ✅      |
+| **.NET Developer**     |          |          |           |        |        | ✅    | ✅     | ✅    |        |           | ✅       | ✅   |         |
+| **PowerShell Engineer** |         |          |           |        |        |       |        |       | ✅     |           | ✅       | ✅   |         |
+| **Azure Specialist**   |          |          |           | ✅     |        |       |        |       |        |           | ✅       |      |         |
+| **Database Engineer**  |          |          |           | ✅     |        |       |        |       |        |           | ✅       |      |         |
+| **TUnit Tester**       |          |          |           | ✅     |        |       |        |       |        |           | ✅       |      |         |
+| **Pester Tester**      |          |          |           |        | ✅     |       |        |       |        |           | ✅       |      |         |
+| **Security Auditor**   |          |          |           | ✅     | ✅     |       |        |       |        |           |          |      |         |
+| **Code Reviewer**      |          |          |           | ✅     | ✅     |       |        | ✅    | ✅     | ✅        |          |      |         |
+| **Git Forensics**      |          |          |           | ✅     | ✅     |       |        |       |        |           |          |      |         |
+| **Documentation**      |          |          |           |        |        |       |        |       |        |           |          |      |         |
+
+_* Automation Architect delegiert an powershell-engineer für Script-Implementierung_
+
 ## Mitwirken
 
 Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Richtlinien.

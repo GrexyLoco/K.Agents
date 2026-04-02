@@ -21,6 +21,18 @@ handoffs:
       Erstelle die Dokumentation für die oben implementierten Komponenten
       (XML-Doc Comments, README-Abschnitte).
     send: false
+  - label: Schema/Migration anfordern
+    agent: database-engineer
+    prompt: >
+      Für die oben implementierte Funktionalität: Entwirf oder erweitere das
+      EF Core Schema und erstelle die benötigte Migration.
+    send: false
+  - label: Azure/Aspire konfigurieren
+    agent: azure-specialist
+    prompt: >
+      Für die oben implementierte Funktionalität: Konfiguriere die benötigten
+      Azure-Ressourcen oder Aspire-Integrationen.
+    send: false
 ---
 
 # .NET Developer – C# 14 / .NET 10 Implementierung

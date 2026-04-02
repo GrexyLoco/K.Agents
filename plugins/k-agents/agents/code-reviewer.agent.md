@@ -14,6 +14,24 @@ handoffs:
     prompt: >
       Bitte behebe die folgenden Review-Findings im PowerShell-Code.
     send: false
+  - label: Security-Audit anfordern
+    agent: security-auditor
+    prompt: >
+      Das Code Review hat potenzielle Sicherheitsbedenken aufgedeckt.
+      Führe ein Security-Audit für die betroffenen Komponenten durch.
+    send: false
+  - label: Tests ergänzen (TUnit)
+    agent: tunit-tester
+    prompt: >
+      Das Code Review hat fehlende Testabdeckung im .NET-Code identifiziert.
+      Ergänze TUnit-Tests für die genannten Bereiche.
+    send: false
+  - label: Tests ergänzen (Pester)
+    agent: pester-tester
+    prompt: >
+      Das Code Review hat fehlende Testabdeckung im PowerShell-Code identifiziert.
+      Ergänze Pester-Tests für die genannten Bereiche.
+    send: false
 ---
 
 # Code Reviewer – Qualitätssicherung

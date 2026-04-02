@@ -21,6 +21,12 @@ handoffs:
     prompt: >
       Analysiere die Git-Historie im Kontext des oben beschriebenen Problems.
     send: false
+  - label: Tasks planen
+    agent: planning
+    prompt: >
+      Basierend auf der CI/CD-Architektur oben: Erstelle GitHub Issues für die
+      Automations-Tasks mit Milestones und Acceptance Criteria.
+    send: false
 ---
 
 # Automation Architect – CI/CD & Automationsarchitektur
