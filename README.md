@@ -258,20 +258,39 @@ Die Agents sind über **Handoff-Buttons** miteinander verknüpft. Nach jeder Age
 4. Code Reviewer      │ Fix reviewen
 ```
 
+#### Flow 6: TDD-Zyklus (Test-Driven Development)
+
+```
+1. Planning Agent         │ Feature definieren, Acceptance Criteria
+       ↓ Handoff          │
+2. TUnit Tester (Modus 1) │ Test-Strategie, executable Test Skeletons
+       ↓ Handoff          │
+3. Planning Agent         │ Test Cases als Acceptance Criteria in Issues
+       ↓ Handoff          │
+4. TUnit Tester (Modus 2) │ RED — Failing Tests schreiben
+       ↓ Handoff          │
+5. .NET Developer         │ GREEN — Minimalen Produktionscode schreiben
+       ↓ Handoff          │
+6. TUnit Tester           │ REFACTOR — Tests verschärfen, Edge Cases
+       ↓ Loop (max 3×)    │ zurück zu Schritt 4 bei neuen Tests
+       ↓ Handoff          │
+7. Code Reviewer          │ Finales Review
+```
+
 ### Handoff-Matrix
 
 Vollständige Übersicht aller Handoff-Verbindungen:
 
 | Agent ↓ delegiert an → | planning | app-arch | auto-arch | dotnet | ps-eng | azure | db-eng | tunit | pester | sec-audit | reviewer | docs | git-for |
 |------------------------|:--------:|:--------:|:---------:|:------:|:------:|:-----:|:------:|:-----:|:------:|:---------:|:--------:|:----:|:-------:|
-| **Planning Agent**     |          | ✅       | ✅        |        |        |       |        |       |        |           |          |      |         |
+| **Planning Agent**     |          | ✅       | ✅        |        |        |       |        | ✅    |        |           |          |      |         |
 | **App Architect**      | ✅       |          |           | ✅     |        | ✅    | ✅     |       |        |           |          |      |         |
 | **Automation Architect** | ✅     |          |           |        | ✅*    | ✅    |        |       |        |           |          |      | ✅      |
 | **.NET Developer**     |          |          |           |        |        | ✅    | ✅     | ✅    |        |           | ✅       | ✅   |         |
 | **PowerShell Engineer** |         |          |           |        |        |       |        |       | ✅     |           | ✅       | ✅   |         |
 | **Azure Specialist**   |          |          |           | ✅     |        |       |        |       |        |           | ✅       |      |         |
 | **Database Engineer**  |          |          |           | ✅     |        |       |        |       |        |           | ✅       |      |         |
-| **TUnit Tester**       |          |          |           | ✅     |        |       |        |       |        |           | ✅       |      |         |
+| **TUnit Tester**       | ✅       |          |           | ✅     |        |       |        |       |        |           | ✅       |      |         |
 | **Pester Tester**      |          |          |           |        | ✅     |       |        |       |        |           | ✅       |      |         |
 | **Security Auditor**   |          |          |           | ✅     | ✅     |       |        |       |        |           |          |      |         |
 | **Code Reviewer**      |          |          |           | ✅     | ✅     |       |        | ✅    | ✅     | ✅        |          |      |         |

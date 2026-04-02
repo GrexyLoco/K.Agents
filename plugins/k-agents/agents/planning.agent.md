@@ -16,6 +16,13 @@ handoffs:
       Basierend auf dem Feature-Summary oben: Analysiere die CI/CD- und
       Automations-Anforderungen für dieses Feature.
     send: false
+  - label: Test-Strategie erarbeiten
+    agent: tunit-tester
+    prompt: >
+      Wir befinden uns in Phase 3 (Test Cases). Basierend auf dem Feature-Summary
+      und den Acceptance Criteria oben: Definiere die Test-Strategie und schreibe
+      executable Test Skeletons (Modus 1 — Test Strategist).
+    send: false
 ---
 
 # Planning Agent – Feature Planning & GitHub Issue Creation
