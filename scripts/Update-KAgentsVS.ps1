@@ -43,7 +43,7 @@ $pluginRoot = Join-Path $scriptRoot 'plugins' 'k-agents'
 $agentsSource = Join-Path $pluginRoot 'agents'
 $skillsSource = Join-Path $pluginRoot 'skills'
 
-# Tool-Mapping laden (ConvertTo-VS2026AgentContent)
+# Tool-Bereinigung laden (ConvertTo-VS2026AgentContent)
 . (Join-Path $PSScriptRoot 'ConvertTo-VS2026AgentContent.ps1')
 
 # Quellverzeichnisse pruefen
@@ -90,7 +90,7 @@ foreach ($name in $knownSkills) {
     }
 }
 
-# --- Phase 2: Aktuelle Version kopieren (mit Tool-Mapping VS Code → VS 2026) ---
+# --- Phase 2: Aktuelle Version kopieren (VS Code-spezifische Tools entfernen) ---
 
 $agentFiles = Get-ChildItem -Path $agentsSource -Filter '*.agent.md'
 foreach ($file in $agentFiles) {
