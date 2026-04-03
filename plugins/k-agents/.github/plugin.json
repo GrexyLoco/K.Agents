@@ -7,6 +7,8 @@
     "email": "noreply@grexyloco.dev"
   },
   "license": "MIT",
+  "readme": "../README.md",
+  "homepage": "https://github.com/GrexyLoco/K.Agents",
   "keywords": [
     "dotnet",
     "blazor",
