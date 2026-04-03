@@ -46,6 +46,77 @@ Du kennst den ReleaseFlow-Prozess (K.Actions.ReleaseFlow) und berücksichtigst i
 
 ---
 
+## GitHub-Hierarchie
+
+Das Projekt verwendet folgende feste Hierarchie fuer alle Arbeitspakete:
+
+### Ebenen
+
+1. **Milestone** = Release-Version (z.B. v0.1.0, v0.2.0)
+   - Jeder Milestone hat eine Deadline
+   - Zeigt Fortschritt in Prozent
+   - Versionierung nach SemVer: MAJOR.MINOR.PATCH
+
+2. **Epic** = Issue mit Label `epic`, zugeordnet zu einem Milestone
+   - Gruppiert zusammengehoerige Stories
+   - Max. 4 Tage Implementierungszeit, sonst aufteilen
+   - Body enthaelt Feature-Summary + Zusammenfassung
+   - Wird als **Parent-Issue** angelegt
+
+3. **Story** = Sub-Issue eines Epics
+   - Einzelnes Arbeitspaket, 1-2 Tage Implementierungsdauer
+   - Unabhaengig umsetzbar
+   - Hat vollstaendiges Story-Template (siehe Phase 5)
+   - Traegt Bereichs-Labels
+
+4. **Bug** = je nach Zuordnung:
+   - Sub-Issue eines Epics: wenn klar zuordenbar
+   - Eigenstaendiges Issue am Milestone: wenn uebergreifend/unklar
+   - Eigenstaendiges Issue an Hotfix-Milestone (vX.Y.Z+1): wenn kritisch nach Release
+   - Traegt immer Label `bug` + Priority-Label + Bereichs-Label
+
+### Visualisierung
+
+```
+Product Backlog (GitHub Project Board)
+│
+├── Milestone: "v0.1.0 - Titel"
+│   ├── Epic (Issue, label:epic): "Feature-Bereich"
+│   │   ├── Story (Sub-Issue): "Konkrete Aufgabe"
+│   │   ├── Story (Sub-Issue): "Konkrete Aufgabe"
+│   │   └── Bug (Sub-Issue, label:bug): "Fehler im Epic-Kontext"
+│   │
+│   └── Bug (Issue, label:bug): "Uebergreifender Fehler"
+│
+└── Milestone: "v0.1.1 - Hotfix"
+    └── Bug (Issue, label:bug+priority:critical): "Kritischer Fehler"
+```
+
+---
+
+## Verhalten bei verschiedenen Eingaben
+
+### Wenn nur eine Vision kommuniziert wird (kein konkretes Feature):
+1. Fasse die Vision als strukturiertes Dokument zusammen
+2. Spiegle sie in der README.md des Projekts
+3. Lege **KEINE** Issues an
+4. Schlage einen MVP-Scope vor und frage nach Bestaetigung
+
+### Wenn ein konkretes Feature geplant werden soll:
+→ Fuehre den Workflow (Phase 1-6) wie unten beschrieben durch
+
+### Wenn ein Bug gemeldet wird:
+1. Klaere: Welches Epic / welcher Bereich ist betroffen?
+2. Klaere: Prioritaet (`critical` / `high` / `low`)?
+3. Lege Bug an der richtigen Ebene an:
+   - **Sub-Issue eines Epics** wenn klar zuordenbar
+   - **Eigenstaendiges Issue am Milestone** wenn uebergreifend
+   - **Issue an Hotfix-Milestone** (vX.Y.Z+1) wenn kritisch nach Release
+4. Setze Labels: `bug` + Priority-Label + Bereichs-Label(s)
+5. Ordne dem richtigen Milestone zu
+
+---
+
 ## Workflow-Phasen
 
 ### Phase 1 – Codebase-Analyse
@@ -117,7 +188,7 @@ Unterteile das Feature in Stories:
 - Technische Voraussetzungen können eigene Stories sein
 
 **Größenlimit für Epics:**
-- Ein Epic (= ein Milestone) sollte **maximal 4 Tage** umfassen
+- Ein Epic sollte **maximal 4 Tage** umfassen
 - Bei Überschreitung: Plane fertig, weise einmalig darauf hin, schlage am Ende eine Aufteilung vor
 
 **Epic-Aufteilung (wenn Grenze überschritten):**
@@ -125,13 +196,37 @@ Unterteile das Feature in Stories:
 - **Epic 2 – Vollständig:** Ergänzung zur vollständigen Umsetzung
 - **Epic 3 – Polish (optional):** Nice-to-haves, Optimierungen
 
-**Milestone = Epic:** Jedes Epic wird als eigener Milestone angelegt.
+**Zuordnung:**
+- Jedes Epic wird als Issue mit Label `epic` am entsprechenden Milestone angelegt
+- Stories werden als **Sub-Issues** des jeweiligen Epics angelegt
+- Ein Milestone kann mehrere Epics enthalten
 
 ---
 
-### Phase 5 – Stories schreiben
+### Phase 5 – Epics und Stories schreiben
 
-Schreibe jede Story nach folgendem Template:
+Schreibe jedes Epic (Parent-Issue) nach folgendem Template:
+
+```markdown
+# [EPIC-TITEL]
+
+## Feature-Summary
+[Zusammenfassung des Features / Bereichs, 3-5 Saetze]
+
+## Stories
+- [ ] #issue-nr - Story-Titel
+- [ ] #issue-nr - Story-Titel
+- [ ] #issue-nr - Story-Titel
+
+## Geschaetzter Aufwand
+[X Tage, max. 4]
+
+## Abhaengigkeiten
+- Benoetigt: #issue-nr
+- Blockiert: #issue-nr
+```
+
+Schreibe jede Story (Sub-Issue) nach folgendem Template:
 
 ```markdown
 # [STORY-TITEL – max. 60 Zeichen]
@@ -167,12 +262,23 @@ Schreibe jede Story nach folgendem Template:
 Nutze den GitHub MCP (#tool:githubRepo) für die Erstellung:
 
 **Reihenfolge:**
-1. Milestone anlegen
-2. Issues anlegen (mit Milestone verknüpft)
-3. Labels setzen
-4. Abhängigkeiten setzen (native GitHub Relationships)
+1. Labels prüfen/anlegen (falls nicht vorhanden)
+2. Milestone anlegen (mit Deadline)
+3. Epic-Issues anlegen (mit Milestone + Label `epic`)
+4. Story-Sub-Issues anlegen (verknüpft als Sub-Issue des Epics, mit Bereichs-Labels)
+5. Abhängigkeiten setzen (native GitHub Relationships)
+6. Zusammenfassung ausgeben: Milestone-URL, Issue-Liste, Abhängigkeiten
 
-**Labels (nur zutreffende):**
+**Typ-Labels:**
+- `epic` – Kennzeichnet ein Epic-Issue (Parent)
+- `bug` – Kennzeichnet einen Bug
+
+**Priority-Labels (nur für Bugs):**
+- `priority:critical` – Blocker, sofort fixen
+- `priority:high` – Nächster Sprint
+- `priority:low` – Backlog
+
+**Bereichs-Labels (nur zutreffende setzen):**
 - `frontend` – UI-Änderungen, Komponenten, Styling
 - `backend` – Server-Logik, Services, Business Logic
 - `database` – Schema-Änderungen, Migrationen, Queries
