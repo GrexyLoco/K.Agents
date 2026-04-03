@@ -7,22 +7,28 @@
 
 .DESCRIPTION
     Wird per Dot-Sourcing in Install-KAgentsVS.ps1 und Update-KAgentsVS.ps1 eingebunden.
-    Entfernt VS Code-spezifische Tools aus der tools:-Zeile im YAML-Frontmatter.
+    Transformiert Agent-Dateien fuer VS 2026 Kompatibilitaet.
 
     Die plattformuebergreifenden Tool-Aliase (search, read, edit, execute, web)
     werden von allen Copilot-Clients (VS Code, VS 2026, JetBrains etc.) nativ
     aufgeloest und bleiben unveraendert.
 
-    Entfernt werden:
-      githubRepo  → in VS 2026 als MCP Server konfiguriert
+    Beide IDEs (VS Code + VS 2026) nutzen dieselben MCP Server:
+      - GitHub MCP     (Issues, PRs, Repos, Advisory Database)
+      - NuGet MCP      (Package-Versionen, Kompatibilitaet, CVEs)
+      - Microsoft Learn MCP (Docs-Suche, API-Referenzen, Code-Beispiele)
+
+    MCP-Tools werden automatisch entdeckt und muessen NICHT in der
+    tools:-Zeile aufgefuehrt werden. Seit der Umstellung auf MCP-basiertes
+    GitHub werden keine VS Code-spezifischen Tools mehr verwendet.
 
     Referenz: https://docs.github.com/en/copilot/reference/custom-agents-configuration#tools
 #>
 
 Set-StrictMode -Version Latest
 
-# Tools, die in VS 2026 entfernt werden (MCP-konfiguriert oder nicht verfuegbar)
-$script:VS2026DropTools = @('githubRepo')
+# Tools, die in VS 2026 entfernt werden (aktuell leer — alle Agents nutzen nur plattformuebergreifende Tools + MCP)
+$script:VS2026DropTools = @()
 
 function ConvertTo-VS2026AgentContent {
     <#
