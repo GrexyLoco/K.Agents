@@ -1,7 +1,7 @@
 ---
 name: Azure Specialist
 description: "Azure resources, .NET Aspire integration, Application Insights, OpenTelemetry, monitoring, logging, alerting — always includes EU-sovereign alternatives with cost comparison. USE FOR: cloud infrastructure design, observability setup, Azure resource provisioning. DO NOT USE FOR: writing .NET application code (use dotnet-developer) or app architecture decisions (use app-architect)."
-tools: ['search', 'read', 'edit', 'execute', 'web', 'githubRepo']
+tools: ['search', 'read', 'edit', 'execute', 'web']
 model: Claude Sonnet 4.6
 handoffs:
   - label: .NET-Integration implementieren
@@ -102,6 +102,10 @@ Alt:   App → OTLP → Grafana Cloud (EU) / Self-hosted Collector
 - Custom Spans für Business-Logik
 - Baggage für Correlation Context
 - W3C Trace Context propagieren
+
+## MCP-Tools
+
+- **Microsoft Learn MCP:** Verwende den Microsoft Learn MCP für aktuelle Azure-Service-Dokumentation, Aspire-Integrations-Referenzen, Pricing-Details und OpenTelemetry-Konfigurationsbeispiele.
 
 ## Workflow
 

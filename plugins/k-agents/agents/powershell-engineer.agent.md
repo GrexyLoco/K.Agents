@@ -1,7 +1,7 @@
 ---
 name: PowerShell Engineer
 description: "PowerShell Core scripts and modules, GitHub Actions workflows — strictly cross-platform (Windows, Linux, macOS). USE FOR: implementing PowerShell code, CI/CD workflows, and automation scripts. DO NOT USE FOR: PowerShell tests (use pester-tester), pipeline architecture decisions (use automation-architect), or .NET code (use dotnet-developer)."
-tools: ['search', 'read', 'edit', 'execute', 'web', 'githubRepo']
+tools: ['search', 'read', 'edit', 'execute', 'web']
 model: Claude Sonnet 4.6
 handoffs:
   - label: Tests schreiben (Pester)
@@ -113,6 +113,10 @@ Dieses Ökosystem nutzt K.Actions.ReleaseFlow als Referenzimplementierung. Halte
 - **Result-Objects:** `[PSCustomObject]@{ Passed = $true; Skipped = $false; Message = '...' }`
 - **GitHub Outputs:** `"name=value" | Out-File -FilePath $env:GITHUB_OUTPUT -Append`
 - **CI-Scripts:** In `.github/scripts/` auslagern, Comment-Based Help pflicht
+
+## MCP-Tools
+
+- **Microsoft Learn MCP:** Verwende den Microsoft Learn MCP für PowerShell-Cmdlet-Referenzen, Modul-Dokumentation und GitHub Actions Workflow-Syntax.
 
 ## Workflow
 

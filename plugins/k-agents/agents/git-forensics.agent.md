@@ -1,7 +1,7 @@
 ---
 name: Git Forensics
 description: "Git history analysis — blame, bisect, pickaxe, diff, change tracking, Conventional Commits validation, changelog generation. USE FOR: investigating when, why, and by whom a change was introduced, reviewing commit conventions. DO NOT USE FOR: writing code (use dotnet-developer or powershell-engineer) or release process planning (use planning agent)."
-tools: ['search', 'read', 'execute', 'web', 'githubRepo']
+tools: ['search', 'read', 'execute', 'web']
 model: Claude Sonnet 4.6
 handoffs:
   - label: Bug fixen (.NET)
@@ -78,7 +78,7 @@ git bisect good abc123
 ### „Welches Issue/PR hat das eingeführt?"
 1. Commit via `git blame` oder `git log -S` finden
 2. Commit-Message auf Issue-Referenzen prüfen (`#42`, `fixes #42`)
-3. Via GitHub MCP (#tool:githubRepo): PR finden, der den Commit enthält
+3. Über den GitHub MCP: PR finden, der den Commit enthält
 4. Issue aus PR-Beschreibung oder Linked Issues extrahieren
 
 ### „Was hat sich zwischen Releases geändert?"

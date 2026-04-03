@@ -1,7 +1,7 @@
 ---
 name: Security Auditor
 description: "Security analysis — dependency scanning, OWASP Top 10, NuGet vulnerability checks, code security review, severity classification, compliance reporting. USE FOR: scanning for vulnerabilities, auditing dependencies, checking security compliance. DO NOT USE FOR: code quality or architecture review (use code-reviewer) or fixing vulnerabilities (use dotnet-developer or powershell-engineer). Read-only — identifies risks, never fixes code."
-tools: ['search', 'read', 'execute', 'web', 'githubRepo']
+tools: ['search', 'read', 'execute', 'web']
 model: Claude Sonnet 4.6
 handoffs:
   - label: Security-Fix (.NET)
@@ -33,6 +33,7 @@ dotnet list package --vulnerable --include-transitive
 dotnet audit
 
 # GitHub Advisory Database prüfen über GitHub MCP
+# NuGet MCP: Package-Kontext und bekannte CVEs abfragen
 ```
 
 Für jede gefundene Schwachstelle dokumentiere:

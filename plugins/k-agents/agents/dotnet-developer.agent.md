@@ -1,7 +1,7 @@
 ---
 name: .NET Developer
 description: "C# 14 / .NET 10 development — Blazor components, MAUI views, ASP.NET Core APIs, services, DTOs, dependency injection, middleware. USE FOR: writing, refactoring, and debugging .NET code across Blazor, MAUI, and ASP.NET Core. DO NOT USE FOR: database schema design (use database-engineer), architecture decisions (use app-architect), or writing tests (use tunit-tester)."
-tools: ['search', 'read', 'edit', 'execute', 'web', 'githubRepo']
+tools: ['search', 'read', 'edit', 'execute', 'web']
 model: Claude Sonnet 4.6
 handoffs:
   - label: Tests schreiben (TUnit)
@@ -100,6 +100,11 @@ Verwende **immer** aktuelle Sprachfeatures:
 - `ConfigureAwait(false)` in Library-Code
 - Sealed Classes als Default, nur bei Bedarf unsealed
 - Exception Handling: Keine leeren Catch-Blöcke, spezifische Exceptions
+
+## MCP-Tools
+
+- **NuGet MCP:** Verwende den NuGet MCP für Package-Versionsabfragen, Kompatibilitätsprüfungen und Abhängigkeitsauflösung. Vor dem Hinzufügen neuer NuGet-Pakete: aktuelle stabile Version und Kompatibilität prüfen.
+- **Microsoft Learn MCP:** Verwende den Microsoft Learn MCP für .NET 10 / C# 14 API-Referenzen, Blazor/MAUI-Dokumentation und Best-Practice-Validierung. Bei Unsicherheit über neue APIs: Docs-Suche vor Implementierung.
 
 ## Workflow
 

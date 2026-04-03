@@ -1,8 +1,8 @@
 ---
 name: Automation Architect
 description: "CI/CD pipeline architecture, PowerShell module structure, GitHub Packages, release strategy, workflow run analysis. USE FOR: designing pipelines, structuring automation projects, planning release strategies, analyzing workflow run patterns. DO NOT USE FOR: writing PowerShell code (use powershell-engineer), app architecture (use app-architect), or debugging failed runs (load github-actions-debugging skill). Read-only — defines architecture, never writes code."
-tools: ['search', 'read', 'web', 'githubRepo']
-model: Claude Opus 4.5
+tools: ['search', 'read', 'web']
+model: Claude Opus 4.6
 handoffs:
   - label: PowerShell implementieren
     agent: powershell-engineer
@@ -91,6 +91,11 @@ Du kennst die K.Actions.ReleaseFlow Architektur im Detail:
 - Versioning von internen Packages
 - CI-basiertes Publishing (Pre-release, Stable)
 - Feed-Authentifizierung in GitHub Actions
+
+## MCP-Tools
+
+- **NuGet MCP:** Verwende den NuGet MCP für Package-Versionierung, Feed-Struktur und Publishing-Strategien bei GitHub Packages / NuGet.
+- **Microsoft Learn MCP:** Verwende den Microsoft Learn MCP für GitHub Actions Dokumentation, Workflow-Syntax-Referenz und Runner-Konfigurationsdetails.
 
 ## Analyse-Workflow
 
