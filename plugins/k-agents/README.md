@@ -73,6 +73,53 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 - **Write-Host überall verboten** (auch CI-Scripts)
 - **Deutsch** als Arbeitssprache für Doku, Issues, Commits
 
+## Logging & Audit-Trail
+
+K.Agents loggt alle Agent-Aktivitaeten automatisch via Hooks.
+
+### Log-Verzeichnis
+
+```
+~/.k-agents/logs/
+├── 2026-04-05.jsonl
+├── 2026-04-06.jsonl
+└── ...
+```
+
+Format: **JSONL** — eine JSON-Zeile pro Event, ein File pro Tag.
+
+### Events
+
+| Event | Trigger |
+|-------|---------|
+| `agent_start` | Agent beginnt Aufgabe (pre_tool_call) |
+| `agent_handoff` | Delegation an anderen Agenten |
+| `agent_complete` | Agent fertig |
+| `error` | Fehler aufgetreten |
+| `fallback` | CLI-Wechsel wegen Rate Limit |
+
+### Log analysieren
+
+```powershell
+# Alle Fehler von heute
+Get-Content (Join-Path $env:USERPROFILE '.k-agents' 'logs' "$(Get-Date -Format 'yyyy-MM-dd').jsonl") |
+    ConvertFrom-Json |
+    Where-Object { $_.event -eq 'error' }
+
+# Haeufigkeit pro Agent
+Get-Content (Join-Path $env:USERPROFILE '.k-agents' 'logs' '*.jsonl') |
+    ConvertFrom-Json |
+    Group-Object agent |
+    Sort-Object Count -Descending
+```
+
+### Log-Rotation
+
+```powershell
+# Logs aelter als 30 Tage loeschen
+& (Join-Path $PSScriptRoot 'scripts' 'cleanup-logs.ps1') -RetentionDays 30
+```
+
 ## Lizenz
 
 MIT — Siehe [LICENSE](../../LICENSE) für Details.
