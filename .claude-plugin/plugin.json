@@ -1,6 +1,6 @@
 {
   "name": "kagents",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "description": "13 spezialisierte AI-Agents und 27 Skills für .NET 10, PowerShell Core, Azure und GitHub Actions",
   "author": "GrexyLoco",
   "license": "MIT"
