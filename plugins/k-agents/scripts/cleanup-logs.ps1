@@ -4,38 +4,38 @@ $ErrorActionPreference = 'Stop'
 
 <#
 .SYNOPSIS
-    Loescht K.Agents Log-Dateien aelter als N Tage.
+    Loescht K.Agents Log-Dateien und behaelt die letzten N Tage.
 
-.PARAMETER RetentionDays
-    Anzahl der Tage, die Logs behalten werden. Standard: 30.
+.PARAMETER Keep
+    Anzahl der Log-Dateien die behalten werden. Standard: 7.
 
 .EXAMPLE
     .\cleanup-logs.ps1
-    # Loescht Logs aelter als 30 Tage
+    # Behaelt die letzten 7 Log-Dateien
 
 .EXAMPLE
-    .\cleanup-logs.ps1 -RetentionDays 7
-    # Loescht Logs aelter als 7 Tage
+    .\cleanup-logs.ps1 -Keep 3
+    # Behaelt die letzten 3 Log-Dateien
 #>
 param(
-    [int]$RetentionDays = 30
+    [int]$Keep = 7
 )
 
-$logDir = Join-Path $env:USERPROFILE '.k-agents' 'logs'
+$pluginRoot = if ($env:CLAUDE_PLUGIN_ROOT) { $env:CLAUDE_PLUGIN_ROOT } else { Split-Path -Parent (Split-Path -Parent $PSScriptRoot) }
+$logDir = Join-Path $pluginRoot 'logs'
 
 if (-not (Test-Path $logDir)) {
     Write-Output "Log-Verzeichnis nicht gefunden: $logDir"
     return
 }
 
-$cutoff   = (Get-Date).AddDays(-$RetentionDays)
-$removed  = Get-ChildItem -Path $logDir -Filter '*.jsonl' |
-            Where-Object { $_.LastWriteTime -lt $cutoff }
+$logs = Get-ChildItem -Path $logDir -Filter '*.jsonl' | Sort-Object Name
 
-if ($removed.Count -eq 0) {
-    Write-Output "Keine Logs aelter als $RetentionDays Tage gefunden."
+if ($logs.Count -le $Keep) {
+    Write-Output "$($logs.Count) Log-Datei(en) vorhanden, nichts zu bereinigen (Keep: $Keep)."
     return
 }
 
-$removed | Remove-Item -Force
-Write-Output "$($removed.Count) Log-Datei(en) geloescht (aelter als $RetentionDays Tage)."
+$toRemove = $logs | Select-Object -First ($logs.Count - $Keep)
+$toRemove | Remove-Item -Force
+Write-Output "$($toRemove.Count) Log-Datei(en) geloescht, $Keep behalten."

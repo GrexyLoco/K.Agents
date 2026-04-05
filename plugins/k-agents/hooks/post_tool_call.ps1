@@ -33,7 +33,12 @@ param(
     [bool]$Success = $true
 )
 
-$logFile = Join-Path $env:USERPROFILE '.k-agents' 'logs' "$(Get-Date -Format 'yyyy-MM-dd').jsonl"
+$pluginRoot = if ($env:CLAUDE_PLUGIN_ROOT) { $env:CLAUDE_PLUGIN_ROOT } else { Split-Path -Parent (Split-Path -Parent $PSScriptRoot) }
+$logDir = Join-Path $pluginRoot 'logs'
+if (-not (Test-Path $logDir)) {
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+}
+$logFile = Join-Path $logDir "$(Get-Date -Format 'yyyy-MM-dd').jsonl"
 
 $eventType = if ($TargetAgent) { 'agent_handoff' } else { 'agent_complete' }
 

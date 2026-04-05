@@ -29,12 +29,19 @@ param(
     [string]$Cli = 'claude'
 )
 
-$logDir = Join-Path $env:USERPROFILE '.k-agents' 'logs'
+$pluginRoot = if ($env:CLAUDE_PLUGIN_ROOT) { $env:CLAUDE_PLUGIN_ROOT } else { Split-Path -Parent (Split-Path -Parent $PSScriptRoot) }
+$logDir = Join-Path $pluginRoot 'logs'
 if (-not (Test-Path $logDir)) {
     New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 }
 
 $logFile = Join-Path $logDir "$(Get-Date -Format 'yyyy-MM-dd').jsonl"
+
+# Log-Rotation: behalte max. 7 Tage
+$logs = Get-ChildItem -Path $logDir -Filter '*.jsonl' | Sort-Object Name
+if ($logs.Count -gt 7) {
+    $logs | Select-Object -First ($logs.Count - 7) | Remove-Item -Force
+}
 
 $entry = [ordered]@{
     timestamp      = (Get-Date -Format 'o')
