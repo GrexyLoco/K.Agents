@@ -1,4 +1,4 @@
-# K.Agents — Spezialisierte AI-Agents für .NET, PowerShell & Azure
+# K.Agents — Spezialisierte AI-Agents fuer .NET, PowerShell & Azure
 
 [![Release](https://img.shields.io/github/v/release/GrexyLoco/K.Agents?include_prereleases&label=version)](https://github.com/GrexyLoco/K.Agents/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
