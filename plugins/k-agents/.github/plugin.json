@@ -1,6 +1,6 @@
 {
   "name": "k-agents",
-  "description": "13 spezialisierte AI-Agents und 27 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
+  "description": "14 spezialisierte AI-Agents und 27 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
   "version": "1.9.6",
   "author": {
     "name": "GrexyLoco",
@@ -32,7 +32,8 @@
     "../agents/planning.agent.md",
     "../agents/powershell-engineer.agent.md",
     "../agents/security-auditor.agent.md",
-    "../agents/tunit-tester.agent.md"
+    "../agents/tunit-tester.agent.md",
+    "../agents/orchestrator.agent.md"
   ],
   "skills": [
     "../skills/csharp-patterns",
