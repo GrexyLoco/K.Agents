@@ -4,10 +4,6 @@
       "type": "http",
       "url": "https://learn.microsoft.com/api/mcp"
     },
-    "nuget": {
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "nuget-mcp-server"]
-    },
     "github": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/",
