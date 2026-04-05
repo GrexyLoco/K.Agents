@@ -1,6 +1,4 @@
 #Requires -Version 7.4
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
 
 <#
 .SYNOPSIS
@@ -42,6 +40,9 @@ param(
     [switch]$Uninstall,
     [switch]$Force
 )
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
 # Pfade bestimmen
 $hooksDir = Join-Path $PSScriptRoot '..' 'hooks'
