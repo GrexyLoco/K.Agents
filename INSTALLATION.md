@@ -368,6 +368,36 @@ Entfernt **nur** die Agents und Skills, die aus K.Agents stammen. Eigene Custom 
 
 ---
 
+## Schritt 4: Copilot Chat konfigurieren (optional)
+
+Nach Plugin-Installation kann Copilot Chat mit einem Instructions-Template konfiguriert werden, das den Orchestrator und die CLIs erklaert.
+
+### Fuer ein einzelnes Repo
+
+```powershell
+# K.Agents Script ausfuehren (setzt voraus: Plugin ist installiert)
+~/.k-agents/plugins/k-agents/scripts/Setup-Instructions.ps1 -Path C:\repos\MeinProjekt
+
+# Danach Projekt-Kontext anpassen
+code C:\repos\MeinProjekt\.github\copilot-instructions.md
+```
+
+### Fuer alle Repos (global)
+
+```powershell
+~/.k-agents/plugins/k-agents/scripts/Setup-Instructions.ps1
+```
+
+Die Instructions werden dann fuer alle Repos ohne eigene `copilot-instructions.md` verwendet.
+
+### Testen
+
+1. VS Code oder VS 2026 mit Copilot Chat oeffnen
+2. Fragen: "Welche Agenten stehen dir zur Verfuegung?"
+3. Erwartung: Antwort erwaehnt Orchestrator, Claude CLI und spezialisierte Agenten
+
+---
+
 ## MCP-Server Voraussetzungen
 
 K.Agents bringt drei vorkonfigurierte MCP-Server mit. Bei Plugin-Installation werden alle MCPs automatisch registriert (`autoInstall: true`).

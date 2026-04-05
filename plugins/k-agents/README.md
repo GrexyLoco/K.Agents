@@ -73,6 +73,41 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 - **Write-Host überall verboten** (auch CI-Scripts)
 - **Deutsch** als Arbeitssprache für Doku, Issues, Commits
 
+## Copilot Chat Integration
+
+K.Agents funktioniert am besten, wenn Copilot Chat weiss, wie es die CLIs und den Orchestrator nutzen soll.
+
+### Option A: Template kopieren (empfohlen)
+
+```powershell
+# Fuer ein einzelnes Repo
+& (Join-Path $PSScriptRoot 'scripts' 'Setup-Instructions.ps1') -Path 'C:\repos\MeinProjekt'
+
+# Global fuer alle Repos
+& (Join-Path $PSScriptRoot 'scripts' 'Setup-Instructions.ps1')
+```
+
+Passe danach den Abschnitt `## Projekt-Kontext` in der installierten Datei an.
+
+### Option B: Manuell kopieren
+
+```powershell
+# Repo-spezifisch
+Copy-Item (Join-Path $PSScriptRoot 'templates' 'copilot-instructions.md') `
+          (Join-Path 'C:\repos\MeinProjekt' '.github' 'copilot-instructions.md')
+
+# Global
+Copy-Item (Join-Path $PSScriptRoot 'templates' 'copilot-instructions.md') `
+          (Join-Path $env:USERPROFILE '.github' 'copilot-instructions.md')
+```
+
+### Verifizieren
+
+Nach Setup, frage Copilot Chat:
+> "Welche CLIs und Agenten stehen dir zur Verfuegung?"
+
+Die Antwort sollte Claude CLI, Copilot CLI und den Orchestrator erwaehnen.
+
 ## MCP-Server
 
 K.Agents bringt vorkonfigurierte MCP-Server mit. Bei Plugin-Installation werden alle MCPs automatisch registriert.
