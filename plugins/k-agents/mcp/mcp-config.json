@@ -1,0 +1,41 @@
+{
+  "mcpServers": {
+    "microsoftdocs/mcp": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp",
+      "description": "Microsoft Learn Dokumentation — Suche und Code-Samples aus offizieller MS/Azure Doku",
+      "version": "latest",
+      "gallery": "https://api.mcp.github.com/2025-09-15/v0/servers/e0455530-d34a-4795-8dc6-b2888ae76c27"
+    },
+    "com.microsoft/nuget": {
+      "type": "stdio",
+      "command": "dnx",
+      "args": [
+        "NuGet.Mcp.Server@latest",
+        "--yes",
+        "--source",
+        "https://api.nuget.org/v3/index.json"
+      ],
+      "description": "NuGet Package Management — Versionen, Updates, Vulnerabilities, READMEs",
+      "version": "latest",
+      "gallery": "https://api.mcp.github.com"
+    },
+    "io.github.github/github-mcp-server": {
+      "type": "stdio",
+      "command": "${LOCALAPPDATA}/github-mcp-server/github-mcp-server.exe",
+      "command_linux": "${HOME}/.local/bin/github-mcp-server",
+      "command_macos": "${HOME}/.local/bin/github-mcp-server",
+      "args": ["stdio"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "GitHub API — Repos, Issues, PRs, Workflows, Code Search",
+      "version": "latest",
+      "repository": "https://github.com/github/github-mcp-server",
+      "auth": "cli",
+      "auth_note": "Standard: gh auth token. Override: Umgebungsvariable GITHUB_TOKEN setzen."
+    }
+  },
+  "autoInstall": true,
+  "note": "MCP-Versionen werden auf 'latest' gepinnt. autoInstall:true installiert fehlende MCPs automatisch bei Plugin-Installation."
+}

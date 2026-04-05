@@ -73,6 +73,53 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 - **Write-Host überall verboten** (auch CI-Scripts)
 - **Deutsch** als Arbeitssprache für Doku, Issues, Commits
 
+## MCP-Server
+
+K.Agents bringt vorkonfigurierte MCP-Server mit. Bei Plugin-Installation werden alle MCPs automatisch registriert.
+
+### Inkludierte MCPs
+
+| MCP | Typ | Funktion | Genutzt von |
+|-----|-----|----------|-------------|
+| **Microsoft Learn** | HTTP | Offizielle MS/Azure Dokumentation, Code-Samples | `app-architect`, `dotnet-developer`, `azure-specialist`, `documentation` |
+| **NuGet** | STDIO | Package-Management, Vulnerabilities, READMEs | `dotnet-developer`, `security-auditor`, `app-architect` |
+| **GitHub** | STDIO | Repos, Issues, PRs, Code Search, Workflows | `planning`, `code-reviewer`, `git-forensics`, `automation-architect` |
+
+### MCP-Status pruefen
+
+```bash
+# Claude CLI
+claude mcp list
+
+# Copilot CLI
+copilot mcp list
+```
+
+### Manuell MCP hinzufuegen
+
+Falls ein MCP nach Installation fehlt:
+
+```bash
+# Microsoft Learn (HTTP, keine lokale Installation noetig)
+claude mcp add microsoftdocs/mcp --url https://learn.microsoft.com/api/mcp
+
+# NuGet (benoetigt .NET SDK / dnx)
+claude mcp add com.microsoft/nuget
+
+# GitHub (benoetigt lokale github-mcp-server Installation)
+claude mcp add io.github.github/github-mcp-server
+```
+
+### GitHub MCP: Credentials
+
+Standard: CLI-Auth via `gh auth token`.
+Override: Umgebungsvariable `GITHUB_TOKEN` setzen.
+
+```powershell
+# GITHUB_TOKEN setzen (optional)
+$env:GITHUB_TOKEN = (gh auth token)
+```
+
 ## Logging & Audit-Trail
 
 K.Agents loggt alle Agent-Aktivitaeten automatisch via Hooks.

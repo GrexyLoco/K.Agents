@@ -368,6 +368,56 @@ Entfernt **nur** die Agents und Skills, die aus K.Agents stammen. Eigene Custom 
 
 ---
 
+## MCP-Server Voraussetzungen
+
+K.Agents bringt drei vorkonfigurierte MCP-Server mit. Bei Plugin-Installation werden alle MCPs automatisch registriert (`autoInstall: true`).
+
+### Microsoft Learn MCP
+
+Keine lokale Installation noetig — HTTP-basiert, direkt verfuegbar.
+
+### NuGet MCP
+
+Benoetigt `dnx` (Teil des .NET SDK):
+
+```powershell
+# Pruefen ob verfuegbar
+dnx --version
+
+# Falls nicht: .NET SDK installieren
+winget install Microsoft.DotNet.SDK.10
+```
+
+### GitHub MCP
+
+Der GitHub MCP Server muss lokal installiert sein:
+
+```powershell
+# Windows (winget)
+winget install GitHub.GitHubMcpServer
+
+# Oder manuell: Download von https://github.com/github/github-mcp-server/releases
+```
+
+**Credentials:** Standard ist CLI-Auth via `gh auth token`. Optional kann `GITHUB_TOKEN` als Umgebungsvariable gesetzt werden:
+
+```powershell
+# Optional: GITHUB_TOKEN als Override
+$env:GITHUB_TOKEN = (gh auth token)
+```
+
+### MCP-Status pruefen
+
+```bash
+# Claude CLI
+claude mcp list
+
+# Copilot CLI
+copilot mcp list
+```
+
+---
+
 ## FAQ
 
 ### Verbrauchen 27 Skills nicht zu viele Tokens?

@@ -21,7 +21,8 @@
   },
 
   "mcp": {
-    "config": "plugins/k-agents/mcp/mcp-config.json"
+    "config": "plugins/k-agents/mcp/mcp-config.json",
+    "autoRegister": true
   },
 
   "compatibility": {
