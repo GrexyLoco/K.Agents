@@ -121,7 +121,7 @@ Alles in **VS Code** (kein Terminal nötig):
 ```
 
 4. Extensions-Sidebar öffnen (`Ctrl+Shift+X`) → `@agentPlugins` in die Suche eingeben
-5. `k-agents` auswählen und installieren
+5. `kagents` auswählen und installieren
 
 ### Wichtige Hinweise
 
@@ -209,6 +209,54 @@ cp -r .github/skills/* .claude/skills/
 > **Offizielle Dokumentation:**
 > - [Claude Code Sub-Agents](https://code.claude.com/docs/en/sub-agents)
 > - [Claude Code Skills](https://code.claude.com/docs/en/skills)
+
+---
+
+## Was das Plugin mitliefert
+
+Neben Agents und Skills liefert das Plugin auch **Hooks** und **MCP-Server** automatisch aus. Diese müssen nicht separat konfiguriert werden.
+
+### Hooks (Logging & Audit-Trail)
+
+Das Plugin registriert drei Lifecycle-Hooks, die automatisch bei jeder Agent-Interaktion feuern:
+
+| Hook | Event | Funktion |
+|------|-------|----------|
+| `pre_tool_call.ps1` | `PreToolUse` | Loggt `agent_start`-Events, führt Log-Rotation durch (max. 7 Dateien) |
+| `post_tool_call.ps1` | `PostToolUse` | Loggt `agent_complete`- und `agent_handoff`-Events |
+| `on_error.ps1` | `PostToolUseFailure` | Loggt `error`- und `fallback`-Events |
+
+**Log-Format:** JSONL (ein JSON-Objekt pro Zeile), eine Datei pro Tag.
+**Log-Pfad:** `${CLAUDE_PLUGIN_ROOT}/logs/` (innerhalb des Plugin-Verzeichnisses, nicht im Workspace).
+
+Die Hooks werden über die `hooks.json` im Plugin definiert und automatisch bei **VS Code** und **Claude Code** aktiviert. Es ist **keine manuelle Konfiguration** in den User Settings nötig.
+
+> **Wichtig:** Hooks werden von **Visual Studio 2026** nicht unterstützt (kein Plugin-System für Hooks).
+
+> **Quelle:** [Agent Plugins — Hooks in plugins](https://code.visualstudio.com/docs/copilot/customization/agent-plugins#_hooks-in-plugins)
+
+### MCP-Server
+
+Das Plugin liefert zwei MCP-Server mit, die automatisch gestartet werden:
+
+| Server | Funktion |
+|--------|----------|
+| **Microsoft Learn** | Docs-Suche, API-Referenzen, Code-Beispiele (`microsoft_docs_search`, `microsoft_docs_fetch`, `microsoft_code_sample_search`) |
+| **GitHub** | Issues, PRs, Repos, Code-Suche, Advisory Database |
+
+Die Server sind in `mcp-servers.json` definiert und werden vom Plugin-System automatisch registriert.
+
+**GitHub-Authentifizierung:** Verwendet `gh auth token` (GitHub CLI). Voraussetzung: `gh auth login` wurde einmalig ausgeführt.
+
+> **Wichtig:** MCP-Server werden von **Visual Studio 2026** nicht unterstützt.
+
+> **Quelle:** [Agent Plugins — MCP servers in plugins](https://code.visualstudio.com/docs/copilot/customization/agent-plugins#_mcp-servers-in-plugins)
+
+### Prüfen ob Hooks und MCPs aktiv sind
+
+1. **Hooks:** Im Chat View auf `...` → `Show Agent Debug Logs` klicken — Hook-Events erscheinen im Log
+2. **MCP-Server:** `Ctrl+Shift+P` → `MCP: List Servers` — Plugin-Server erscheinen in der Liste
+3. **Tools:** Im Chat auf das Zahnrad-Icon → `Configure Tools` — MCP-Tools wie `microsoft_docs_search` müssen sichtbar sein
 
 ---
 
@@ -336,6 +384,8 @@ Entfernt **nur** die Agents und Skills, die aus K.Agents stammen. Eigene Custom 
 3. **Agent Picker** klicken (Dropdown oben im Chat) → Custom Agents müssen in der Liste erscheinen
 4. Alternativ: `@dotnet-developer Erstelle eine Blazor-Komponente` eingeben
 5. Über das **Tools-Icon** im Chat die verfügbaren Tool-Namen prüfen
+
+> **Hinweis:** Hooks und MCP-Server werden in Visual Studio 2026 **nicht** unterstützt. Diese Features stehen nur über das Plugin-System in VS Code und Claude Code zur Verfügung. Das bedeutet: kein automatisches Logging und keine MCP-Tools (Microsoft Learn, GitHub) in VS 2026.
 
 > **Quelle:** [Use built-in and custom agents](https://learn.microsoft.com/en-us/visualstudio/ide/copilot-specialized-agents?view=visualstudio#access-custom-agents) — *"In the Copilot Chat window, select the agent picker dropdown to see available agents."*
 

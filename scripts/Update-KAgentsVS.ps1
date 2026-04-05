@@ -96,6 +96,9 @@ $agentFiles = Get-ChildItem -Path $agentsSource -Filter '*.agent.md'
 foreach ($file in $agentFiles) {
     $dest = Join-Path $AgentsPath $file.Name
     if ($PSCmdlet.ShouldProcess($dest, 'Agent kopieren')) {
+        if (-not (Test-Path $AgentsPath)) {
+            New-Item -ItemType Directory -Path $AgentsPath -Force | Out-Null
+        }
         $content = Get-Content -Path $file.FullName -Raw
         $transformed = ConvertTo-VS2026AgentContent -Content $content
         Set-Content -Path $dest -Value $transformed -NoNewline

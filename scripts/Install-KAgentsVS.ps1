@@ -72,6 +72,9 @@ $agentFiles = Get-ChildItem -Path $agentsSource -Filter '*.agent.md'
 foreach ($file in $agentFiles) {
     $dest = Join-Path $AgentsPath $file.Name
     if ($PSCmdlet.ShouldProcess($dest, 'Agent kopieren')) {
+        if (-not (Test-Path $AgentsPath)) {
+            New-Item -ItemType Directory -Path $AgentsPath -Force | Out-Null
+        }
         $content = Get-Content -Path $file.FullName -Raw
         $transformed = ConvertTo-VS2026AgentContent -Content $content
         Set-Content -Path $dest -Value $transformed -NoNewline
@@ -84,6 +87,9 @@ $skillDirs = Get-ChildItem -Path $skillsSource -Directory
 foreach ($dir in $skillDirs) {
     $dest = Join-Path $SkillsPath $dir.Name
     if ($PSCmdlet.ShouldProcess($dest, 'Skill kopieren')) {
+        if (-not (Test-Path $SkillsPath)) {
+            New-Item -ItemType Directory -Path $SkillsPath -Force | Out-Null
+        }
         Copy-Item -Path $dir.FullName -Destination $dest -Recurse -Force
     }
 }
