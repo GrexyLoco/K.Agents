@@ -1,0 +1,10 @@
+{
+  "name": "kagents",
+  "version": "1.9.7",
+  "description": "14 spezialisierte AI-Agents und 27 Skills für .NET 10, PowerShell Core, Azure und GitHub Actions",
+  "author": {
+    "name": "GrexyLoco"
+  },
+  "license": "MIT",
+  "mcpServers": "./mcp-servers.json"
+}
