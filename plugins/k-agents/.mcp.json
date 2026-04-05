@@ -1,0 +1,22 @@
+{
+  "microsoftdocs": {
+    "type": "http",
+    "url": "https://learn.microsoft.com/api/mcp"
+  },
+  "nuget": {
+    "command": "dnx",
+    "args": [
+      "NuGet.Mcp.Server@latest",
+      "--yes",
+      "--source",
+      "https://api.nuget.org/v3/index.json"
+    ]
+  },
+  "github": {
+    "type": "http",
+    "url": "https://api.githubcopilot.com/mcp/",
+    "headers": {
+      "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+    }
+  }
+}

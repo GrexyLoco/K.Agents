@@ -398,52 +398,97 @@ Die Instructions werden dann fuer alle Repos ohne eigene `copilot-instructions.m
 
 ---
 
-## MCP-Server Voraussetzungen
+## MCP-Server
 
-K.Agents bringt drei vorkonfigurierte MCP-Server mit. Bei Plugin-Installation werden alle MCPs automatisch registriert (`autoInstall: true`).
+K.Agents liefert drei vorkonfigurierte MCP-Server ueber `.mcp.json` im Plugin-Root. Bei Plugin-Installation werden sie automatisch erkannt.
 
-### Microsoft Learn MCP
+### Enthaltene Server
 
-Keine lokale Installation noetig — HTTP-basiert, direkt verfuegbar.
+| Server | Typ | Beschreibung | Voraussetzung |
+|--------|-----|-------------|---------------|
+| **Microsoft Learn** | HTTP | Suche und Code-Samples aus offizieller MS/Azure Doku | Keine (HTTP-basiert) |
+| **NuGet** | stdio | Package-Versionen, Updates, Vulnerabilities | `dnx` (.NET SDK) |
+| **GitHub** | HTTP | Repos, Issues, PRs, Code Search | `GITHUB_PERSONAL_ACCESS_TOKEN` |
 
-### NuGet MCP
-
-Benoetigt `dnx` (Teil des .NET SDK):
+### Voraussetzungen installieren
 
 ```powershell
-# Pruefen ob verfuegbar
+# NuGet MCP: .NET SDK pruefen / installieren
 dnx --version
-
-# Falls nicht: .NET SDK installieren
+# Falls nicht vorhanden:
 winget install Microsoft.DotNet.SDK.10
+
+# GitHub MCP: Personal Access Token setzen
+# Variante 1: Umgebungsvariable (Session)
+$env:GITHUB_PERSONAL_ACCESS_TOKEN = (gh auth token)
+
+# Variante 2: Dauerhaft in User-Umgebungsvariablen
+[Environment]::SetEnvironmentVariable('GITHUB_PERSONAL_ACCESS_TOKEN', (gh auth token), 'User')
 ```
 
-### GitHub MCP
+### Status pruefen
 
-Der GitHub MCP Server muss lokal installiert sein:
+Im Claude Code Prompt (nicht im Terminal):
+```
+/mcp
+```
+
+Erwartung: Alle drei Server erscheinen unter „Manage MCP servers".
+
+> **Schema:** Die `.mcp.json` folgt dem offiziellen Claude Code Plugin-Schema. Pro Server sind nur `type`/`url` (HTTP) oder `command`/`args` (stdio) erlaubt — keine Extra-Felder wie `version`, `description` oder `gallery`.
+
+---
+
+## Hooks (Logging & Audit-Trail)
+
+K.Agents liefert drei Hook-Scripts fuer automatisches Logging aller Agent-Aktivitaeten als JSONL.
+
+> **Wichtig:** Claude Code Hooks werden **nicht** automatisch ueber Plugins installiert — sie muessen in der `settings.json` registriert werden. Dafuer gibt es ein Setup-Script.
+
+### Hooks installieren
 
 ```powershell
-# Windows (winget)
-winget install GitHub.GitHubMcpServer
+# User-Level (gilt fuer alle Repos)
+.\plugins\k-agents\scripts\Install-Hooks.ps1
 
-# Oder manuell: Download von https://github.com/github/github-mcp-server/releases
+# Nur fuer das aktuelle Repo
+.\plugins\k-agents\scripts\Install-Hooks.ps1 -Scope project
+
+# Bestehende Hooks ueberschreiben
+.\plugins\k-agents\scripts\Install-Hooks.ps1 -Force
+
+# Hooks entfernen
+.\plugins\k-agents\scripts\Install-Hooks.ps1 -Uninstall
 ```
 
-**Credentials:** Standard ist CLI-Auth via `gh auth token`. Optional kann `GITHUB_TOKEN` als Umgebungsvariable gesetzt werden:
+### Was wird registriert?
+
+| Hook-Typ | Script | Event |
+|----------|--------|-------|
+| `PreToolUse` | `hooks/pre_tool_call.ps1` | `agent_start` — vor jedem Tool-Aufruf |
+| `PostToolUse` | `hooks/post_tool_call.ps1` | `agent_complete` / `agent_handoff` — nach Tool-Aufruf |
+| `PostToolUseFailure` | `hooks/on_error.ps1` | `error` / `fallback` — bei Fehlern |
+
+### Log-Format und -Ort
+
+Logs werden als **JSONL** (eine JSON-Zeile pro Event) geschrieben nach:
+```
+~/.k-agents/logs/2026-04-05.jsonl
+```
+
+Beispiel-Eintrag:
+```json
+{"timestamp":"2026-04-05T14:30:00+02:00","session_id":"abc-123","cli":"claude","event":"agent_start","agent":"dotnet-developer","model":"sonnet","prompt_preview":"Erstelle eine Blazor-Komponente..."}
+```
+
+### Log-Rotation
 
 ```powershell
-# Optional: GITHUB_TOKEN als Override
-$env:GITHUB_TOKEN = (gh auth token)
-```
+# Logs aelter als 30 Tage loeschen (Standard)
+.\plugins\k-agents\scripts\cleanup-logs.ps1
 
-### MCP-Status pruefen
-
-```bash
-# Claude CLI
-claude mcp list
-
-# Copilot CLI
-copilot mcp list
+# Eigene Retention
+.\plugins\k-agents\scripts\cleanup-logs.ps1 -RetentionDays 7
 ```
 
 ---
