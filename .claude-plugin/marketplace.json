@@ -1,0 +1,14 @@
+{
+  "name": "K.Agents",
+  "description": "Spezialisierte Agenten fuer .NET/Azure Entwicklung mit Orchestrator, Hooks und MCP-Integration",
+  "author": "GrexyLoco",
+  "repository": "https://github.com/GrexyLoco/K.Agents",
+  "version": "0.2.0",
+  "plugins": [
+    {
+      "name": "k-agents",
+      "path": "plugins/k-agents",
+      "description": "13+ spezialisierte Agenten mit Orchestrator fuer .NET 10, PowerShell Core, Azure und GitHub Actions"
+    }
+  ]
+}
