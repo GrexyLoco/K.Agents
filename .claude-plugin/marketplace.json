@@ -1,14 +1,17 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "K.Agents",
   "description": "Spezialisierte Agenten fuer .NET/Azure Entwicklung mit Orchestrator, Hooks und MCP-Integration",
-  "author": "GrexyLoco",
-  "repository": "https://github.com/GrexyLoco/K.Agents",
-  "version": "0.2.0",
+  "owner": {
+    "name": "GrexyLoco"
+  },
   "plugins": [
     {
       "name": "k-agents",
-      "path": "plugins/k-agents",
-      "description": "13+ spezialisierte Agenten mit Orchestrator fuer .NET 10, PowerShell Core, Azure und GitHub Actions"
+      "description": "13+ spezialisierte Agenten mit Orchestrator fuer .NET 10, PowerShell Core, Azure und GitHub Actions",
+      "source": "./plugins/k-agents",
+      "category": "development",
+      "homepage": "https://github.com/GrexyLoco/K.Agents"
     }
   ]
 }
