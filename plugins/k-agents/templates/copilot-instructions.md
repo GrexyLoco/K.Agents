@@ -14,6 +14,34 @@ Beide CLIs haben das **K.Agents Plugin** installiert mit:
 
 ## CLI-Orchestrierung
 
+### Plattform-Kompatibilitaet
+
+K.Agents ist fuer mehrere Plattformen ausgelegt:
+
+| Feature | Claude Code | VS Code Copilot Chat | VS 2026 |
+|---|---|---|---|
+| Agents (14) | Automatisch via Plugin | `.github/plugin.json` | `Install-KAgentsVS.ps1` |
+| Skills (27) | Automatisch via Plugin | `.github/plugin.json` | `Install-KAgentsVS.ps1` |
+| MCP-Server | Automatisch via `.mcp.json` | `Export-McpConfig.ps1` → `.vscode/mcp.json` | Manuell |
+| Hooks/Logging | Automatisch via `hooks.json` | Nicht verfuegbar* | Nicht verfuegbar* |
+
+*VS Code und VS 2026 haben kein Hook-/Event-System. Audit-Trail ist nur in Claude Code verfuegbar.
+
+### MCP-Server Setup nach Plattform
+
+**Claude Code:** Keine Aktion noetig — MCP-Server werden automatisch mit dem Plugin geladen.
+
+**VS Code Copilot Chat:**
+```powershell
+# Einmalig im Projektverzeichnis ausfuehren:
+.\scripts\Export-McpConfig.ps1
+```
+Erzeugt `.vscode/mcp.json` mit Microsoft Learn, NuGet und GitHub MCP-Servern.
+
+**VS 2026:**
+MCP-Server muessen manuell in den VS 2026 Einstellungen konfiguriert werden.
+Die Adressen sind identisch (siehe `.mcp.json` im Plugin-Verzeichnis).
+
 ### Prioritaet
 
 1. **Zuerst Claude CLI** — groesserer Kontext, tieferes Reasoning
