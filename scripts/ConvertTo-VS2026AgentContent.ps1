@@ -27,7 +27,14 @@
 
 Set-StrictMode -Version Latest
 
-# Tools, die in VS 2026 entfernt werden (aktuell leer — alle Agents nutzen nur plattformuebergreifende Tools + MCP)
+# Tools, die in VS 2026 entfernt werden.
+# Die plattformuebergreifenden Tool Sets (search, read, edit, execute, web)
+# werden von VS Code, VS 2026 und JetBrains nativ aufgeloest.
+# Referenz: https://docs.github.com/en/copilot/reference/custom-agents-configuration#tools
+#
+# Nur VS Code-EXKLUSIVE Tools muessten hier eingetragen werden.
+# Stand April 2026: Alle K.Agents nutzen ausschliesslich plattformuebergreifende
+# Tool Sets, daher ist diese Liste bewusst leer.
 $script:VS2026DropTools = @()
 
 function ConvertTo-VS2026AgentContent {
