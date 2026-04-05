@@ -12,6 +12,7 @@
     Ablauf:
     1. Entfernt alle K.Agents Agents/Skills aus den Zielverzeichnissen
     2. Kopiert die aktuelle Version aus dem lokalen Repo
+    3. Aktualisiert die Copilot Instructions (global)
 
     Andere Custom Agents/Skills im selben Verzeichnis bleiben erhalten.
 
@@ -21,17 +22,24 @@
 .PARAMETER SkillsPath
     Pfad der User-Level Skills. Standard: $env:USERPROFILE\.github\skills
 
+.PARAMETER SkipInstructions
+    Ueberspringt die Aktualisierung der Copilot Instructions.
+
 .EXAMPLE
     ./scripts/Update-KAgentsVS.ps1
 
 .EXAMPLE
     ./scripts/Update-KAgentsVS.ps1 -WhatIf
+
+.EXAMPLE
+    ./scripts/Update-KAgentsVS.ps1 -SkipInstructions
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$AgentsPath = (Join-Path $env:USERPROFILE '.github' 'agents'),
-    [string]$SkillsPath = (Join-Path $env:USERPROFILE '.github' 'skills')
+    [string]$SkillsPath = (Join-Path $env:USERPROFILE '.github' 'skills'),
+    [switch]$SkipInstructions
 )
 
 Set-StrictMode -Version Latest
@@ -110,6 +118,19 @@ foreach ($dir in $skillDirs) {
     $dest = Join-Path $SkillsPath $dir.Name
     if ($PSCmdlet.ShouldProcess($dest, 'Skill kopieren')) {
         Copy-Item -Path $dir.FullName -Destination $dest -Recurse -Force
+    }
+}
+
+# --- Phase 3: Copilot Instructions aktualisieren (global) ---
+
+if (-not $SkipInstructions) {
+    $setupScript = Join-Path $pluginRoot 'scripts' 'Setup-Instructions.ps1'
+    if (Test-Path $setupScript) {
+        if ($PSCmdlet.ShouldProcess("$env:USERPROFILE\.github\copilot-instructions.md", 'Instructions aktualisieren')) {
+            & $setupScript -Force
+        }
+    } else {
+        Write-Warning "Setup-Instructions.ps1 nicht gefunden: $setupScript"
     }
 }
 

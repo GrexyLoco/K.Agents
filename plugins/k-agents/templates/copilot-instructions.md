@@ -9,7 +9,7 @@ Dieses System hat Zugriff auf zwei CLI-Tools:
 Beide CLIs haben das **K.Agents Plugin** installiert mit:
 - 14 Agenten (13 spezialisierte + 1 Orchestrator)
 - Orchestrator fuer automatisches Routing
-- MCP-Server (Microsoft Learn, NuGet, GitHub)
+- 2 MCP-Server (Microsoft Learn, GitHub)
 - Logging-Hooks fuer Audit-Trail
 
 ## CLI-Orchestrierung
@@ -20,27 +20,11 @@ K.Agents ist fuer mehrere Plattformen ausgelegt:
 
 | Feature | Claude Code | VS Code Copilot Chat | VS 2026 |
 |---|---|---|---|
-| Agents (14) | Automatisch via Plugin | `.github/plugin.json` | `Install-KAgentsVS.ps1` |
-| Skills (27) | Automatisch via Plugin | `.github/plugin.json` | `Install-KAgentsVS.ps1` |
-| MCP-Server | Automatisch via `.mcp.json` | `Export-McpConfig.ps1` → `.vscode/mcp.json` | Manuell |
-| Hooks/Logging | Automatisch via `hooks.json` | Nicht verfuegbar* | Nicht verfuegbar* |
-
-*VS Code und VS 2026 haben kein Hook-/Event-System. Audit-Trail ist nur in Claude Code verfuegbar.
-
-### MCP-Server Setup nach Plattform
-
-**Claude Code:** Keine Aktion noetig — MCP-Server werden automatisch mit dem Plugin geladen.
-
-**VS Code Copilot Chat:**
-```powershell
-# Einmalig im Projektverzeichnis ausfuehren:
-.\scripts\Export-McpConfig.ps1
-```
-Erzeugt `.vscode/mcp.json` mit Microsoft Learn, NuGet und GitHub MCP-Servern.
-
-**VS 2026:**
-MCP-Server muessen manuell in den VS 2026 Einstellungen konfiguriert werden.
-Die Adressen sind identisch (siehe `.mcp.json` im Plugin-Verzeichnis).
+| Agents (14) | Automatisch via Plugin | Automatisch via Plugin | `Install-KAgentsVS.ps1` |
+| Skills (27) | Automatisch via Plugin | Automatisch via Plugin | `Install-KAgentsVS.ps1` |
+| MCP-Server (2) | Automatisch via Plugin | Automatisch via Plugin | Nicht verfuegbar |
+| Hooks/Logging | Automatisch via Plugin | Automatisch via Plugin | Nicht verfuegbar |
+| Instructions | `Setup-Instructions.ps1` | `Setup-Instructions.ps1` | `Install-KAgentsVS.ps1` |
 
 ### Prioritaet
 

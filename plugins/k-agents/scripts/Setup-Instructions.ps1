@@ -1,6 +1,4 @@
 #Requires -Version 7.4
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
 
 <#
 .SYNOPSIS
@@ -9,6 +7,14 @@ $ErrorActionPreference = 'Stop'
 .DESCRIPTION
     Installiert das copilot-instructions.md Template aus K.Agents in ein
     einzelnes Repo oder als globale Konfiguration fuer alle Repos.
+
+    Das Template erklaert Copilot Chat, wie der Orchestrator und die
+    spezialisierten Agenten zu verwenden sind, und welche CLI-Tools
+    (claude, copilot) zur Verfuegung stehen.
+
+    Ohne -Path werden die Instructions global installiert nach
+    $env:USERPROFILE\.github\copilot-instructions.md — damit gelten
+    sie fuer alle Repos, die keine eigene copilot-instructions.md haben.
 
 .PARAMETER Path
     Ziel-Repo-Pfad. Wenn nicht angegeben: globale Installation nach
@@ -29,10 +35,14 @@ $ErrorActionPreference = 'Stop'
     .\Setup-Instructions.ps1 -Path C:\repos\MyProject -Force
     Ueberschreibt existierende Instructions ohne Rueckfrage
 #>
+[CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$Path,
     [switch]$Force
 )
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
 $templatePath = Join-Path $PSScriptRoot '..' 'templates' 'copilot-instructions.md'
 

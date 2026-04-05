@@ -15,11 +15,18 @@
     Dieses Skript muss aus dem K.Agents-Repo-Verzeichnis heraus ausgefuehrt werden,
     oder das Repo wird automatisch ueber den Skript-Pfad ermittelt.
 
+    Am Ende wird automatisch das Copilot Instructions Template (global)
+    installiert, damit Copilot Chat den Orchestrator und die CLIs kennt.
+    Mit -SkipInstructions kann das uebersprungen werden.
+
 .PARAMETER AgentsPath
     Zielpfad fuer Agents. Standard: $env:USERPROFILE\.github\agents
 
 .PARAMETER SkillsPath
     Zielpfad fuer Skills. Standard: $env:USERPROFILE\.github\skills
+
+.PARAMETER SkipInstructions
+    Ueberspringt die Installation der Copilot Instructions.
 
 .EXAMPLE
     ./scripts/Install-KAgentsVS.ps1
@@ -28,13 +35,17 @@
     ./scripts/Install-KAgentsVS.ps1 -WhatIf
 
 .EXAMPLE
+    ./scripts/Install-KAgentsVS.ps1 -SkipInstructions
+
+.EXAMPLE
     ./scripts/Install-KAgentsVS.ps1 -AgentsPath "D:\custom\.github\agents"
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$AgentsPath = (Join-Path $env:USERPROFILE '.github' 'agents'),
-    [string]$SkillsPath = (Join-Path $env:USERPROFILE '.github' 'skills')
+    [string]$SkillsPath = (Join-Path $env:USERPROFILE '.github' 'skills'),
+    [switch]$SkipInstructions
 )
 
 Set-StrictMode -Version Latest
@@ -94,6 +105,19 @@ foreach ($dir in $skillDirs) {
     }
 }
 Write-Output "$($skillDirs.Count) Skills kopiert nach: $SkillsPath"
+
+# --- Phase 3: Copilot Instructions installieren (global) ---
+
+if (-not $SkipInstructions) {
+    $setupScript = Join-Path $pluginRoot 'scripts' 'Setup-Instructions.ps1'
+    if (Test-Path $setupScript) {
+        if ($PSCmdlet.ShouldProcess("$env:USERPROFILE\.github\copilot-instructions.md", 'Instructions installieren')) {
+            & $setupScript -Force
+        }
+    } else {
+        Write-Warning "Setup-Instructions.ps1 nicht gefunden: $setupScript"
+    }
+}
 
 Write-Output ''
 Write-Output 'Installation abgeschlossen.'

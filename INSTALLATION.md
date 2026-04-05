@@ -418,128 +418,69 @@ Entfernt **nur** die Agents und Skills, die aus K.Agents stammen. Eigene Custom 
 
 ---
 
-## Schritt 4: Copilot Chat konfigurieren (optional)
+## Copilot Instructions (optional)
 
-Nach Plugin-Installation kann Copilot Chat mit einem Instructions-Template konfiguriert werden, das den Orchestrator und die CLIs erklaert.
+Copilot Chat und die CLIs wissen nicht automatisch, dass K.Agents installiert ist und wie der Orchestrator zu verwenden ist. Das **Instructions Template** erklaert Copilot Chat:
 
-### Fuer ein einzelnes Repo
+- Welche CLIs verfuegbar sind (`claude`, `copilot`)
+- Wie der Orchestrator aufgerufen wird
+- Welche Agenten fuer welche Aufgaben zustaendig sind
+- Wie bei Rate Limits verfahren wird
+
+### Wohin werden die Instructions installiert?
+
+| Scope | Pfad | Wirkung |
+|-------|------|---------|
+| **Global** (Standard) | `%USERPROFILE%\.github\copilot-instructions.md` | Gilt fuer alle Repos, die keine eigene Instructions-Datei haben |
+| **Pro Repo** | `<repo>\.github\copilot-instructions.md` | Gilt nur fuer dieses Repo, ueberschreibt globale Instructions |
+
+### Automatisch via Install-Script (VS 2026)
+
+Die VS 2026 Install- und Update-Scripts kopieren die Instructions **automatisch** global:
 
 ```powershell
-# K.Agents Script ausfuehren (setzt voraus: Plugin ist installiert)
-~/.k-agents/plugins/k-agents/scripts/Setup-Instructions.ps1 -Path C:\repos\MeinProjekt
+# Agents, Skills UND Instructions installieren (Standard)
+~/K.Agents/scripts/Install-KAgentsVS.ps1
 
-# Danach Projekt-Kontext anpassen
+# Nur Agents und Skills, OHNE Instructions
+~/K.Agents/scripts/Install-KAgentsVS.ps1 -SkipInstructions
+```
+
+Bei Updates werden die Instructions ebenfalls automatisch aktualisiert:
+
+```powershell
+~/K.Agents/scripts/Update-KAgentsVS.ps1
+
+# Update ohne Instructions
+~/K.Agents/scripts/Update-KAgentsVS.ps1 -SkipInstructions
+```
+
+### Manuell via Setup-Script (ohne VS 2026)
+
+Wenn du **kein Visual Studio 2026** nutzt (nur CLIs und/oder VS Code), kannst du die Instructions separat installieren:
+
+```powershell
+# Global (fuer alle Repos)
+~/K.Agents/plugins/k-agents/scripts/Setup-Instructions.ps1
+
+# Fuer ein einzelnes Repo
+~/K.Agents/plugins/k-agents/scripts/Setup-Instructions.ps1 -Path C:\repos\MeinProjekt
+
+# Bestehende ueberschreiben
+~/K.Agents/plugins/k-agents/scripts/Setup-Instructions.ps1 -Force
+```
+
+Nach Repo-Installation den Projekt-Kontext anpassen:
+
+```powershell
 code C:\repos\MeinProjekt\.github\copilot-instructions.md
 ```
-
-### Fuer alle Repos (global)
-
-```powershell
-~/.k-agents/plugins/k-agents/scripts/Setup-Instructions.ps1
-```
-
-Die Instructions werden dann fuer alle Repos ohne eigene `copilot-instructions.md` verwendet.
 
 ### Testen
 
 1. VS Code oder VS 2026 mit Copilot Chat oeffnen
 2. Fragen: "Welche Agenten stehen dir zur Verfuegung?"
-3. Erwartung: Antwort erwaehnt Orchestrator, Claude CLI und spezialisierte Agenten
-
----
-
-## MCP-Server
-
-K.Agents liefert drei vorkonfigurierte MCP-Server ueber `.mcp.json` im Plugin-Root. Bei Plugin-Installation werden sie automatisch erkannt.
-
-### Enthaltene Server
-
-| Server | Typ | Beschreibung | Voraussetzung |
-|--------|-----|-------------|---------------|
-| **Microsoft Learn** | HTTP | Suche und Code-Samples aus offizieller MS/Azure Doku | Keine (HTTP-basiert) |
-| **NuGet** | stdio | Package-Versionen, Updates, Vulnerabilities | `dnx` (.NET SDK) |
-| **GitHub** | HTTP | Repos, Issues, PRs, Code Search | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-
-### Voraussetzungen installieren
-
-```powershell
-# NuGet MCP: .NET SDK pruefen / installieren
-dnx --version
-# Falls nicht vorhanden:
-winget install Microsoft.DotNet.SDK.10
-
-# GitHub MCP: Personal Access Token setzen
-# Variante 1: Umgebungsvariable (Session)
-$env:GITHUB_PERSONAL_ACCESS_TOKEN = (gh auth token)
-
-# Variante 2: Dauerhaft in User-Umgebungsvariablen
-[Environment]::SetEnvironmentVariable('GITHUB_PERSONAL_ACCESS_TOKEN', (gh auth token), 'User')
-```
-
-### Status pruefen
-
-Im Claude Code Prompt (nicht im Terminal):
-```
-/mcp
-```
-
-Erwartung: Alle drei Server erscheinen unter „Manage MCP servers".
-
-> **Schema:** Die `.mcp.json` folgt dem offiziellen Claude Code Plugin-Schema. Pro Server sind nur `type`/`url` (HTTP) oder `command`/`args` (stdio) erlaubt — keine Extra-Felder wie `version`, `description` oder `gallery`.
-
----
-
-## Hooks (Logging & Audit-Trail)
-
-K.Agents liefert drei Hook-Scripts fuer automatisches Logging aller Agent-Aktivitaeten als JSONL.
-
-> **Wichtig:** Claude Code Hooks werden **nicht** automatisch ueber Plugins installiert — sie muessen in der `settings.json` registriert werden. Dafuer gibt es ein Setup-Script.
-
-### Hooks installieren
-
-```powershell
-# User-Level (gilt fuer alle Repos)
-.\plugins\k-agents\scripts\Install-Hooks.ps1
-
-# Nur fuer das aktuelle Repo
-.\plugins\k-agents\scripts\Install-Hooks.ps1 -Scope project
-
-# Bestehende Hooks ueberschreiben
-.\plugins\k-agents\scripts\Install-Hooks.ps1 -Force
-
-# Hooks entfernen
-.\plugins\k-agents\scripts\Install-Hooks.ps1 -Uninstall
-```
-
-### Was wird registriert?
-
-| Hook-Typ | Script | Event |
-|----------|--------|-------|
-| `PreToolUse` | `hooks/pre_tool_call.ps1` | `agent_start` — vor jedem Tool-Aufruf |
-| `PostToolUse` | `hooks/post_tool_call.ps1` | `agent_complete` / `agent_handoff` — nach Tool-Aufruf |
-| `PostToolUseFailure` | `hooks/on_error.ps1` | `error` / `fallback` — bei Fehlern |
-
-### Log-Format und -Ort
-
-Logs werden als **JSONL** (eine JSON-Zeile pro Event) geschrieben nach:
-```
-~/.k-agents/logs/2026-04-05.jsonl
-```
-
-Beispiel-Eintrag:
-```json
-{"timestamp":"2026-04-05T14:30:00+02:00","session_id":"abc-123","cli":"claude","event":"agent_start","agent":"dotnet-developer","model":"sonnet","prompt_preview":"Erstelle eine Blazor-Komponente..."}
-```
-
-### Log-Rotation
-
-```powershell
-# Logs aelter als 30 Tage loeschen (Standard)
-.\plugins\k-agents\scripts\cleanup-logs.ps1
-
-# Eigene Retention
-.\plugins\k-agents\scripts\cleanup-logs.ps1 -RetentionDays 7
-```
+3. Erwartung: Antwort erwaehnt Orchestrator, spezialisierte Agenten und CLI-Aufruf-Pattern
 
 ---
 
