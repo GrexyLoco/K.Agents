@@ -1,6 +1,6 @@
 {
   "name": "kagents",
-  "version": "1.9.4",
+  "version": "1.9.5",
   "description": "13 spezialisierte AI-Agents und 27 Skills für .NET 10, PowerShell Core, Azure und GitHub Actions",
   "author": "GrexyLoco",
   "license": "MIT",
@@ -11,7 +11,12 @@
     },
     "nuget": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "nuget-mcp-server"]
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "nuget-mcp-server"
+      ]
     },
     "github": {
       "type": "http",
