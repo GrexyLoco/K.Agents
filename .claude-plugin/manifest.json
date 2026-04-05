@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "name": "k-agents",
+  "name": "kagents",
   "display_name": "K.Agents",
   "version": "0.2.0",
   "description": "Spezialisierte Agenten fuer .NET/Azure Entwicklung mit Orchestrator, Hooks und MCP-Integration",
@@ -8,20 +8,20 @@
   "repository": "https://github.com/GrexyLoco/K.Agents",
 
   "agents": {
-    "path": "plugins/k-agents/agents",
+    "path": "plugins/kagents/agents",
     "pattern": "*.agent.md"
   },
 
   "skills": {
-    "path": "plugins/k-agents/skills"
+    "path": "plugins/kagents/skills"
   },
 
   "hooks": {
-    "path": "plugins/k-agents/hooks"
+    "path": "plugins/kagents/hooks"
   },
 
   "mcp": {
-    "config": "plugins/k-agents/mcp/mcp-config.json",
+    "config": "plugins/kagents/mcp/mcp-config.json",
     "autoRegister": true
   },
 

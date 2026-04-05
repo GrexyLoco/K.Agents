@@ -10,7 +10,7 @@
     Andere Custom Agents/Skills im selben Verzeichnis bleiben erhalten.
 
     Die Zuordnung erfolgt ueber den Dateinamen (Agents) bzw. Ordnernamen (Skills),
-    abgeglichen mit dem lokalen K.Agents-Repo unter plugins/k-agents/.
+    abgeglichen mit dem lokalen K.Agents-Repo unter plugins/kagents/.
 
 .PARAMETER AgentsPath
     Pfad der User-Level Agents. Standard: $env:USERPROFILE\.github\agents
@@ -35,7 +35,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
-$pluginRoot = Join-Path $scriptRoot 'plugins' 'k-agents'
+$pluginRoot = Join-Path $scriptRoot 'plugins' 'kagents'
 
 $agentsSource = Join-Path $pluginRoot 'agents'
 $skillsSource = Join-Path $pluginRoot 'skills'

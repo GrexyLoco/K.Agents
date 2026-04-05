@@ -13,7 +13,7 @@
       "name": "kagents",
       "description": "14 spezialisierte AI-Agents und 27 Skills fuer .NET, PowerShell und Azure",
       "version": "1.10.11",
-      "source": "./plugins/k-agents"
+      "source": "./plugins/kagents"
     }
   ]
 }

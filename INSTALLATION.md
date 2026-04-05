@@ -151,8 +151,8 @@ Im **Terminal** (PowerShell Core / Bash):
 git clone https://github.com/GrexyLoco/K.Agents.git ~/K.Agents
 
 # In jedes Consumer-Repo kopieren (im Verzeichnis des Consumer-Repos ausführen)
-cp -r ~/K.Agents/plugins/k-agents/agents/* .github/agents/
-cp -r ~/K.Agents/plugins/k-agents/skills/* .github/skills/
+cp -r ~/K.Agents/plugins/kagents/agents/* .github/agents/
+cp -r ~/K.Agents/plugins/kagents/skills/* .github/skills/
 cp ~/K.Agents/AGENTS.md ./AGENTS.md
 cp ~/K.Agents/.github/copilot-instructions.md .github/copilot-instructions.md
 ```
@@ -168,10 +168,10 @@ Bei einem Workspace mit 10 Repos musst du die Dateien in **jedes Repo** kopieren
 // Öffnen via: Ctrl+Shift+P → "Preferences: Open User Settings (JSON)"
 {
   "chat.agentFilesLocations": [
-    "~/K.Agents/plugins/k-agents/agents"
+    "~/K.Agents/plugins/kagents/agents"
   ],
   "chat.agentSkillsLocations": [
-    "~/K.Agents/plugins/k-agents/skills"
+    "~/K.Agents/plugins/kagents/skills"
   ]
 }
 ```
@@ -345,8 +345,8 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\.github\agents" -Force
 New-Item -ItemType Directory -Path "$env:USERPROFILE\.github\skills" -Force
 
 # Agents und Skills kopieren
-Copy-Item -Path ~/K.Agents/plugins/k-agents/agents/* -Destination "$env:USERPROFILE\.github\agents\" -Force
-Copy-Item -Path ~/K.Agents/plugins/k-agents/skills/* -Destination "$env:USERPROFILE\.github\skills\" -Recurse -Force
+Copy-Item -Path ~/K.Agents/plugins/kagents/agents/* -Destination "$env:USERPROFILE\.github\agents\" -Force
+Copy-Item -Path ~/K.Agents/plugins/kagents/skills/* -Destination "$env:USERPROFILE\.github\skills\" -Recurse -Force
 ```
 
 > **⚠️ Manuelle Kopie übernimmt kein Tool-Mapping.** Die Agent-Dateien enthalten VS Code Tool Sets (`search`, `read`, `edit`), die in VS 2026 nicht funktionieren. Nutze bevorzugt die Scripts (`Install-KAgentsVS.ps1`, `Update-KAgentsVS.ps1`), die das Mapping automatisch durchführen.
@@ -461,13 +461,13 @@ Wenn du **kein Visual Studio 2026** nutzt (nur CLIs und/oder VS Code), kannst du
 
 ```powershell
 # Global (fuer alle Repos)
-~/K.Agents/plugins/k-agents/scripts/Setup-Instructions.ps1
+~/K.Agents/scripts/Setup-Instructions.ps1
 
 # Fuer ein einzelnes Repo
-~/K.Agents/plugins/k-agents/scripts/Setup-Instructions.ps1 -Path C:\repos\MeinProjekt
+~/K.Agents/scripts/Setup-Instructions.ps1 -Path C:\repos\MeinProjekt
 
 # Bestehende ueberschreiben
-~/K.Agents/plugins/k-agents/scripts/Setup-Instructions.ps1 -Force
+~/K.Agents/scripts/Setup-Instructions.ps1 -Force
 ```
 
 Nach Repo-Installation den Projekt-Kontext anpassen:

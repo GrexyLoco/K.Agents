@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     Durchsucht die Claude Code settings.json nach Hook-Eintraegen, die
-    'k-agents' oder 'k_agents' im command-String enthalten, und entfernt
+    'kagents' im command-String enthalten, und entfernt
     nur diese. Andere Hooks bleiben unangetastet.
     Leere Hook-Arrays und der hooks-Key selbst werden aufgeraeumt.
 
@@ -84,7 +84,7 @@ foreach ($hookType in @($hooks.Keys)) {
         $cleanedHooks = [System.Collections.ArrayList]::new()
         foreach ($hook in $matcher['hooks']) {
             $command = if ($hook.ContainsKey('command')) { $hook['command'] } else { '' }
-            if ($command -match 'k-agents|k_agents') {
+            if ($command -match 'kagents|k-agents|k_agents') {
                 $removedCount++
                 if ($WhatIfPreference) {
                     Write-Output "[WhatIf] Wuerde entfernen: $hookType -> $command"

@@ -46,7 +46,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
-$pluginRoot = Join-Path $scriptRoot 'plugins' 'k-agents'
+$pluginRoot = Join-Path $scriptRoot 'plugins' 'kagents'
 
 $agentsSource = Join-Path $pluginRoot 'agents'
 $skillsSource = Join-Path $pluginRoot 'skills'
@@ -124,7 +124,7 @@ foreach ($dir in $skillDirs) {
 # --- Phase 3: Copilot Instructions aktualisieren (global) ---
 
 if (-not $SkipInstructions) {
-    $setupScript = Join-Path $pluginRoot 'scripts' 'Setup-Instructions.ps1'
+    $setupScript = Join-Path $PSScriptRoot 'Setup-Instructions.ps1'
     if (Test-Path $setupScript) {
         if ($PSCmdlet.ShouldProcess("$env:USERPROFILE\.github\copilot-instructions.md", 'Instructions aktualisieren')) {
             & $setupScript -Force

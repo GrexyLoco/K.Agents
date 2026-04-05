@@ -162,7 +162,7 @@ K.Agents loggt alle Agent-Aktivitaeten automatisch via Hooks.
 ### Log-Verzeichnis
 
 ```
-~/.k-agents/logs/
+${CLAUDE_PLUGIN_ROOT}/logs/
 ├── 2026-04-05.jsonl
 ├── 2026-04-06.jsonl
 └── ...
@@ -184,12 +184,12 @@ Format: **JSONL** — eine JSON-Zeile pro Event, ein File pro Tag.
 
 ```powershell
 # Alle Fehler von heute
-Get-Content (Join-Path $env:USERPROFILE '.k-agents' 'logs' "$(Get-Date -Format 'yyyy-MM-dd').jsonl") |
+Get-Content (Join-Path $env:CLAUDE_PLUGIN_ROOT 'logs' "$(Get-Date -Format 'yyyy-MM-dd').jsonl") |
     ConvertFrom-Json |
     Where-Object { $_.event -eq 'error' }
 
 # Haeufigkeit pro Agent
-Get-Content (Join-Path $env:USERPROFILE '.k-agents' 'logs' '*.jsonl') |
+Get-Content (Join-Path $env:CLAUDE_PLUGIN_ROOT 'logs' '*.jsonl') |
     ConvertFrom-Json |
     Group-Object agent |
     Sort-Object Count -Descending

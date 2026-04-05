@@ -44,7 +44,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$templatePath = Join-Path $PSScriptRoot '..' 'templates' 'copilot-instructions.md'
+$scriptRoot = Split-Path -Parent $PSScriptRoot
+$templatePath = Join-Path $scriptRoot 'plugins' 'kagents' 'templates' 'copilot-instructions.md'
 
 if (-not (Test-Path $templatePath)) {
     throw "Template nicht gefunden: $templatePath"

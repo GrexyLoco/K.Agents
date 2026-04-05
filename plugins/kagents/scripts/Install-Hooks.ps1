@@ -7,7 +7,7 @@
 .DESCRIPTION
     Traegt die K.Agents Hook-Scripts (PreToolUse, PostToolUse, PostToolUseFailure)
     in die User-Level settings.json von Claude Code ein.
-    Die Hook-Scripts loggen Agent-Events als JSONL nach ~/.k-agents/logs/.
+    Die Hook-Scripts loggen Agent-Events als JSONL nach ${CLAUDE_PLUGIN_ROOT}/logs/.
 
 .PARAMETER Scope
     Installations-Scope: 'user' (Standard) oder 'project'.
@@ -85,7 +85,7 @@ if ($settings.ContainsKey('hooks') -and -not $Force) {
             foreach ($matcher in $existingHooks[$hookType]) {
                 if ($matcher.ContainsKey('hooks')) {
                     foreach ($hook in $matcher['hooks']) {
-                        if ($hook['command'] -match 'k-agents') {
+                        if ($hook['command'] -match 'kagents') {
                             $hasKAgentsHook = $true
                         }
                     }
@@ -158,5 +158,5 @@ Write-Output "  PreToolUse        -> $preToolScript"
 Write-Output "  PostToolUse       -> $postToolScript"
 Write-Output "  PostToolUseFailure -> $onErrorScript"
 Write-Output ''
-Write-Output "Logs: $(Join-Path $env:USERPROFILE '.k-agents' 'logs')"
+Write-Output "Logs: ${CLAUDE_PLUGIN_ROOT}/logs/"
 Write-Output "Log-Rotation: .\cleanup-logs.ps1 -RetentionDays 30"

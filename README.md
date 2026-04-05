@@ -53,7 +53,7 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 ### Einstieg (Orchestrator)
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
-| [Orchestrator](plugins/k-agents/agents/orchestrator.agent.md) | Automatisches Routing — analysiert Aufgabe und delegiert sofort | Haiku |
+| [Orchestrator](plugins/kagents/agents/orchestrator.agent.md) | Automatisches Routing — analysiert Aufgabe und delegiert sofort | Haiku |
 
 **Nutzung:**
 ```powershell
@@ -67,31 +67,31 @@ copilot --agent orchestrator "<aufgabe>"
 ### Strategie & Planung
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
-| [Planning Agent](plugins/k-agents/agents/planning.agent.md) | Feature-Planung → GitHub Issues/Milestones | Opus |
-| [App Architect](plugins/k-agents/agents/app-architect.agent.md) | .NET/Blazor/MAUI Architektur, Modular Monolith | Opus |
-| [Automation Architect](plugins/k-agents/agents/automation-architect.agent.md) | CI/CD, Workflows, Release-Strategie | Opus |
+| [Planning Agent](plugins/kagents/agents/planning.agent.md) | Feature-Planung → GitHub Issues/Milestones | Opus |
+| [App Architect](plugins/kagents/agents/app-architect.agent.md) | .NET/Blazor/MAUI Architektur, Modular Monolith | Opus |
+| [Automation Architect](plugins/kagents/agents/automation-architect.agent.md) | CI/CD, Workflows, Release-Strategie | Opus |
 
 ### Implementierung
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
-| [.NET Developer](plugins/k-agents/agents/dotnet-developer.agent.md) | C# 14, Blazor, MAUI, APIs | Sonnet |
-| [PowerShell Engineer](plugins/k-agents/agents/powershell-engineer.agent.md) | Cross-Platform PS Core, GitHub Actions | Sonnet |
-| [Azure Specialist](plugins/k-agents/agents/azure-specialist.agent.md) | Aspire, Monitoring + EU-Alternativen | Sonnet |
-| [Database Engineer](plugins/k-agents/agents/database-engineer.agent.md) | EF Core, Migrations, Performance | Sonnet |
+| [.NET Developer](plugins/kagents/agents/dotnet-developer.agent.md) | C# 14, Blazor, MAUI, APIs | Sonnet |
+| [PowerShell Engineer](plugins/kagents/agents/powershell-engineer.agent.md) | Cross-Platform PS Core, GitHub Actions | Sonnet |
+| [Azure Specialist](plugins/kagents/agents/azure-specialist.agent.md) | Aspire, Monitoring + EU-Alternativen | Sonnet |
+| [Database Engineer](plugins/kagents/agents/database-engineer.agent.md) | EF Core, Migrations, Performance | Sonnet |
 
 ### Qualitätssicherung
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
-| [TUnit Tester](plugins/k-agents/agents/tunit-tester.agent.md) | .NET Tests mit TUnit | Sonnet |
-| [Pester Tester](plugins/k-agents/agents/pester-tester.agent.md) | PowerShell Tests mit Pester 5.6 | Sonnet |
-| [Security Auditor](plugins/k-agents/agents/security-auditor.agent.md) | OWASP, Dependency Scanning | Sonnet |
-| [Code Reviewer](plugins/k-agents/agents/code-reviewer.agent.md) | Patterns, Performance, Architektur | Opus |
+| [TUnit Tester](plugins/kagents/agents/tunit-tester.agent.md) | .NET Tests mit TUnit | Sonnet |
+| [Pester Tester](plugins/kagents/agents/pester-tester.agent.md) | PowerShell Tests mit Pester 5.6 | Sonnet |
+| [Security Auditor](plugins/kagents/agents/security-auditor.agent.md) | OWASP, Dependency Scanning | Sonnet |
+| [Code Reviewer](plugins/kagents/agents/code-reviewer.agent.md) | Patterns, Performance, Architektur | Opus |
 
 ### Querschnitt
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
-| [Documentation](plugins/k-agents/agents/documentation.agent.md) | README, Changelog, API-Docs | Sonnet |
-| [Git Forensics](plugins/k-agents/agents/git-forensics.agent.md) | Blame, Bisect, Conventional Commits | Sonnet |
+| [Documentation](plugins/kagents/agents/documentation.agent.md) | README, Changelog, API-Docs | Sonnet |
+| [Git Forensics](plugins/kagents/agents/git-forensics.agent.md) | Blame, Bisect, Conventional Commits | Sonnet |
 
 ## Skills
 
