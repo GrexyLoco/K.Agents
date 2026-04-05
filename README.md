@@ -5,8 +5,21 @@
 [![Agents](https://img.shields.io/badge/Agents-14-blue)](.github/agents/)
 [![Skills](https://img.shields.io/badge/Skills-27-green)](.github/skills/)
 
-Kuratierte Sammlung von **14 Custom Agents** (13 spezialisierte + 1 Orchestrator) und **27 Skills** für VS Code Copilot, Visual Studio 2026 und Claude Code.
+Kuratierte Sammlung von **14 Custom Agents** (13 spezialisierte + 1 Orchestrator), **27 Skills** und **2 MCP-Server** für VS Code Copilot, Visual Studio 2026 und Claude Code.
 Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
+
+## Inhaltsverzeichnis
+
+- [Besonderheiten](#besonderheiten)
+- [Installation](#installation)
+- [Agents](#agents)
+- [Skills](#skills)
+- [MCP-Server](#mcp-server)
+- [Kompatibilität](#kompatibilität)
+- [Agent-Workflow & Handoff-Flows](#agent-workflow--handoff-flows)
+- [Mitwirken](#mitwirken)
+- [Danksagung](#danksagung)
+- [Lizenz](#lizenz)
 
 ## Besonderheiten
 
@@ -111,6 +124,19 @@ copilot --agent orchestrator "<aufgabe>"
 | `aspire-integration-testing` | [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) | MIT |
 | `database-performance` | [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) | MIT |
 | `csharp-concurrency-patterns` | [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) | MIT |
+
+## MCP-Server
+
+Das Plugin liefert zwei MCP-Server mit, die automatisch im Plugin-System (VS Code, Claude Code, Copilot CLI) gestartet werden:
+
+| Server | Typ | Funktion | Tools |
+|--------|-----|----------|-------|
+| **Microsoft Learn** | HTTP | Offizielle Microsoft-Dokumentation und Code-Beispiele | `microsoft_docs_search`, `microsoft_docs_fetch`, `microsoft_code_sample_search` |
+| **GitHub** | HTTP | Issues, PRs, Repos, Code-Suche, Advisory Database | `list_issues`, `search_code`, `create_pull_request`, u.v.m. |
+
+> **Voraussetzung GitHub MCP:** `gh auth login` muss einmalig ausgeführt worden sein.
+
+> **Hinweis:** MCP-Server werden von Visual Studio 2026 nicht unterstützt. Siehe [INSTALLATION.md](INSTALLATION.md#was-das-plugin-mitliefert) für Details.
 
 ## Kompatibilität
 
