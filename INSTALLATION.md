@@ -34,7 +34,7 @@ copilot
 /plugin marketplace add GrexyLoco/K.Agents
 
 # 3. Plugin installieren:
-/plugin install k-agents@k-agents
+/plugin install kagents@K.Agents
 
 # 4. Prüfen:
 /skills
@@ -54,7 +54,7 @@ claude
 /plugin marketplace add GrexyLoco/K.Agents
 
 # 3. Plugin installieren:
-/plugin install k-agents@k-agents
+/plugin install kagents@K.Agents
 
 # 4. Prüfen:
 /skills
@@ -67,10 +67,10 @@ Im **Copilot CLI- oder Claude Code-Prompt** (nicht im Terminal):
 
 ```
 # Marketplace-Index aktualisieren
-/plugin marketplace update k-agents
+/plugin marketplace update K.Agents
 
 # Plugin auf neueste Version bringen
-/plugin update k-agents@k-agents
+/plugin update kagents@K.Agents
 ```
 
 ### Multi-Repo-Verhalten
@@ -196,7 +196,7 @@ Dann im **Claude Code Prompt** (nicht im Terminal):
 ```
 # Plugin Marketplace
 /plugin marketplace add GrexyLoco/K.Agents
-/plugin install k-agents@k-agents
+/plugin install kagents@K.Agents
 ```
 
 Oder manuell im **Terminal**:

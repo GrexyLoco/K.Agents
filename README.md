@@ -24,7 +24,7 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 **Schnellstart (Plugin — einmal installieren, in allen Repos verfügbar):**
 ```bash
 /plugin marketplace add GrexyLoco/K.Agents
-/plugin install k-agents@k-agents
+/plugin install kagents@K.Agents
 ```
 
 **Schnellstart (VS Code Settings):**

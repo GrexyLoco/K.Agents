@@ -1,5 +1,5 @@
 {
-  "name": "k-agents",
+  "name": "kagents",
   "version": "1.9.1",
   "description": "13 spezialisierte AI-Agents und 27 Skills für .NET 10, PowerShell Core, Azure und GitHub Actions",
   "author": "GrexyLoco",

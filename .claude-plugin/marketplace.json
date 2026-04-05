@@ -7,7 +7,7 @@
   },
   "plugins": [
     {
-      "name": "k-agents",
+      "name": "kagents",
       "description": "13+ spezialisierte Agenten mit Orchestrator fuer .NET 10, PowerShell Core, Azure und GitHub Actions",
       "source": "./plugins/k-agents",
       "category": "development",
