@@ -1,5 +1,5 @@
 {
-  "name": "k-agents",
+  "name": "kagents",
   "owner": {
     "name": "GrexyLoco",
     "email": "noreply@grexyloco.dev"
@@ -10,8 +10,8 @@
   },
   "plugins": [
     {
-      "name": "k-agents",
-      "description": "13 spezialisierte AI-Agents und 27 Skills für .NET, PowerShell und Azure",
+      "name": "kagents",
+      "description": "14 spezialisierte AI-Agents und 27 Skills fuer .NET, PowerShell und Azure",
       "version": "1.10.6",
       "source": "./plugins/k-agents"
     }
