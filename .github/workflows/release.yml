@@ -139,12 +139,12 @@ jobs:
           $marketplace.plugins[0].version = $newVersion
           $marketplace | ConvertTo-Json -Depth 10 | Set-Content $marketplacePath -Encoding utf8
 
-          # 3. Claude Code Plugin (Luecke geschlossen)
-          $claudePluginPath = Join-Path '.claude-plugin' 'plugin.json'
-          if (Test-Path $claudePluginPath) {
-            $claudePlugin = Get-Content $claudePluginPath -Raw | ConvertFrom-Json
-            $claudePlugin.version = $newVersion
-            $claudePlugin | ConvertTo-Json -Depth 10 | Set-Content $claudePluginPath -Encoding utf8
+          # 3. Claude Code Marketplace (Single Source of Truth)
+          $claudeMarketplacePath = Join-Path '.claude-plugin' 'marketplace.json'
+          if (Test-Path $claudeMarketplacePath) {
+            $claudeMarketplace = Get-Content $claudeMarketplacePath -Raw | ConvertFrom-Json
+            $claudeMarketplace.plugins[0].version = $newVersion
+            $claudeMarketplace | ConvertTo-Json -Depth 10 | Set-Content $claudeMarketplacePath -Encoding utf8
           }
 
           Write-Information -InformationAction Continue "Alle JSONs auf $newVersion aktualisiert"
@@ -154,7 +154,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add plugins/k-agents/.github/plugin.json .github/plugin/marketplace.json
-          if [ -f ".claude-plugin/plugin.json" ]; then git add .claude-plugin/plugin.json; fi
+          if [ -f ".claude-plugin/marketplace.json" ]; then git add .claude-plugin/marketplace.json; fi
           git diff --staged --quiet && echo "Keine Aenderungen" && exit 0
           git commit -m "chore(plugin): Version auf ${{ steps.version.outputs.newVersion }} aktualisiert [skip ci]"
           git push
