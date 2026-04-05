@@ -1,12 +1,18 @@
 # K.Agents
 
-**13 spezialisierte AI-Agents und 27 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
+**14 AI-Agents (13 spezialisierte + 1 Orchestrator) und 27 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
 
 ## Überblick
 
 Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual Studio 2026 und Claude Code. Jeder Agent hat eine klar definierte Rolle mit Handoff-Buttons zur nahtlosen Zusammenarbeit.
 
 ## Agents
+
+### Einstieg
+
+| Agent | Beschreibung | Model |
+|-------|-------------|-------|
+| Orchestrator | Automatisches Routing — analysiert Aufgabe und delegiert sofort | Haiku |
 
 ### Strategie & Planung
 

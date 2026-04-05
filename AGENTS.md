@@ -15,10 +15,23 @@ Diese Codebase gehört zu einer Software-Entwicklungsabteilung mit folgenden Sch
 
 ## Agent-Routing
 
-Dieses Projekt verfügt über 13 spezialisierte Agents. Wähle den passenden Agent basierend auf der Aufgabe:
+Dieses Projekt verfügt über 14 Agents (13 spezialisierte + 1 Orchestrator). Der **Orchestrator** ist der empfohlene Einstiegspunkt — er analysiert die Aufgabe und delegiert automatisch an den passenden Agenten.
+
+**Empfohlener Einstieg:**
+```powershell
+claude --agent orchestrator "<aufgabe>"
+```
+
+Bei Claude CLI Rate Limit automatischer Fallback auf Copilot CLI:
+```powershell
+copilot --agent orchestrator "<aufgabe>"
+```
+
+Wähle direkt einen spezialisierten Agenten, wenn der Aufgabentyp klar ist:
 
 | Aufgabe | Agent |
 |---------|-------|
+| Beliebige Aufgabe (automatisches Routing) | `orchestrator` |
 | Feature planen, Issues erstellen | `planning` |
 | .NET/Blazor/MAUI Architektur entscheiden | `app-architect` |
 | CI/CD-Pipelines, Release-Strategie entwerfen | `automation-architect` |
