@@ -1,22 +1,14 @@
 # Copilot Instructions — K.Agents Integration
 
-## CLI-Verfuegbarkeit
+## K.Agents Uebersicht
 
-Dieses System hat Zugriff auf zwei CLI-Tools:
-- `claude` — Claude CLI (Anthropic)
-- `copilot` — Copilot CLI (GitHub)
-
-Beide CLIs haben das **K.Agents Plugin** installiert mit:
+Dieses Projekt nutzt das **K.Agents Plugin** mit:
 - 14 Agenten (13 spezialisierte + 1 Orchestrator)
-- Orchestrator fuer automatisches Routing
+- 27 Skills (Domain-spezifisches Wissen)
 - 2 MCP-Server (Microsoft Learn, GitHub)
 - Logging-Hooks fuer Audit-Trail
 
-## CLI-Orchestrierung
-
 ### Plattform-Kompatibilitaet
-
-K.Agents ist fuer mehrere Plattformen ausgelegt:
 
 | Feature | Claude Code | VS Code Copilot Chat | VS 2026 |
 |---|---|---|---|
@@ -26,20 +18,9 @@ K.Agents ist fuer mehrere Plattformen ausgelegt:
 | Hooks/Logging | Automatisch via Plugin | Automatisch via Plugin | Nicht verfuegbar |
 | Instructions | `Setup-Instructions.ps1` | `Setup-Instructions.ps1` | `Install-KAgentsVS.ps1` |
 
-### Prioritaet
+### Agent-Routing
 
-1. **Zuerst Claude CLI** — groesserer Kontext, tieferes Reasoning
-2. **Fallback Copilot CLI** — bei Rate Limit oder Fehler
-
-### Aufruf-Pattern
-
-Fuer ALLE Aufgaben, nutze den Orchestrator:
-
-```powershell
-claude --agent orchestrator "<aufgabe>"
-```
-
-Der Orchestrator routet automatisch zum passenden Agenten:
+Der **Orchestrator** ist der empfohlene Einstiegspunkt — er analysiert die Aufgabe und delegiert via Handoff an den passenden Agenten:
 
 | Aufgaben-Typ | Ziel-Agent |
 |---|---|
@@ -56,34 +37,6 @@ Der Orchestrator routet automatisch zum passenden Agenten:
 | Code Review | `code-reviewer` |
 | Dokumentation | `documentation` |
 | Git-Historie | `git-forensics` |
-
-### Bei Rate Limit
-
-Wenn Claude CLI einen dieser Fehler zurueckgibt:
-- "Rate limit exceeded" / "Usage limit reached" / "429" / "overloaded"
-
-Wechsle zu Copilot CLI und informiere den User:
-> "Claude-Kontingent erschoepft, wechsle auf Copilot CLI."
-
-```powershell
-copilot --agent orchestrator "<aufgabe>"
-```
-
-## Wann CLI nutzen vs. direkt antworten
-
-### CLI nutzen fuer:
-- Komplexe Analyse (mehr als 5 Dateien betroffen)
-- Architektur-Entscheidungen
-- Feature-Planung
-- Code-Reviews
-- Implementierung mit mehreren Dateien
-- Wenn mehr Kontext benoetigt wird
-
-### Direkt antworten fuer:
-- Einfache Fragen
-- Kleine Code-Snippets
-- Erklaerungen
-- Einzelne Datei-Aenderungen
 
 ## Projekt-Kontext
 

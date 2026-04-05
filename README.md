@@ -55,14 +55,7 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 |-------|-------------|-------|
 | [Orchestrator](plugins/kagents/agents/orchestrator.agent.md) | Automatisches Routing — analysiert Aufgabe und delegiert sofort | Haiku |
 
-**Nutzung:**
-```powershell
-# Claude CLI (primär)
-claude --agent orchestrator "<aufgabe>"
-
-# Copilot CLI (Fallback bei Rate Limit)
-copilot --agent orchestrator "<aufgabe>"
-```
+**Nutzung:** Orchestrator im Agent-Picker wählen (Copilot Chat, Claude Code) oder direkt in der CLI starten.
 
 ### Strategie & Planung
 | Agent | Beschreibung | Model |

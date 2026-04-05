@@ -17,15 +17,7 @@ Diese Codebase gehört zu einer Software-Entwicklungsabteilung mit folgenden Sch
 
 Dieses Projekt verfügt über 14 Agents (13 spezialisierte + 1 Orchestrator). Der **Orchestrator** ist der empfohlene Einstiegspunkt — er analysiert die Aufgabe und delegiert automatisch an den passenden Agenten.
 
-**Empfohlener Einstieg:**
-```powershell
-claude --agent orchestrator "<aufgabe>"
-```
-
-Bei Claude CLI Rate Limit automatischer Fallback auf Copilot CLI:
-```powershell
-copilot --agent orchestrator "<aufgabe>"
-```
+Wähle den Orchestrator im **Agent-Picker** (Copilot Chat, Claude Code).
 
 Wähle direkt einen spezialisierten Agenten, wenn der Aufgabentyp klar ist:
 

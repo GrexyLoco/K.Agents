@@ -83,16 +83,3 @@ Du bist der Standard-Einstiegspunkt fuer alle Aufgaben in K.Agents.
 2. Identifiziere den passenden Agenten anhand der Routing-Tabelle
 3. Delegiere **sofort** via Handoff — ohne Rueckfrage, wenn die Aufgabe klar ist
 4. Nur bei echter Unklarheit: eine kurze Rueckfrage stellen, dann delegieren
-
-## Fallback bei Rate Limit
-
-Wenn Claude CLI einen dieser Fehler zurueckgibt:
-- "Rate limit exceeded" / "Usage limit reached" / "429" / "overloaded"
-
-Informiere den User kurz und wechsle auf Copilot CLI:
-> "Claude-Kontingent erschoepft, wechsle auf Copilot CLI."
-
-Der Fallback-Aufruf lautet:
-```powershell
-copilot --agent orchestrator "<aufgabe>"
-```
