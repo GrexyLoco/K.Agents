@@ -112,7 +112,8 @@ $hooksConfig = @{
             hooks = @(
                 @{
                     type = 'command'
-                    command = "pwsh -NoProfile -File `"$preToolScript`""
+                    shell = 'powershell'
+                    command = "& `"$preToolScript`""
                 }
             )
         }
@@ -123,7 +124,8 @@ $hooksConfig = @{
             hooks = @(
                 @{
                     type = 'command'
-                    command = "pwsh -NoProfile -File `"$postToolScript`""
+                    shell = 'powershell'
+                    command = "& `"$postToolScript`""
                 }
             )
         }
@@ -134,7 +136,8 @@ $hooksConfig = @{
             hooks = @(
                 @{
                     type = 'command'
-                    command = "pwsh -NoProfile -File `"$onErrorScript`""
+                    shell = 'powershell'
+                    command = "& `"$onErrorScript`""
                 }
             )
         }
