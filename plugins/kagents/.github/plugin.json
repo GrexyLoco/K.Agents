@@ -1,7 +1,7 @@
 {
   "name": "kagents",
   "description": "14 spezialisierte AI-Agents und 27 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
-  "version": "1.10.13",
+  "version": "1.10.14",
   "author": {
     "name": "GrexyLoco",
     "email": "noreply@grexyloco.dev"
