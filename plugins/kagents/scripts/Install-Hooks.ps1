@@ -154,6 +154,8 @@ if (-not (Test-Path $settingsDir)) {
 
 $settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath -Encoding utf8
 
+$logsDir = [System.IO.Path]::GetFullPath((Join-Path $hooksDir '..' 'logs'))
+
 Write-Output "K.Agents Hooks installiert ($Scope): $settingsPath"
 Write-Output ''
 Write-Output 'Registrierte Hooks:'
@@ -161,5 +163,5 @@ Write-Output "  PreToolUse        -> $preToolScript"
 Write-Output "  PostToolUse       -> $postToolScript"
 Write-Output "  PostToolUseFailure -> $onErrorScript"
 Write-Output ''
-Write-Output "Logs: ${CLAUDE_PLUGIN_ROOT}/logs/"
+Write-Output "Logs: $logsDir"
 Write-Output "Log-Rotation: .\cleanup-logs.ps1 -RetentionDays 30"
