@@ -202,6 +202,61 @@ Get-Content (Join-Path $env:CLAUDE_PLUGIN_ROOT 'logs' '*.jsonl') |
 & (Join-Path $PSScriptRoot 'scripts' 'cleanup-logs.ps1') -RetentionDays 30
 ```
 
+## ReleaseFlow-Guardrail
+
+K.Agents schuetzt den [K.Actions.ReleaseFlow](https://github.com/GrexyLoco/K.Actions.ReleaseFlow)-Prozess
+automatisch via PreToolUse-Hook. Der Guardrail blockiert direkte `master`/`main`-Merges, die den
+Branching-Prozess umgehen wuerden.
+
+### Geschuetzte Kommandos
+
+| Kommando | Geprueft | Erlaubt |
+|----------|----------|---------|
+| `gh pr create --base master` | Head-Branch muss `release/v*` sein | Nur Stable-PRs |
+| `gh pr create` (ohne `--base`) | Warnung: Default-Target koennte master sein | Explizit `--base` setzen |
+| `gh pr merge` | Head-Branch muss `release/v*` sein | Nur von release-Branches |
+
+### ReleaseFlow-Branching-Modell
+
+```
+feature/* oder fix/*  →  dev/vX.Y.Z  →  release/vX.Y.Z  →  master
+```
+
+### Repo-Erkennung
+
+Der Guardrail ist nur aktiv in Repos, die ReleaseFlow verwenden. Erkennungs-Marker:
+
+- `.releaseflow` Datei im Repo-Root
+- `releaseflow.json` Datei im Repo-Root
+- `action.yml` mit `K.Actions.ReleaseFlow`-Referenz
+- `.github/workflows/*.yml` mit `K.Actions.ReleaseFlow`-Referenz
+
+### Break-Glass
+
+Wenn ein direkter Master-Merge beabsichtigt ist (z.B. Hotfix ausserhalb ReleaseFlow), kann der
+Guardrail mit der Umgebungsvariable `RELEASEFLOW_BYPASS=1` umgangen werden:
+
+```powershell
+# Break-Glass aktivieren (nur fuer aktuelle Shell-Session)
+$env:RELEASEFLOW_BYPASS = '1'
+
+# Kommando ausfuehren
+gh pr create --base master --title 'Emergency Fix'
+
+# Break-Glass danach deaktivieren
+Remove-Item Env:RELEASEFLOW_BYPASS
+```
+
+> **Hinweis:** Jede Bypass-Nutzung wird ins Audit-Log geschrieben (`event: releaseflow_guardrail_bypass`).
+
+### Guardrail deaktivieren
+
+Der Guardrail ist Teil der K.Agents Hooks. Er kann per Uninstall-Script deaktiviert werden:
+
+```powershell
+& (Join-Path $PSScriptRoot 'scripts' 'Uninstall-Hooks.ps1')
+```
+
 ## Lizenz
 
 MIT — Siehe [LICENSE](../../LICENSE) für Details.

@@ -12,5 +12,5 @@ Thumbs.db
 *.tmp
 *.bak
 
-# K.Agents Runtime-Logs
+# K.Agents Laufzeit-Logs
 plugins/kagents/logs/
