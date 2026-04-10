@@ -26,10 +26,8 @@ $ErrorActionPreference = 'Stop'
 #>
 
 # --- stdin lesen (Claude Code sendet JSON via stdin) ---
-$rawInput = try { [Console]::In.ReadToEnd() } catch { '' }
-$hookData = if ($rawInput.Trim()) {
-    try { $rawInput | ConvertFrom-Json -AsHashtable } catch { @{} }
-} else { @{} }
+. (Join-Path $PSScriptRoot 'HookHelpers.ps1')
+$hookData = Read-HookStdin
 
 # Konstanten
 $MaxCommandLogLength = 200
@@ -91,14 +89,7 @@ if (-not (Test-IsReleaseFlowRepo -RepoPath $cwd)) { exit 0 }
 # --- Break-Glass: RELEASEFLOW_BYPASS=1 ---
 if ($env:RELEASEFLOW_BYPASS -eq '1') {
     # Bypass-Nutzung ins Log schreiben (kein Block)
-    $pluginRoot = if ($env:CLAUDE_PLUGIN_ROOT) {
-        $env:CLAUDE_PLUGIN_ROOT
-    } else {
-        Split-Path -Parent $PSScriptRoot
-    }
-    $logDir  = Join-Path $pluginRoot 'logs'
-    if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
-    $logFile = Join-Path $logDir "$(Get-Date -Format 'yyyy-MM-dd').jsonl"
+    $logFile = Initialize-LogFile
     @{
         timestamp  = (Get-Date -Format 'o')
         event      = 'releaseflow_guardrail_bypass'
