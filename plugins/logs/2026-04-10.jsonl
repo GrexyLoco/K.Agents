@@ -1,2 +1,0 @@
-{"timestamp":"2026-04-10T09:13:58.7384089+00:00","command":"gh pr create --base master --title test","event":"releaseflow_guardrail_bypass","session_id":"test","cwd":"/tmp/rf-test-repo"}
-{"cwd":"/tmp/rf-test-repo","timestamp":"2026-04-10T09:16:03.1761471+00:00","event":"releaseflow_guardrail_bypass","command":"gh pr create --base master --title test","session_id":"test"}
