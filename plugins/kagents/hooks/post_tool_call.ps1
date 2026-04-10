@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 #>
 
 # --- stdin lesen (Claude Code sendet JSON via stdin) ---
-$rawInput = try { $input | Out-String } catch { '' }
+$rawInput = try { [Console]::In.ReadToEnd() } catch { '' }
 $hookData = if ($rawInput.Trim()) {
     try { $rawInput | ConvertFrom-Json -AsHashtable } catch { @{} }
 } else { @{} }
@@ -31,20 +31,22 @@ $toolInputPreview = if ($toolInputRaw.Length -gt 200) {
     $toolInputRaw.Substring(0, 200) + '...'
 } else { $toolInputRaw }
 
-# --- Erfolg aus tool_response extrahieren ---
-$toolResponse = if ($hookData.ContainsKey('tool_response')) { $hookData['tool_response'] } else { @{} }
-$success = if ($toolResponse -is [hashtable] -and $toolResponse.ContainsKey('success')) {
-    $toolResponse['success']
-} else { $null }
+# --- Erfolg: tool_response ist ein String (Rohdaten), nicht null = Erfolg ---
+$hasResponse = $hookData.ContainsKey('tool_response') -and $null -ne $hookData['tool_response']
+$responsePreview = if ($hasResponse) {
+    $raw = [string]$hookData['tool_response']
+    if ($raw.Length -gt 200) { $raw.Substring(0, 200) + '...' } else { $raw }
+} else { '' }
 
 $entry = [ordered]@{
-    timestamp  = (Get-Date -Format 'o')
-    session_id = $hookData['session_id']
-    event      = 'post_tool_use'
-    tool_name  = $hookData['tool_name']
-    tool_input = $toolInputPreview
-    success    = $success
-    agent_type = $hookData['agent_type']
+    timestamp      = (Get-Date -Format 'o')
+    session_id     = $hookData['session_id']
+    event          = 'post_tool_use'
+    tool_name      = $hookData['tool_name']
+    tool_input     = $toolInputPreview
+    has_response   = $hasResponse
+    tool_response  = $responsePreview
+    agent_type     = $hookData['agent_type']
 } | ConvertTo-Json -Compress
 
 Add-Content -Path $logFile -Value $entry -Encoding utf8

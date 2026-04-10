@@ -26,7 +26,7 @@ $ErrorActionPreference = 'Stop'
 #>
 
 # --- stdin lesen (Claude Code sendet JSON via stdin) ---
-$rawInput = try { $input | Out-String } catch { '' }
+$rawInput = try { [Console]::In.ReadToEnd() } catch { '' }
 $hookData = if ($rawInput.Trim()) {
     try { $rawInput | ConvertFrom-Json -AsHashtable } catch { @{} }
 } else { @{} }
@@ -94,7 +94,7 @@ if ($env:RELEASEFLOW_BYPASS -eq '1') {
     $pluginRoot = if ($env:CLAUDE_PLUGIN_ROOT) {
         $env:CLAUDE_PLUGIN_ROOT
     } else {
-        Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+        Split-Path -Parent $PSScriptRoot
     }
     $logDir  = Join-Path $pluginRoot 'logs'
     if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }

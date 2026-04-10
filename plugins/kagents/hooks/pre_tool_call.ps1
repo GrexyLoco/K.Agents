@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 #>
 
 # --- stdin lesen (Claude Code sendet JSON via stdin) ---
-$rawInput = try { $input | Out-String } catch { '' }
+$rawInput = try { [Console]::In.ReadToEnd() } catch { '' }
 $hookData = if ($rawInput.Trim()) {
     try { $rawInput | ConvertFrom-Json -AsHashtable } catch { @{} }
 } else { @{} }
