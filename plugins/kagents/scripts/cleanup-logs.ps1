@@ -21,7 +21,7 @@ param(
     [int]$Keep = 7
 )
 
-$pluginRoot = if ($env:CLAUDE_PLUGIN_ROOT) { $env:CLAUDE_PLUGIN_ROOT } else { Split-Path -Parent (Split-Path -Parent $PSScriptRoot) }
+$pluginRoot = if ($env:CLAUDE_PLUGIN_ROOT) { $env:CLAUDE_PLUGIN_ROOT } else { Split-Path -Parent $PSScriptRoot }
 $logDir = Join-Path $pluginRoot 'logs'
 
 if (-not (Test-Path $logDir)) {
