@@ -31,6 +31,10 @@ $hookData = if ($rawInput.Trim()) {
     try { $rawInput | ConvertFrom-Json -AsHashtable } catch { @{} }
 } else { @{} }
 
+# Konstanten
+$MaxCommandLogLength = 200
+$UnknownBaseBranch   = 'master/main (unbekannt)'
+
 # Nur Bash-Tool-Aufrufe pruefen
 if ($hookData['tool_name'] -ne 'Bash') { exit 0 }
 
@@ -98,7 +102,7 @@ if ($env:RELEASEFLOW_BYPASS -eq '1') {
     @{
         timestamp  = (Get-Date -Format 'o')
         event      = 'releaseflow_guardrail_bypass'
-        command    = $(if ($command.Length -gt 200) { $command.Substring(0, 200) + '...' } else { $command })
+        command    = $(if ($command.Length -gt $MaxCommandLogLength) { $command.Substring(0, $MaxCommandLogLength) + '...' } else { $command })
         cwd        = $cwd
         session_id = $hookData['session_id']
     } | ConvertTo-Json -Compress | Add-Content -Path $logFile -Encoding utf8
@@ -193,7 +197,7 @@ if ($isPrMerge) {
     $baseBranch = ''
     $prNumberMatch = [regex]::Match($command, '\bgh\s+pr\s+merge\s+(\d+)')
     try {
-        Push-Location $cwd
+        Push-Location $cwd -ErrorAction Stop
         if ($prNumberMatch.Success) {
             $prNumber = $prNumberMatch.Groups[1].Value
             # 2>$null: gh-Fehler (kein Auth, PR nicht gefunden) werden bewusst ignoriert
@@ -212,7 +216,7 @@ if ($isPrMerge) {
     if (-not $shouldBlock -and -not $baseBranch -and -not ($currentBranch -match $releasePattern)) {
         # Base unbekannt und nicht auf release/* → konservativ blockieren
         $shouldBlock = $true
-        $baseBranch  = 'master/main (unbekannt)'
+        $baseBranch  = $UnknownBaseBranch
     }
 
     if ($shouldBlock) {
