@@ -101,12 +101,23 @@ if ($settings.ContainsKey('hooks') -and -not $Force) {
 }
 
 # Hook-Kommandos erstellen (cross-platform Pfade)
-$preToolScript = Join-Path $hooksDir 'pre_tool_call.ps1'
-$postToolScript = Join-Path $hooksDir 'post_tool_call.ps1'
-$onErrorScript = Join-Path $hooksDir 'on_error.ps1'
+$preToolScript       = Join-Path $hooksDir 'pre_tool_call.ps1'
+$guardrailScript     = Join-Path $hooksDir 'releaseflow-guardrail.ps1'
+$postToolScript      = Join-Path $hooksDir 'post_tool_call.ps1'
+$onErrorScript       = Join-Path $hooksDir 'on_error.ps1'
 
 $hooksConfig = @{
     PreToolUse = @(
+        @{
+            matcher = 'Bash'
+            hooks = @(
+                @{
+                    type    = 'command'
+                    shell   = 'powershell'
+                    command = "& `"$guardrailScript`""
+                }
+            )
+        },
         @{
             matcher = ''
             hooks = @(
@@ -159,8 +170,9 @@ $logsDir = [System.IO.Path]::GetFullPath((Join-Path $hooksDir '..' 'logs'))
 Write-Output "K.Agents Hooks installiert ($Scope): $settingsPath"
 Write-Output ''
 Write-Output 'Registrierte Hooks:'
-Write-Output "  PreToolUse        -> $preToolScript"
-Write-Output "  PostToolUse       -> $postToolScript"
+Write-Output "  PreToolUse (Bash)  -> $guardrailScript"
+Write-Output "  PreToolUse         -> $preToolScript"
+Write-Output "  PostToolUse        -> $postToolScript"
 Write-Output "  PostToolUseFailure -> $onErrorScript"
 Write-Output ''
 Write-Output "Logs: $logsDir"
