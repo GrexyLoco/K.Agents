@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Beta Release Pipeline
-# version: unknown
-# commit: 3d363ba
-# installed: 2026-04-19
-# content-hash: FE4FB8FA
+# version: untagged@9fefd0a
+# commit: 9fefd0a
+# updated: 2026-04-19
+# content-hash: 139A7569
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.

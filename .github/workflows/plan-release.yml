@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Plan Release (PO Dispatch)
-# version: unknown
-# commit: 3d363ba
-# installed: 2026-04-19
-# content-hash: F9D083C1
+# version: untagged@9fefd0a
+# commit: 9fefd0a
+# updated: 2026-04-19
+# content-hash: 41E0B658
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -37,33 +37,21 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Import ReleaseFlow
-        shell: pwsh
-        run: |
-          Import-Module ./K.Actions.ReleaseFlow.psd1
-
       - name: 🔑 Generate GitHub App Token
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.RELEASEFLOW_APP_ID }}
           private-key: ${{ secrets.RELEASEFLOW_APP_PRIVATE_KEY }}
-      
+
       - name: Create Release Train
         id: create
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          $result = New-ReleaseTrain `
-            -TargetVersion '${{ inputs.target_version }}' `
-            -Base '${{ inputs.base }}'
-
-          "dev-branch=$($result.DevBranch)" >> $env:GITHUB_OUTPUT
-          "intent-url=$($result.IntentUrl)" >> $env:GITHUB_OUTPUT
-          "base-commit=$($result.BaseCommit)" >> $env:GITHUB_OUTPUT
-          "milestone-url=$($result.MilestoneUrl)" >> $env:GITHUB_OUTPUT
-          "milestone-title=${{ inputs.target_version }}" >> $env:GITHUB_OUTPUT
+        uses: GrexyLoco/K.Actions.ReleaseFlow@v1
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          action: plan-release
+          target-version: ${{ inputs.target_version }}
+          base: ${{ inputs.base }}
 
       - name: Summary
         if: always()

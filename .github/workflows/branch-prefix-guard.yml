@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Branch-Prefix Guard
-# version: unknown
-# commit: 3d363ba
-# installed: 2026-04-19
-# content-hash: B99FC0CE
+# version: untagged@9fefd0a
+# commit: 9fefd0a
+# updated: 2026-04-19
+# content-hash: B2C2FD03
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.

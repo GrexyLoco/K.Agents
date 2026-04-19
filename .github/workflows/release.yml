@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Release Pipeline (Stable)
-# version: unknown
-# commit: 3d363ba
-# installed: 2026-04-19
-# content-hash: B8509235
+# version: untagged@9fefd0a
+# commit: 9fefd0a
+# updated: 2026-04-19
+# content-hash: A58A4F84
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.

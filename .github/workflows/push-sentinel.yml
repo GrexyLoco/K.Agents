@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Push Sentinel (Audit)
-# version: unknown
-# commit: 3d363ba
-# installed: 2026-04-19
-# content-hash: AB4DFED2
+# version: untagged@9fefd0a
+# commit: 9fefd0a
+# updated: 2026-04-19
+# content-hash: 45294537
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -66,6 +66,26 @@ jobs:
           # otherwise break the `\(#\d+\)$` end-anchor match. (#307)
           $subject = ($env:COMMIT_MESSAGE -split "`n", 2)[0]
 
+          # Load bot allowlist from .github/releaseflow.json (#382)
+          $allowedBots = @('k-releaseflow[bot]')
+          try {
+              $cfgB64 = & gh api "repos/$env:REPO/contents/.github/releaseflow.json" --jq '.content' 2>$null
+              if ($LASTEXITCODE -eq 0 -and $cfgB64) {
+                  $cfgJson = [System.Text.Encoding]::UTF8.GetString(
+                      [Convert]::FromBase64String(($cfgB64 -replace '\s', ''))
+                  )
+                  $cfg = $cfgJson | ConvertFrom-Json -ErrorAction SilentlyContinue
+                  if ($cfg.PSObject.Properties['push_sentinel'] -and
+                      $cfg.push_sentinel.PSObject.Properties['allowed_bots']) {
+                      $allowedBots = @($cfg.push_sentinel.allowed_bots)
+                  }
+              }
+              $global:LASTEXITCODE = 0
+          }
+          catch {
+              Write-Host "::warning::Could not load allowed_bots from releaseflow.json — using default"
+          }
+
           if ($subject -match '^Merge pull request #\d+') {
               $classification = 'pr-merge'
               $reason = "PR merge detected"
@@ -73,8 +93,17 @@ jobs:
           elseif ($env:SENDER_TYPE -eq 'Bot' -or
                   $env:SENDER_LOGIN -match '\[bot\]$' -or
                   $env:PUSHER -match '\[bot\]$') {
-              $classification = 'bot-commit'
-              $reason = "Bot push detected: sender=$($env:SENDER_LOGIN)"
+              $botIdentity = if ($env:SENDER_LOGIN -match '\[bot\]$') { $env:SENDER_LOGIN }
+                             elseif ($env:PUSHER -match '\[bot\]$')   { $env:PUSHER }
+                             else { $env:SENDER_LOGIN }
+              if ($allowedBots -contains $botIdentity) {
+                  $classification = 'bot-commit'
+                  $reason = "Allowlisted bot: $botIdentity"
+              }
+              else {
+                  $classification = 'bot-commit-foreign'
+                  $reason = "Foreign bot: $botIdentity (not in push_sentinel.allowed_bots)"
+              }
           }
           elseif ($env:COMMIT_MESSAGE -match '\[skip ci\]') {
               $classification = 'bot-commit'
@@ -110,7 +139,12 @@ jobs:
           "classification=$classification" >> $env:GITHUB_OUTPUT
           "reason=$reason" >> $env:GITHUB_OUTPUT
 
-          $icon = switch ($classification) { 'pr-merge' { 'OK' } 'bot-commit' { 'BOT' } default { 'ALERT' } }
+          $icon = switch ($classification) {
+              'pr-merge'           { 'OK' }
+              'bot-commit'         { 'BOT' }
+              'bot-commit-foreign' { 'WARN' }
+              default              { 'ALERT' }
+          }
           Write-Host "::notice::Push Sentinel [$icon]: $reason"
 
           # Step Summary
@@ -129,17 +163,27 @@ jobs:
           | **Grund** | $reason |
           "@ >> $env:GITHUB_STEP_SUMMARY
 
-      - name: Create audit issue (unexpected push)
-        if: steps.classify.outputs.classification == 'unknown'
+      - name: Create audit issue (unknown or foreign bot)
+        if: steps.classify.outputs.classification == 'unknown' || steps.classify.outputs.classification == 'bot-commit-foreign'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLASSIFICATION: ${{ steps.classify.outputs.classification }}
+          REASON: ${{ steps.classify.outputs.reason }}
         run: |
+          if [ "$CLASSIFICATION" = "bot-commit-foreign" ]; then
+            TITLE="security: Foreign bot push on ${{ github.ref_name }} (${{ github.sha }})"
+            INTRO="Bot push classified as **foreign** (not in \`push_sentinel.allowed_bots\`). No release workflow was dispatched."
+          else
+            TITLE="security: Unaudited push on ${{ github.ref_name }} (${{ github.sha }})"
+            INTRO="Push by **${{ github.event.pusher.name }}** was not classified as PR merge or bot commit."
+          fi
           gh issue create \
-            --title "security: Unaudited push on ${{ github.ref_name }} (${{ github.sha }})" \
-            --body "Push by **${{ github.event.pusher.name }}** on \`${{ github.ref_name }}\` was not classified as a PR merge or bot commit. [View run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
+            --title "$TITLE" \
+            --body "$INTRO Reason: $REASON. [View run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
             --label "security:unaudited-push"
 
-      - name: Dispatch release workflow (unexpected push)
+      - name: Dispatch release workflow (only on true unknown)
+        # Foreign bots get an audit issue but NO release dispatch. (#382)
         if: steps.classify.outputs.classification == 'unknown'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
