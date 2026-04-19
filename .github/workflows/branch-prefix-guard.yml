@@ -1,0 +1,91 @@
+# ═══════════════════════════════════════════════════════════════
+# K.Actions.ReleaseFlow — Branch-Prefix Guard
+# version: unknown
+# commit: 3d363ba
+# installed: 2026-04-19
+# content-hash: B99FC0CE
+#
+# ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
+# Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
+# Für eigene Logik (Deployments, Notifications):
+#   → Eigenen Workflow mit repository_dispatch erstellen.
+#   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
+# ═══════════════════════════════════════════════════════════════
+name: Branch-Prefix Guard
+
+# Verhindert PRs mit falschen Branch-Prefixen auf dev/v* und release/v*.
+# Erlaubt: feature/*, fix/*, dev/v* (Promotion), release/v* (Stable).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - 'dev/v*'
+      - 'release/v*'
+      - 'master'
+      - 'main'
+
+permissions:
+  pull-requests: read
+
+jobs:
+  branch-prefix-guard:
+    name: Branch-Prefix prüfen
+    runs-on: ubuntu-latest
+    steps:
+      - name: Branch-Prefix validieren
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          echo "Head: $HEAD_REF → Base: $BASE_REF"
+
+          # Erlaubte Prefixe für Code-PRs
+          if [[ "$HEAD_REF" =~ ^feature/ ]] || [[ "$HEAD_REF" =~ ^fix/ ]]; then
+            echo "✅ Branch-Prefix '$HEAD_REF' ist erlaubt."
+            exit 0
+          fi
+
+          # Promotion-PRs: dev/v* → release/v* (Freeze)
+          if [[ "$HEAD_REF" =~ ^dev/v ]] && [[ "$BASE_REF" =~ ^release/v ]]; then
+            echo "✅ Promotion-PR erkannt (dev → release). Erlaubt."
+            exit 0
+          fi
+
+          # Stable-PRs: release/v* → master/main
+          if [[ "$HEAD_REF" =~ ^release/v ]] && [[ "$BASE_REF" =~ ^(master|main)$ ]]; then
+            echo "✅ Stable-PR erkannt (release → master). Erlaubt."
+            exit 0
+          fi
+
+          # Backflow-PRs: master/main → dev/v* oder release/v*
+          if [[ "$HEAD_REF" =~ ^(master|main)$ ]]; then
+            echo "✅ Backflow-PR erkannt (master → dev/release). Erlaubt."
+            exit 0
+          fi
+
+          # Alles andere ist verboten
+          echo "::error::❌ Branch-Prefix '$HEAD_REF' ist nicht erlaubt!"
+          echo ""
+          echo "Erlaubte Prefixe für Code-PRs:"
+          echo "  • feature/*  (z.B. feature/329-branch-prefix-guard)"
+          echo "  • fix/*      (z.B. fix/330-label-agnostic)"
+          echo ""
+          echo "Der PR-Titel-Typ (FEAT:, FIX:, DOC:, REFACTOR:) ist unabhängig vom Branch-Prefix."
+
+          cat >> "$GITHUB_STEP_SUMMARY" << 'SUMMARY'
+          ## Branch-Prefix Guard — Fehlgeschlagen
+
+          | Feld | Wert |
+          |------|------|
+          | **Head-Branch** | `${{ github.head_ref }}` |
+          | **Base-Branch** | `${{ github.base_ref }}` |
+
+          **Erlaubte Prefixe für Code-PRs:**
+          - `feature/*` (z.B. `feature/329-branch-prefix-guard`)
+          - `fix/*` (z.B. `fix/330-label-agnostic`)
+
+          > Der PR-Titel-Typ (`FEAT:`, `FIX:`, `DOC:`, `REFACTOR:`) ist unabhängig vom Branch-Prefix.
+          SUMMARY
+
+          exit 1

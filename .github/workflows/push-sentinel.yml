@@ -1,0 +1,158 @@
+# ═══════════════════════════════════════════════════════════════
+# K.Actions.ReleaseFlow — Push Sentinel (Audit)
+# version: unknown
+# commit: 3d363ba
+# installed: 2026-04-19
+# content-hash: AB4DFED2
+#
+# ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
+# Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
+# Für eigene Logik (Deployments, Notifications):
+#   → Eigenen Workflow mit repository_dispatch erstellen.
+#   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
+# ═══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
+# Push Sentinel — Defense in Depth (Layer 2)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Detective control: Classifies every push to protected branches.
+# PR merges and bot commits are logged silently.
+# Unexpected pushes create an audit issue + dispatch the release workflow.
+#
+# Requires: Label "security:unaudited-push" must exist in the repository.
+#
+# Issue: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/issues/178
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Push Sentinel
+
+on:
+  push:
+    branches:
+      - 'dev/v*'
+      - 'release/v*'
+      - 'main'
+      - 'master'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sentinel:
+    name: Push Classification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Classify push
+        id: classify
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMIT_SHA: ${{ github.sha }}
+          PUSHER: ${{ github.event.pusher.name }}
+          SENDER_LOGIN: ${{ github.event.sender.login }}
+          SENDER_TYPE: ${{ github.event.sender.type }}
+          REF_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        shell: pwsh
+        run: |
+          $classification = 'unknown'
+          $reason = ''
+
+          # First line only — commits with Co-Authored-By footers would
+          # otherwise break the `\(#\d+\)$` end-anchor match. (#307)
+          $subject = ($env:COMMIT_MESSAGE -split "`n", 2)[0]
+
+          if ($subject -match '^Merge pull request #\d+') {
+              $classification = 'pr-merge'
+              $reason = "PR merge detected"
+          }
+          elseif ($env:SENDER_TYPE -eq 'Bot' -or
+                  $env:SENDER_LOGIN -match '\[bot\]$' -or
+                  $env:PUSHER -match '\[bot\]$') {
+              $classification = 'bot-commit'
+              $reason = "Bot push detected: sender=$($env:SENDER_LOGIN)"
+          }
+          elseif ($env:COMMIT_MESSAGE -match '\[skip ci\]') {
+              $classification = 'bot-commit'
+              $reason = "Version bump detected: [skip ci]"
+          }
+          elseif ($subject -match '\(#\d+\)$') {
+              $classification = 'pr-merge'
+              $reason = "Squash merge detected"
+          }
+          else {
+              # API fallback: commits-to-PRs lookup (#307)
+              try {
+                  $prsJson = & gh api "repos/$env:REPO/commits/$env:COMMIT_SHA/pulls" 2>$null
+                  if ($LASTEXITCODE -eq 0 -and $prsJson) {
+                      $prs = $prsJson | ConvertFrom-Json -ErrorAction SilentlyContinue
+                      $mergedPrs = @($prs | Where-Object { $_.merged_at })
+                      if ($mergedPrs.Count -gt 0) {
+                          $prNumbers = ($mergedPrs | ForEach-Object { "#$($_.number)" }) -join ', '
+                          $classification = 'pr-merge'
+                          $reason = "API lookup: commit belongs to PR(s) $prNumbers"
+                      }
+                  }
+                  $global:LASTEXITCODE = 0
+              }
+              catch {
+                  Write-Host "::warning::Commits-to-PRs API lookup failed: $_"
+              }
+              if ($classification -eq 'unknown') {
+                  $reason = "Unclassified push: pusher=$($env:PUSHER), sender=$($env:SENDER_LOGIN)"
+              }
+          }
+
+          "classification=$classification" >> $env:GITHUB_OUTPUT
+          "reason=$reason" >> $env:GITHUB_OUTPUT
+
+          $icon = switch ($classification) { 'pr-merge' { 'OK' } 'bot-commit' { 'BOT' } default { 'ALERT' } }
+          Write-Host "::notice::Push Sentinel [$icon]: $reason"
+
+          # Step Summary
+          @"
+          ## Push Sentinel
+
+          > Der **Push Sentinel** ist eine Detective-Control (Layer 2), die jeden Push auf geschuetzte Branches klassifiziert.
+          > PR-Merges und Bot-Commits werden erwartet und nur protokolliert. Unerwartete Pushes erzeugen ein Audit-Issue.
+
+          | Feld | Wert |
+          |------|------|
+          | **Klassifikation** | ``$classification`` |
+          | **Branch** | ``$($env:REF_NAME)`` |
+          | **Pusher** | ``$($env:PUSHER)`` |
+          | **Sender** | ``$($env:SENDER_LOGIN)`` ($($env:SENDER_TYPE)) |
+          | **Grund** | $reason |
+          "@ >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Create audit issue (unexpected push)
+        if: steps.classify.outputs.classification == 'unknown'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "security: Unaudited push on ${{ github.ref_name }} (${{ github.sha }})" \
+            --body "Push by **${{ github.event.pusher.name }}** on \`${{ github.ref_name }}\` was not classified as a PR merge or bot commit. [View run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" \
+            --label "security:unaudited-push"
+
+      - name: Dispatch release workflow (unexpected push)
+        if: steps.classify.outputs.classification == 'unknown'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $branch = '${{ github.ref_name }}'
+          $workflow = switch -Regex ($branch) {
+              '^dev/v'           { 'alpha-release.yml' }
+              '^release/v'       { 'beta-release.yml' }
+              '^(main|master)$'  { 'release.yml' }
+              default            { $null }
+          }
+          if ($workflow) {
+              gh workflow run $workflow --ref $branch
+              Write-Host "::notice::Dispatched $workflow on $branch"
+          }
