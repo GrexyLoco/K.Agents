@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Plan Release (PO Dispatch)
-# version: untagged@9fefd0a
-# commit: 9fefd0a
+# version: untagged@f3f8389
+# commit: f3f8389
 # updated: 2026-04-19
-# content-hash: 41E0B658
+# content-hash: 9F60D69E
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -43,10 +43,23 @@ jobs:
         with:
           client-id: ${{ vars.RELEASEFLOW_APP_ID }}
           private-key: ${{ secrets.RELEASEFLOW_APP_PRIVATE_KEY }}
+          owner: GrexyLoco
+          repositories: >
+            ${{ github.event.repository.name }},K.Actions.ReleaseFlow
+
+      # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
+      # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar.
+      - name: Checkout ReleaseFlow Action
+        uses: actions/checkout@v6
+        with:
+          repository: GrexyLoco/K.Actions.ReleaseFlow
+          ref: v1
+          token: ${{ steps.app-token.outputs.token }}
+          path: .releaseflow
 
       - name: Create Release Train
         id: create
-        uses: GrexyLoco/K.Actions.ReleaseFlow@v1
+        uses: ./.releaseflow
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           action: plan-release
