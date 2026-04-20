@@ -1,0 +1,115 @@
+name: Quality Gate
+
+# Setzt den Status-Check 'quality-gate', den ReleaseFlow (G4 Stable-Gate)
+# via .github/releaseflow.json.statusCheck erwartet.
+#
+# Läuft auf PRs gegen geschützte Branches (für Merge-Block) und auf
+# direkte Pushes auf diese Branches (für Post-Merge-Status auf dem Commit,
+# den ReleaseFlow released).
+on:
+  pull_request:
+    branches:
+      - 'dev/v*'
+      - 'release/v*'
+      - 'master'
+      - 'main'
+  push:
+    branches:
+      - 'dev/v*'
+      - 'release/v*'
+      - 'master'
+      - 'main'
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    name: quality-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser -SkipPublisherCheck
+          $results = Invoke-ScriptAnalyzer `
+            -Path plugins/kagents `
+            -Recurse `
+            -Severity Error,Warning `
+            -ExcludeRule PSAvoidUsingWriteHost,PSUseShouldProcessForStateChangingFunctions
+
+          if ($results) {
+            $results | Format-Table -AutoSize | Out-String | Write-Output
+            $errorCount = @($results | Where-Object { $_.Severity -eq 'Error' }).Count
+            Write-Output "::warning::PSScriptAnalyzer: $($results.Count) Findings ($errorCount Error)"
+            if ($errorCount -gt 0) {
+              Write-Output "::error::PSScriptAnalyzer hat $errorCount Error-Severity-Findings — Quality-Gate fehlgeschlagen."
+              exit 1
+            }
+          } else {
+            Write-Output "PSScriptAnalyzer: Clean"
+          }
+
+      - name: Validate Plugin-Manifests (JSON-Syntax + Pflichtfelder)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $checks = @(
+            @{
+              Path = 'plugins/kagents/.github/plugin.json'
+              Required = @('name', 'version', 'description')
+            }
+            @{
+              Path = '.github/plugin/marketplace.json'
+              Required = @('metadata', 'plugins')
+            }
+            @{
+              Path = '.claude-plugin/marketplace.json'
+              Required = @('plugins')
+            }
+          )
+
+          $failed = $false
+          foreach ($c in $checks) {
+            if (-not (Test-Path $c.Path)) {
+              Write-Output "::warning::$($c.Path) nicht vorhanden — übersprungen."
+              continue
+            }
+            try {
+              $json = Get-Content $c.Path -Raw | ConvertFrom-Json
+              foreach ($field in $c.Required) {
+                if (-not $json.PSObject.Properties[$field]) {
+                  Write-Output "::error::$($c.Path): Pflichtfeld '$field' fehlt."
+                  $failed = $true
+                }
+              }
+              if (-not $failed) {
+                Write-Output "✓ $($c.Path)"
+              }
+            } catch {
+              Write-Output "::error::$($c.Path): JSON-Syntaxfehler — $_"
+              $failed = $true
+            }
+          }
+
+          if ($failed) {
+            Write-Output "::error::Plugin-Manifest-Validation fehlgeschlagen."
+            exit 1
+          }
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Quality Gate"
+            echo ""
+            echo "| Check | Status |"
+            echo "|-------|--------|"
+            echo "| PSScriptAnalyzer (plugins/kagents) | ${{ job.status }} |"
+            echo "| Plugin-Manifest-Validation | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
