@@ -210,3 +210,81 @@ on:
 - GitHub Outputs via `$env:GITHUB_OUTPUT`
 - Keine `Write-Host` — verwende `Write-Information`, `Write-Verbose`, `Write-Output`
 - Exit-Codes: `exit 0` (Erfolg), `exit 1` (Fehler)
+
+## Consumer-Integration-Pattern
+
+### Action-Interface
+
+`./.releaseflow` Composite Action (nach Cross-Repo-Checkout) akzeptiert:
+
+| Parameter | Werte | Zweck |
+|-----------|-------|-------|
+| `action` | `release` (Default), `plan-release`, `resolve-milestone` | Orchestrator-Modus |
+| `github-token` | App-Token | Pflicht |
+| `target-version` | `X.Y.Z` (ohne v-Prefix) | Nur für `plan-release` |
+| `base` | Commit/Tag, default `latest-stable` | Nur für `plan-release` |
+| `issue-number` | Issue-Nr. | Nur für `resolve-milestone` |
+| `branch-name` | Branch-Name | Nur für `resolve-milestone` |
+
+### Cross-Repo-Checkout-Pattern (#390)
+
+`K.Actions.ReleaseFlow` ist ein privates Repo, daher ist `uses: GrexyLoco/K.Actions.ReleaseFlow@v1` auf Consumer-Runnern nicht auflösbar. Die Workflows holen den Action-Code explizit mit App-Token ab:
+
+```yaml
+- name: Generate GitHub App Token
+  id: app-token
+  uses: actions/create-github-app-token@v3
+  with:
+    client-id: ${{ vars.RELEASEFLOW_APP_ID }}
+    private-key: ${{ secrets.RELEASEFLOW_APP_PRIVATE_KEY }}
+    owner: <owner>
+    repositories: >
+      ${{ github.event.repository.name }},K.Actions.ReleaseFlow
+
+- name: Checkout ReleaseFlow Action
+  uses: actions/checkout@v6
+  with:
+    repository: <owner>/K.Actions.ReleaseFlow
+    ref: v1
+    token: ${{ steps.app-token.outputs.token }}
+    path: .releaseflow
+    fetch-tags: true  # nur wenn Tags in der Action benötigt werden
+
+- name: Use Action
+  uses: ./.releaseflow
+  with:
+    github-token: ${{ steps.app-token.outputs.token }}
+    action: release
+```
+
+### Consumer-Hook-Workflow-Pattern (repository_dispatch)
+
+Für Plugin-Metadata-Bumps, Deployments, Notifications:
+
+```yaml
+name: Consumer Hooks
+on:
+  repository_dispatch:
+    types: [releaseflow-stable]  # oder alpha, beta, plan, auto-pr
+
+jobs:
+  handle-stable:
+    if: github.event.action == 'releaseflow-stable'
+    permissions:
+      contents: write  # nur wenn zurück-commited wird
+    steps:
+      - name: Validate payload
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+          TAG:     ${{ github.event.client_payload.tag }}
+          PHASE:   ${{ github.event.client_payload.phase }}
+        run: |
+          if [ -z "$VERSION" ] || [ "$PHASE" != "stable" ]; then exit 1; fi
+      - name: Your logic here
+        run: echo "Triggered by $TAG"
+```
+
+**Konventionen:**
+- Immer `client_payload` validieren (Version/Tag/Phase nicht leer).
+- Bei Commits zurück ins Repo: Bot-Identität `k-releaseflow[bot]` (oder eigener Bot in `push_sentinel.allowed_bots` eintragen) + `[skip ci]` in der Commit-Message.
+- Kein Re-Trigger der Release-Pipelines durch Consumer-Commits (daher `[skip ci]` und/oder paths-ignore).
