@@ -1,173 +1,82 @@
-name: "\U0001F680 Release"
+# ═══════════════════════════════════════════════════════════════
+# K.Actions.ReleaseFlow — Release Pipeline (Stable)
+# version: untagged@f3f8389
+# commit: f3f8389
+# updated: 2026-04-20
+# content-hash: 78323506
+#
+# ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
+# Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
+# Für eigene Logik (Deployments, Notifications):
+#   → Eigenen Workflow mit repository_dispatch erstellen.
+#   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
+# ═══════════════════════════════════════════════════════════════
+# Basic ReleaseFlow Workflow
+# 
+# This is the minimal setup for K.Actions.ReleaseFlow.
+# It triggers on merged PRs to main, dev/*, and release/* branches.
+
+name: Release
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [master]
-    paths-ignore:
-      - '.github/workflows/release.yml'
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - 'dev/v*'
+      - 'release/v*'
 
 jobs:
   release:
-    name: "\U0001F680 Smart Release"
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    # Only run when PR is merged (not just closed)
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    
     permissions:
-      contents: write
-      packages: read
+      contents: write      # For tags and releases
+      pull-requests: write # For backflow PRs
+    
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          fetch-depth: 0
-
-      - name: Checkout NextPluginVersion
-        uses: actions/checkout@v4
+          fetch-depth: 0    # Full history for tag operations
+          fetch-tags: true  # Ensure tags are fetched
+      
+      - name: 🔑 Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v3
         with:
-          repository: GrexyLoco/K.Actions.NextPluginVersion
-          token: ${{ secrets.K_ACTIONS_PAT }}
-          path: .github/actions/next-plugin-version
+          client-id: ${{ vars.RELEASEFLOW_APP_ID }}
+          private-key: ${{ secrets.RELEASEFLOW_APP_PRIVATE_KEY }}
+          owner: GrexyLoco
+          repositories: >
+            ${{ github.event.repository.name }},K.Actions.ReleaseFlow
 
-      - name: Version berechnen
-        id: version
-        uses: ./.github/actions/next-plugin-version
+      # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
+      # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar.
+      - name: Checkout ReleaseFlow Action
+        uses: actions/checkout@v6
         with:
-          manifestPath: plugins/kagents/.github/plugin.json
-          branchName: ${{ github.ref_name }}
+          repository: GrexyLoco/K.Actions.ReleaseFlow
+          ref: v1
+          token: ${{ steps.app-token.outputs.token }}
+          path: .releaseflow
 
-      - name: Smartagr installieren
-        shell: pwsh
+      - name: Run ReleaseFlow
+        id: release
+        uses: ./.releaseflow
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+
+      - name: Consumer-Hook auslösen
+        if: success() && steps.release.outputs.phase != ''
         env:
-          GH_PACKAGES_TOKEN: ${{ secrets.K_ACTIONS_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          $owner = 'GrexyLoco'
-          $token = $env:GH_PACKAGES_TOKEN
-          Write-Output "::add-mask::${token}"
-          if (-not $token) { throw "K_ACTIONS_PAT ist leer!" }
-
-          # Bootstrap-Script laden (fuer Repair-PSResourceGetCase)
-          . "${{ github.workspace }}/.github/workflows/scripts/Install-PackageRepoProviderBootstrap.ps1"
-
-          # NuGet V3 Feed mit Bearer Auth (PAT als Bearer Token)
-          $headers = @{ Authorization = "Bearer $token" }
-          $feedUrl = "https://nuget.pkg.github.com/${owner}/index.json"
-
-          Write-Information -InformationAction Continue "Lade NuGet Service Index..."
-          $index = Invoke-RestMethod -Uri $feedUrl -Headers $headers
-          $baseAddress = ($index.resources | Where-Object { $_.'@type' -eq 'PackageBaseAddress/3.0.0' }).'@id'
-          if (-not $baseAddress.EndsWith('/')) { $baseAddress += '/' }
-          Write-Information -InformationAction Continue "PackageBaseAddress: $baseAddress"
-
-          $modulesPath = Join-Path $HOME '.local/share/powershell/Modules'
-          $modules = @(
-            'K.PSGallery.PackageRepoProvider.GitHub',
-            'K.PSGallery.PackageRepoProvider',
-            'K.PSGallery.Smartagr'
-          )
-
-          foreach ($mod in $modules) {
-            Write-Information -InformationAction Continue "Installiere $mod..."
-            $lowerMod = $mod.ToLower()
-
-            # Version ermitteln
-            $versionsUrl = "${baseAddress}${lowerMod}/index.json"
-            $versionsData = Invoke-RestMethod -Uri $versionsUrl -Headers $headers
-            $latestVersion = $versionsData.versions[-1]
-            Write-Information -InformationAction Continue "  Version: $latestVersion"
-
-            # .nupkg herunterladen
-            $nupkgUrl = "${baseAddress}${lowerMod}/${latestVersion}/${lowerMod}.${latestVersion}.nupkg"
-            $tempFile = Join-Path $env:RUNNER_TEMP "${mod}.${latestVersion}.nupkg"
-            Invoke-WebRequest -Uri $nupkgUrl -Headers $headers -OutFile $tempFile
-
-            # In Modules-Pfad entpacken
-            $destPath = Join-Path $modulesPath $mod $latestVersion
-            New-Item -Path $destPath -ItemType Directory -Force | Out-Null
-            Expand-Archive $tempFile -DestinationPath $destPath -Force
-
-            # PSResourceGet #1402 Workaround (Linux: lowercase Ordnernamen fixen)
-            Repair-PSResourceGetCase -ModuleName $mod
-
-            # Modul global importieren (-Global fuer ScriptsToProcess Scope)
-            Import-Module $mod -Force -Global -ErrorAction Stop
-            $v = (Get-Module $mod).Version
-            Write-Information -InformationAction Continue "$mod v$v installiert"
-          }
-
-      - name: Smart Release erstellen
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          $version = 'v${{ steps.version.outputs.newVersion }}'
-          $nl = [Environment]::NewLine
-          $notes = "## K.Agents $version" + $nl + $nl
-          $notes += "Aktualisierte AI-Agents und Skills." + $nl + $nl
-          $notes += "### Update" + $nl
-          $notes += '```' + $nl + "/plugin update kagents" + $nl + '```' + $nl + $nl
-          $notes += "---" + $nl + "*Auto-generated by Smartagr*"
-          Write-Information -InformationAction Continue "Erstelle Release $version..."
-          $result = New-SmartRelease `
-            -TargetVersion $version `
-            -ReleaseNotes $notes `
-            -PushToRemote `
-            -Force
-          if ($result.Success) {
-            Write-Information -InformationAction Continue "Release erstellt: $($result.ReleaseUrl)"
-          } else {
-            Write-Error "Release fehlgeschlagen: $($result.ErrorMessage)"
-            exit 1
-          }
-
-      - name: JSON-Dateien aktualisieren
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $newVersion = '${{ steps.version.outputs.newVersion }}'
-
-          # 1. Source of Truth: plugin.json
-          $pluginPath = Join-Path 'plugins' 'kagents' '.github' 'plugin.json'
-          $plugin = Get-Content $pluginPath -Raw | ConvertFrom-Json
-          $plugin.version = $newVersion
-          $plugin | ConvertTo-Json -Depth 10 | Set-Content $pluginPath -Encoding utf8
-
-          # 2. Marketplace
-          $marketplacePath = Join-Path '.github' 'plugin' 'marketplace.json'
-          $marketplace = Get-Content $marketplacePath -Raw | ConvertFrom-Json
-          $marketplace.metadata.version = $newVersion
-          $marketplace.plugins[0].version = $newVersion
-          $marketplace | ConvertTo-Json -Depth 10 | Set-Content $marketplacePath -Encoding utf8
-
-          # 3. Claude Code Marketplace (Single Source of Truth)
-          $claudeMarketplacePath = Join-Path '.claude-plugin' 'marketplace.json'
-          if (Test-Path $claudeMarketplacePath) {
-            $claudeMarketplace = Get-Content $claudeMarketplacePath -Raw | ConvertFrom-Json
-            $claudeMarketplace.plugins[0].version = $newVersion
-            $claudeMarketplace | ConvertTo-Json -Depth 10 | Set-Content $claudeMarketplacePath -Encoding utf8
-          }
-
-          Write-Information -InformationAction Continue "Alle JSONs auf $newVersion aktualisiert"
-
-      - name: Version committen
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add plugins/kagents/.github/plugin.json .github/plugin/marketplace.json
-          if [ -f ".claude-plugin/marketplace.json" ]; then git add .claude-plugin/marketplace.json; fi
-          git diff --staged --quiet && echo "Keine Aenderungen" && exit 0
-          git commit -m "chore(plugin): Version auf ${{ steps.version.outputs.newVersion }} aktualisiert [skip ci]"
-          git push
-
-      - name: Summary
-        if: always()
-        shell: pwsh
-        run: |
-          $current = '${{ steps.version.outputs.currentVersion }}'
-          $new = '${{ steps.version.outputs.newVersion }}'
-          $tag = 'v${{ steps.version.outputs.newVersion }}'
-          $summary = "## K.Agents Release`n`n"
-          $summary += "| Property | Value |`n|----------|-------|`n"
-          $summary += "| Version | $current -> $new |`n"
-          $summary += "| Tag | $tag |`n"
-          Write-Output $summary >> $env:GITHUB_STEP_SUMMARY
+          gh api "repos/${{ github.repository }}/dispatches" \
+            -f event_type="releaseflow-${{ steps.release.outputs.phase }}" \
+            -f "client_payload[version]=${{ steps.release.outputs.version }}" \
+            -f "client_payload[tag]=${{ steps.release.outputs.tag }}" \
+            -f "client_payload[release-url]=${{ steps.release.outputs.release-url }}" \
+            -f "client_payload[phase]=${{ steps.release.outputs.phase }}"

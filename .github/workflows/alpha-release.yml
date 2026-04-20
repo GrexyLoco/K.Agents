@@ -1,0 +1,139 @@
+# ═══════════════════════════════════════════════════════════════
+# K.Actions.ReleaseFlow — Alpha Release Pipeline
+# version: untagged@f3f8389
+# commit: f3f8389
+# updated: 2026-04-20
+# content-hash: 49F1BA49
+#
+# ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
+# Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
+# Für eigene Logik (Deployments, Notifications):
+#   → Eigenen Workflow mit repository_dispatch erstellen.
+#   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
+# ═══════════════════════════════════════════════════════════════
+name: Alpha Release Pipeline
+
+# Trigger: PR merged in dev/v* Branches (Feature-/Fix-PR)
+# Erzeugt vX.Y.Z-alpha.N Tag + GitHub Pre-release
+# Labelt die im PR referenzierten Issues mit phase:in-alpha (#216)
+#
+# Architektur: Option A — Getrennte Workflows (empfohlen)
+#   alpha-release.yml → dev/v*    → Alpha
+#   beta-release.yml  → release/v* → Beta
+#   release.yml       → master     → Stable
+#
+# workflow_dispatch: Break-Glass für direkte Pushes auf dev/v* (#178).
+# Dispatch auf den gewünschten dev/v*-Branch auslösen — Version wird
+# automatisch aus dem Branch-Namen extrahiert.
+on:
+  pull_request:
+    types: [closed]
+    branches: ['dev/v*']
+  workflow_dispatch:
+
+# Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
+# Action selbst (New-PreReleaseTag mit atomarer gh-api-Reservierung + Retry).
+
+permissions:
+  contents: write
+  actions: read
+  pull-requests: read
+  issues: write   # für phase:in-alpha label
+
+jobs:
+  alpha-release:
+    name: Alpha Release
+    # PR-Modus: nur merged PRs von feature/* oder fix/*
+    # Dispatch-Modus: immer ausführen (Break-Glass, #178)
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       (startsWith(github.event.pull_request.head.ref, 'feature/') ||
+        startsWith(github.event.pull_request.head.ref, 'fix/')))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: 🔑 GitHub App Token generieren
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASEFLOW_APP_ID }}
+          private-key: ${{ secrets.RELEASEFLOW_APP_PRIVATE_KEY }}
+          owner: GrexyLoco
+          repositories: >
+            ${{ github.event.repository.name }},K.Actions.ReleaseFlow
+
+      # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
+      # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar — wir holen
+      # den Action-Code explizit mit dem App-Token ab.
+      - name: Checkout ReleaseFlow Action
+        uses: actions/checkout@v6
+        with:
+          repository: GrexyLoco/K.Actions.ReleaseFlow
+          ref: v1
+          token: ${{ steps.app-token.outputs.token }}
+          path: .releaseflow
+
+      # Label integrated issues with phase:in-alpha (#216)
+      # Parses closing keywords from PR body and labels the referenced issues.
+      # The label marks issues as "integrated but not yet released" — they stay
+      # open and are bulk-closed when the Stable-PR is merged into master.
+      - name: Label integrated issues with phase:in-alpha
+        # Skip bei workflow_dispatch: kein PR-Body zum Parsen (#178)
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        shell: bash
+        run: |
+          ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+          if [ -z "$ISSUE_NUMBERS" ]; then
+            echo "No closing keywords found — no issues to label."
+            exit 0
+          fi
+          REPO="${{ github.repository }}"
+          for ISSUE in $ISSUE_NUMBERS; do
+            gh issue edit "$ISSUE" --repo "$REPO" --add-label 'phase:in-alpha' 2>&1 || \
+              echo "::warning::Could not label issue #$ISSUE (continuing)"
+          done
+
+      - name: ReleaseFlow ausführen (Alpha)
+        id: release
+        uses: ./.releaseflow
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          action: release
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          TAG="${{ steps.release.outputs.tag }}"
+          URL="${{ steps.release.outputs.release-url }}"
+          CREATED="${{ steps.release.outputs.release-created }}"
+
+          if [ "$CREATED" = "true" ]; then
+            echo "## 🔬 Alpha Release: $TAG" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ [Release $TAG]($URL) erfolgreich erstellt." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 🔬 Alpha Release" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "ℹ️ Kein neues Release erstellt." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Consumer-Hook auslösen
+        if: success() && steps.release.outputs.release-created == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/dispatches" \
+            -f event_type="releaseflow-alpha" \
+            -f "client_payload[version]=${{ steps.release.outputs.version }}" \
+            -f "client_payload[tag]=${{ steps.release.outputs.tag }}" \
+            -f "client_payload[release-url]=${{ steps.release.outputs.release-url }}" \
+            -f "client_payload[phase]=alpha"

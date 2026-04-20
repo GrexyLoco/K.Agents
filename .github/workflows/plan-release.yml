@@ -1,0 +1,153 @@
+# ═══════════════════════════════════════════════════════════════
+# K.Actions.ReleaseFlow — Plan Release (PO Dispatch)
+# version: untagged@f3f8389
+# commit: f3f8389
+# updated: 2026-04-20
+# content-hash: 9F60D69E
+#
+# ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
+# Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
+# Für eigene Logik (Deployments, Notifications):
+#   → Eigenen Workflow mit repository_dispatch erstellen.
+#   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
+# ═══════════════════════════════════════════════════════════════
+name: Plan Release (PO Dispatch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_version:
+        description: 'Zielversion (ohne v-Prefix, z.B. 2.0.0)'
+        required: true
+        type: string
+      base:
+        description: 'Basis-Commit/Tag (default: latest-stable)'
+        required: false
+        default: 'latest-stable'
+        type: string
+
+jobs:
+  plan-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: 🔑 Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASEFLOW_APP_ID }}
+          private-key: ${{ secrets.RELEASEFLOW_APP_PRIVATE_KEY }}
+          owner: GrexyLoco
+          repositories: >
+            ${{ github.event.repository.name }},K.Actions.ReleaseFlow
+
+      # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
+      # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar.
+      - name: Checkout ReleaseFlow Action
+        uses: actions/checkout@v6
+        with:
+          repository: GrexyLoco/K.Actions.ReleaseFlow
+          ref: v1
+          token: ${{ steps.app-token.outputs.token }}
+          path: .releaseflow
+
+      - name: Create Release Train
+        id: create
+        uses: ./.releaseflow
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          action: plan-release
+          target-version: ${{ inputs.target_version }}
+          base: ${{ inputs.base }}
+
+      - name: Summary
+        if: always()
+        env:
+          DEV_BRANCH: ${{ steps.create.outputs.dev-branch }}
+          INTENT_URL: ${{ steps.create.outputs.intent-url }}
+          BASE_COMMIT: ${{ steps.create.outputs.base-commit }}
+          MILESTONE_URL: ${{ steps.create.outputs.milestone-url }}
+          MILESTONE_TITLE: ${{ steps.create.outputs.milestone-title }}
+          REPO_URL: "https://github.com/${{ github.repository }}"
+          CREATE_OUTCOME: ${{ steps.create.outcome }}
+        run: |
+          # ── Klickbare Links (#89) ──────────────────────────────────
+          if [ "$CREATE_OUTCOME" = "success" ]; then
+
+            # Dev Branch → Tree-Link
+            if [ -n "$DEV_BRANCH" ]; then
+              DEV_BRANCH_LINK="[\`$DEV_BRANCH\`]($REPO_URL/tree/$DEV_BRANCH)"
+            else
+              DEV_BRANCH_LINK="—"
+            fi
+
+            # Intent → vorhandene URL als Markdown-Link
+            if [ -n "$INTENT_URL" ]; then
+              INTENT_LINK="[Release Intent]($INTENT_URL)"
+            else
+              INTENT_LINK="—"
+            fi
+
+            # Base Commit → Commit-Link + Tags/Branches (#88)
+            if [ -n "$BASE_COMMIT" ]; then
+              SHORT_SHA="${BASE_COMMIT:0:7}"
+              BASE_COMMIT_LINK="[\`$SHORT_SHA\`]($REPO_URL/commit/$BASE_COMMIT)"
+
+              BASE_TAGS=$(git tag --contains "$BASE_COMMIT" 2>/dev/null | tr '\n' ', ' | sed 's/,$//' | sed 's/,/, /g')
+              BASE_BRANCHES=$(git branch -r --contains "$BASE_COMMIT" 2>/dev/null | tr -d ' ' | tr '\n' ', ' | sed 's/,$//' | sed 's/,/, /g')
+
+              [ -n "$BASE_TAGS" ]     && BASE_COMMIT_LINK="$BASE_COMMIT_LINK · 🏷️ $BASE_TAGS"
+              [ -n "$BASE_BRANCHES" ] && BASE_COMMIT_LINK="$BASE_COMMIT_LINK · 🌿 $BASE_BRANCHES"
+            else
+              BASE_COMMIT_LINK="—"
+            fi
+
+            # Milestone → Link oder Titel oder —
+            if [ -n "$MILESTONE_URL" ]; then
+              MILESTONE_LINK="[$MILESTONE_TITLE]($MILESTONE_URL)"
+            elif [ -n "$MILESTONE_TITLE" ]; then
+              MILESTONE_LINK="\`$MILESTONE_TITLE\`"
+            else
+              MILESTONE_LINK="—"
+            fi
+
+            echo "## ✅ Release Train erstellt" >> $GITHUB_STEP_SUMMARY
+          else
+            DEV_BRANCH_LINK="—"
+            INTENT_LINK="—"
+            BASE_COMMIT_LINK="—"
+            MILESTONE_LINK="—"
+            echo "## ❌ Release Train fehlgeschlagen" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Feld | Wert |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Dev Branch** | $DEV_BRANCH_LINK |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Milestone** | $MILESTONE_LINK |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Intent** | $INTENT_LINK |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Base Commit** | $BASE_COMMIT_LINK |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Consumer-Hook auslösen
+        if: success() && steps.create.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/dispatches" \
+            -f event_type="releaseflow-plan" \
+            -f "client_payload[version]=${{ steps.create.outputs.dev-branch }}" \
+            -f "client_payload[intent-url]=${{ steps.create.outputs.intent-url }}" \
+            -f "client_payload[phase]=plan"
+
+    outputs:
+      dev-branch: ${{ steps.create.outputs.dev-branch }}
+      intent-url: ${{ steps.create.outputs.intent-url }}
+      base-commit: ${{ steps.create.outputs.base-commit }}
+      milestone-url: ${{ steps.create.outputs.milestone-url }}
+      milestone-title: ${{ steps.create.outputs.milestone-title }}
