@@ -77,8 +77,8 @@ $postToolScript   = Join-Path $hooksDir 'post_tool_call.ps1'
 function Get-ClaudeSettingsPath {
     param([string]$Scope)
     if ($Scope -eq 'user') {
-        $home = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
-        return Join-Path $home '.claude' 'settings.json'
+        $userHome = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+        return Join-Path $userHome '.claude' 'settings.json'
     }
     return Join-Path (Get-Location) '.claude' 'settings.json'
 }
