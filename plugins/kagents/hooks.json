@@ -1,0 +1,40 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/releaseflow-guardrail.ps1\"",
+          "windows": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/releaseflow-guardrail.ps1\"",
+          "linux": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/releaseflow-guardrail.ps1'",
+          "osx": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/releaseflow-guardrail.ps1'"
+        }
+      ]
+    },
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_tool_call.ps1\"",
+          "windows": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_tool_call.ps1\"",
+          "linux": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/pre_tool_call.ps1'",
+          "osx": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/pre_tool_call.ps1'"
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/post_tool_call.ps1\"",
+          "windows": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/post_tool_call.ps1\"",
+          "linux": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/post_tool_call.ps1'",
+          "osx": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/post_tool_call.ps1'"
+        }
+      ]
+    }
+  ]
+}

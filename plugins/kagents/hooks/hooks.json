@@ -6,8 +6,10 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "pwsh",
-            "command": "& \"$env:CLAUDE_PLUGIN_ROOT/hooks/releaseflow-guardrail.ps1\""
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/releaseflow-guardrail.ps1\"",
+            "windows": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/releaseflow-guardrail.ps1\"",
+            "linux": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/releaseflow-guardrail.ps1'",
+            "osx": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/releaseflow-guardrail.ps1'"
           }
         ]
       },
@@ -15,8 +17,10 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "pwsh",
-            "command": "& \"$env:CLAUDE_PLUGIN_ROOT/hooks/pre_tool_call.ps1\""
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_tool_call.ps1\"",
+            "windows": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_tool_call.ps1\"",
+            "linux": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/pre_tool_call.ps1'",
+            "osx": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/pre_tool_call.ps1'"
           }
         ]
       }
@@ -26,19 +30,10 @@
         "hooks": [
           {
             "type": "command",
-            "shell": "pwsh",
-            "command": "& \"$env:CLAUDE_PLUGIN_ROOT/hooks/post_tool_call.ps1\""
-          }
-        ]
-      }
-    ],
-    "PostToolUseFailure": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "shell": "pwsh",
-            "command": "& \"$env:CLAUDE_PLUGIN_ROOT/hooks/on_error.ps1\""
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/post_tool_call.ps1\"",
+            "windows": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/post_tool_call.ps1\"",
+            "linux": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/post_tool_call.ps1'",
+            "osx": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/post_tool_call.ps1'"
           }
         ]
       }

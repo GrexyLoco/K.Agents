@@ -1,6 +1,6 @@
 {
   "statusCheck": {
-    "enabled": false,
+    "enabled": true,
     "context": "quality-gate"
   }
 }
