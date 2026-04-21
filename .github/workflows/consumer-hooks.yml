@@ -1,0 +1,128 @@
+name: Consumer Hooks
+
+# Reagiert auf repository_dispatch-Events der ReleaseFlow-App.
+# Übernimmt die Plugin-spezifische Logik, die nicht in den generischen
+# ReleaseFlow-Workflows enthalten ist:
+#   - Version-Bump in plugin.json, marketplace.json, .claude-plugin/marketplace.json
+#   - [skip ci]-Commit auf master
+#
+# Aktuelle Hooks:
+#   - releaseflow-stable → update-plugin-metadata
+#
+# Known-Issue (Issue folgt): JSON-Bump läuft NACH dem Stable-Tag — Konsistent
+# mit dem alten Push-on-master-Modell, aber Tag vX.Y.Z zeigt auf einen Commit
+# mit alter Plugin-JSON-Version. Marketplace-Installation per Tag liefert daher
+# plugin.json = (X.Y.Z-1). Fix erfordert Upstream-Änderung in ReleaseFlow
+# (Pre-Release-Hook oder JSON-Bump im Promotion-PR).
+on:
+  repository_dispatch:
+    types:
+      - releaseflow-stable
+
+jobs:
+  update-plugin-metadata:
+    name: Update Plugin-JSONs nach Stable-Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Validate payload
+        shell: bash
+        env:
+          NEW_VERSION: ${{ github.event.client_payload.version }}
+          TAG: ${{ github.event.client_payload.tag }}
+          PHASE: ${{ github.event.client_payload.phase }}
+        run: |
+          if [ -z "$NEW_VERSION" ] || [ -z "$TAG" ] || [ "$PHASE" != "stable" ]; then
+            echo "::error::Invalid payload: version='$NEW_VERSION', tag='$TAG', phase='$PHASE'"
+            exit 1
+          fi
+          echo "Stable release detected: $TAG (version=$NEW_VERSION)"
+
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASEFLOW_APP_ID }}
+          private-key: ${{ secrets.RELEASEFLOW_APP_PRIVATE_KEY }}
+          owner: GrexyLoco
+          repositories: ${{ github.event.repository.name }}
+
+      - uses: actions/checkout@v6
+        with:
+          ref: master
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Update Plugin-JSONs auf neue Version
+        shell: pwsh
+        env:
+          NEW_VERSION: ${{ github.event.client_payload.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $newVersion = $env:NEW_VERSION
+
+          # 1. Source of Truth: plugin.json
+          $pluginPath = Join-Path 'plugins' 'kagents' '.github' 'plugin.json'
+          $plugin = Get-Content $pluginPath -Raw | ConvertFrom-Json
+          $plugin.version = $newVersion
+          $plugin | ConvertTo-Json -Depth 10 | Set-Content $pluginPath -Encoding utf8
+
+          # 2. Marketplace
+          $marketplacePath = Join-Path '.github' 'plugin' 'marketplace.json'
+          $marketplace = Get-Content $marketplacePath -Raw | ConvertFrom-Json
+          $marketplace.metadata.version = $newVersion
+          $marketplace.plugins[0].version = $newVersion
+          $marketplace | ConvertTo-Json -Depth 10 | Set-Content $marketplacePath -Encoding utf8
+
+          # 3. Claude Code Marketplace
+          $claudeMarketplacePath = Join-Path '.claude-plugin' 'marketplace.json'
+          if (Test-Path $claudeMarketplacePath) {
+            $claudeMarketplace = Get-Content $claudeMarketplacePath -Raw | ConvertFrom-Json
+            $claudeMarketplace.plugins[0].version = $newVersion
+            $claudeMarketplace | ConvertTo-Json -Depth 10 | Set-Content $claudeMarketplacePath -Encoding utf8
+          }
+
+          Write-Output "Plugin-Metadata auf $newVersion aktualisiert"
+
+      - name: Commit + Push [skip ci]
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NEW_VERSION: ${{ github.event.client_payload.version }}
+        shell: bash
+        run: |
+          # Bot-Identität: muss mit push_sentinel allowed_bots übereinstimmen.
+          # k-releaseflow[bot] wird als allowlisted klassifiziert (push-sentinel.yml:70).
+          git config user.name "k-releaseflow[bot]"
+          git config user.email "k-releaseflow[bot]@users.noreply.github.com"
+
+          git add plugins/kagents/.github/plugin.json .github/plugin/marketplace.json
+          if [ -f ".claude-plugin/marketplace.json" ]; then
+            git add .claude-plugin/marketplace.json
+          fi
+
+          if git diff --staged --quiet; then
+            echo "Keine Änderungen an Plugin-JSONs — bereits auf $NEW_VERSION."
+            exit 0
+          fi
+
+          git commit -m "chore(plugin): Version auf $NEW_VERSION aktualisiert [skip ci]"
+          git push origin master
+
+      - name: Summary
+        if: always()
+        env:
+          NEW_VERSION: ${{ github.event.client_payload.version }}
+          TAG: ${{ github.event.client_payload.tag }}
+          RELEASE_URL: ${{ github.event.client_payload.release-url }}
+        shell: bash
+        run: |
+          {
+            echo "## Consumer Hook: Plugin-Metadata nach Stable-Release"
+            echo ""
+            echo "| Feld | Wert |"
+            echo "|------|------|"
+            echo "| **Tag** | \`$TAG\` |"
+            echo "| **Version** | \`$NEW_VERSION\` |"
+            echo "| **Release** | $RELEASE_URL |"
+          } >> "$GITHUB_STEP_SUMMARY"

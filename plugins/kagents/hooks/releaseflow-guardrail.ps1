@@ -19,6 +19,20 @@ $ErrorActionPreference = 'Stop'
     Break-Glass: Setze RELEASEFLOW_BYPASS=1 in der Shell, um den Guardrail zu umgehen.
 
 .NOTES
+    Defense-in-Depth-Architektur — dieser Hook ist der **proaktive** Layer:
+
+      Layer 1 (proaktiv, LOKAL im Agent-Terminal):
+        Dieser Hook. Blockt 'gh pr create'/'gh pr merge' VOR der API-Call,
+        verhindert dass ein falscher PR ueberhaupt in GitHub angelegt wird.
+
+      Layer 2 (reaktiv, REMOTE in CI):
+        .github/workflows/branch-prefix-guard.yml — markiert PR als failing,
+        sobald er in GitHub existiert und eine falsche Prefix-Kombination hat.
+
+      Layer 3 (detective, REMOTE in CI):
+        .github/workflows/push-sentinel.yml — protokolliert unerwartete Pushes
+        auf geschuetzte Branches, erzeugt Audit-Issue + dispatched Release.
+
     Gibt JSON via stdout aus, um den Tool-Aufruf in Claude Code zu blockieren:
         {"decision":"block","reason":"..."}
     Exit-Code 0: kein Block (normaler Verlauf oder Bypass).
@@ -58,13 +72,17 @@ function Test-IsReleaseFlowRepo {
     [CmdletBinding()]
     param([string]$RepoPath)
 
-    # Marker 1: .releaseflow Datei
+    # Marker 1: .releaseflow Datei (Legacy-Marker, wird noch von alten Consumer-Repos gesetzt)
     if (Test-Path (Join-Path $RepoPath '.releaseflow')) { return $true }
 
     # Marker 2: releaseflow.json
+    # ReleaseFlow-App (ab v1/f3f8389) seedet die Config unter .github/releaseflow.json.
+    # Der Root-Pfad wird fuer Rueckwaertskompatibilitaet mit aelteren App-Versionen
+    # weiter geprueft.
+    if (Test-Path (Join-Path $RepoPath '.github' 'releaseflow.json')) { return $true }
     if (Test-Path (Join-Path $RepoPath 'releaseflow.json')) { return $true }
 
-    # Marker 3: action.yml mit K.Actions.ReleaseFlow
+    # Marker 3: action.yml mit K.Actions.ReleaseFlow (nur relevant, wenn das Repo selbst eine Action ist)
     $actionYml = Join-Path $RepoPath 'action.yml'
     if (Test-Path $actionYml) {
         $content = Get-Content $actionYml -Raw -ErrorAction SilentlyContinue
