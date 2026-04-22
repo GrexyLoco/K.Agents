@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Plan Release (PO Dispatch)
-# version: untagged@f3f8389
-# commit: f3f8389
-# updated: 2026-04-20
-# content-hash: 9F60D69E
+# version: untagged@e2b362e
+# commit: e2b362e
+# updated: 2026-04-22
+# content-hash: BB4533FD
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -32,11 +32,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
+      # GitHub App Token ZUERST (#406) — siehe Kommentar in basic.yml
       - name: 🔑 Generate GitHub App Token
         id: app-token
         uses: actions/create-github-app-token@v3
@@ -46,6 +42,12 @@ jobs:
           owner: GrexyLoco
           repositories: >
             ${{ github.event.repository.name }},K.Actions.ReleaseFlow
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app-token.outputs.token }}
 
       # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
       # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar.
