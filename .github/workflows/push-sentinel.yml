@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Push Sentinel (Audit)
-# version: untagged@e2b362e
-# commit: e2b362e
-# updated: 2026-04-22
-# content-hash: 1E7D8E71
+# version: v1.9.13
+# commit: 9f8a3fa
+# updated: 2026-04-25
+# content-hash: 43F3AB17
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -23,7 +23,7 @@
 # Issue: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/issues/178
 # ═══════════════════════════════════════════════════════════════════════════════
 
-name: Push Sentinel
+name: "RF: Push Sentinel"
 
 on:
   push:

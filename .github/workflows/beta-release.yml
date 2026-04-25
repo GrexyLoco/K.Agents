@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Beta Release Pipeline
-# version: untagged@e2b362e
-# commit: e2b362e
-# updated: 2026-04-22
-# content-hash: 604FF1A6
+# version: v1.9.13
+# commit: 9f8a3fa
+# updated: 2026-04-25
+# content-hash: 395714A6
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -11,7 +11,7 @@
 #   → Eigenen Workflow mit repository_dispatch erstellen.
 #   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
 # ═══════════════════════════════════════════════════════════════
-name: Beta Release Pipeline
+name: "RF: Beta Release Pipeline"
 
 # Trigger: Push auf release/v* Branches (Fix-PR oder Promotion-PR gemerged)
 # Erzeugt vX.Y.Z-beta.N Tag + GitHub Pre-release

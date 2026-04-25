@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Auto-PR Pipeline
-# version: untagged@e2b362e
-# commit: e2b362e
-# updated: 2026-04-22
-# content-hash: F0FD703B
+# version: v1.9.13
+# commit: 9f8a3fa
+# updated: 2026-04-25
+# content-hash: B0A78867
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -11,7 +11,7 @@
 #   → Eigenen Workflow mit repository_dispatch erstellen.
 #   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
 # ═══════════════════════════════════════════════════════════════
-name: Auto-PR
+name: "RF: 🔧 Auto-PR"
 
 # Trigger:
 #   - Push auf fix/* oder feature/* Branches (primär)
@@ -35,7 +35,7 @@ on:
 
 jobs:
   auto-pr:
-    name: Auto-PR erstellen
+    name: 🤖 Auto-PR erstellen
     runs-on: ubuntu-latest
     permissions:
       contents: read

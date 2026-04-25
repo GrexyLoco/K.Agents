@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Alpha Release Pipeline
-# version: untagged@e2b362e
-# commit: e2b362e
-# updated: 2026-04-22
-# content-hash: A5E2ACEF
+# version: v1.9.13
+# commit: 9f8a3fa
+# updated: 2026-04-25
+# content-hash: D64CED40
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -11,7 +11,7 @@
 #   → Eigenen Workflow mit repository_dispatch erstellen.
 #   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
 # ═══════════════════════════════════════════════════════════════
-name: Alpha Release Pipeline
+name: "RF: 🔧 Alpha Release Pipeline"
 
 # Trigger: PR merged in dev/v* Branches (Feature-/Fix-PR)
 # Erzeugt vX.Y.Z-alpha.N Tag + GitHub Pre-release

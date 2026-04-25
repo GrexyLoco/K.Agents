@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Release Pipeline (Stable)
-# version: untagged@e2b362e
-# commit: e2b362e
-# updated: 2026-04-22
-# content-hash: 9793883B
+# version: v1.9.13
+# commit: 9f8a3fa
+# updated: 2026-04-25
+# content-hash: C29EB4CF
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -25,7 +25,7 @@
 # damit sie NICHT parallel zu alpha-release.yml auf dev/v*-PR-Merges feuert
 # (Race-Condition mit doppelten Tag-Erstellungs-Versuchen).
 
-name: Release
+name: "RF: Release"
 
 on:
   pull_request:
