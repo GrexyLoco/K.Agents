@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Branch-Prefix Guard
-# version: untagged@f3f8389
-# commit: f3f8389
-# updated: 2026-04-20
-# content-hash: A87097E7
+# version: v1.9.13
+# commit: 9f8a3fa
+# updated: 2026-04-25
+# content-hash: 9DAD5512
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -11,7 +11,7 @@
 #   → Eigenen Workflow mit repository_dispatch erstellen.
 #   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
 # ═══════════════════════════════════════════════════════════════
-name: Branch-Prefix Guard
+name: "RF: Branch-Prefix Guard"
 
 # Verhindert PRs mit falschen Branch-Prefixen auf dev/v* und release/v*.
 # Erlaubt: feature/*, fix/*, dev/v* (Promotion), release/v* (Stable).

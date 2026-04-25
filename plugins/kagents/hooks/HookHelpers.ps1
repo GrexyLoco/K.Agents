@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
     Gemeinsame Hilfsfunktionen fuer K.Agents Claude Code Hooks.
 
 .DESCRIPTION
-    Wird per dot-sourcing in pre_tool_call, post_tool_call und on_error eingebunden.
+    Wird per dot-sourcing in pre_tool_call und post_tool_call eingebunden.
     Stellt Funktionen bereit fuer stdin-Lesen, Log-Initialisierung, Korrelations-IDs
     und Input-Vorschau.
 #>

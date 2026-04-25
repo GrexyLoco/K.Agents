@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Release Pipeline (Stable)
-# version: untagged@f3f8389
-# commit: f3f8389
-# updated: 2026-04-20
-# content-hash: 78323506
+# version: v1.9.13
+# commit: 9f8a3fa
+# updated: 2026-04-25
+# content-hash: C29EB4CF
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -12,24 +12,43 @@
 #   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
 # ═══════════════════════════════════════════════════════════════
 # Basic ReleaseFlow Workflow
-# 
+#
 # This is the minimal setup for K.Actions.ReleaseFlow.
-# It triggers on merged PRs to main, dev/*, and release/* branches.
+#
+# Architektur: Option A — Getrennte Workflows (#407)
+#   alpha-release.yml → PR-close auf dev/v*      → Alpha
+#   beta-release.yml  → push auf release/v*      → Beta
+#   release.yml       → PR-close auf main/master → Stable
+#                        oder dev/v* → release/v* (Freeze)
+#
+# Diese release.yml lauscht ausschließlich auf main/master und release/v*,
+# damit sie NICHT parallel zu alpha-release.yml auf dev/v*-PR-Merges feuert
+# (Race-Condition mit doppelten Tag-Erstellungs-Versuchen).
 
-name: Release
+name: "RF: Release"
 
 on:
   pull_request:
     types: [closed]
     branches:
       - main
-      - 'dev/v*'
+      - master
       - 'release/v*'
 
 jobs:
   release:
-    # Only run when PR is merged (not just closed)
-    if: github.event.pull_request.merged == true
+    # Triggert nur bei:
+    #   - Stable-Promo   : head=release/v* → base=main|master
+    #   - Freeze-Promo   : head=dev/v*     → base=release/v*
+    # Alpha/Beta laufen exklusiv in den phasenspezifischen Workflows.
+    if: |
+      github.event.pull_request.merged == true && (
+        ((github.base_ref == 'main' || github.base_ref == 'master') &&
+         startsWith(github.event.pull_request.head.ref, 'release/v'))
+        ||
+        (startsWith(github.base_ref, 'release/v') &&
+         startsWith(github.event.pull_request.head.ref, 'dev/v'))
+      )
     runs-on: ubuntu-latest
     
     permissions:
@@ -37,12 +56,10 @@ jobs:
       pull-requests: write # For backflow PRs
     
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0    # Full history for tag operations
-          fetch-tags: true  # Ensure tags are fetched
-      
+      # GitHub App Token ZUERST — damit Checkout ihn als Git-Credential
+      # persistiert (#406). Spätere 'git push' in New-FreezeRelease,
+      # Smart-Tag-Updates und Tag-Cleanup laufen dann unter App-Identität
+      # und greifen in den Ruleset-Bypass.
       - name: 🔑 Generate GitHub App Token
         id: app-token
         uses: actions/create-github-app-token@v3
@@ -52,6 +69,13 @@ jobs:
           owner: GrexyLoco
           repositories: >
             ${{ github.event.repository.name }},K.Actions.ReleaseFlow
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0    # Full history for tag operations
+          fetch-tags: true  # Ensure tags are fetched
+          token: ${{ steps.app-token.outputs.token }}  # App-Token als Git-Credential (#406)
 
       # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
       # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar.

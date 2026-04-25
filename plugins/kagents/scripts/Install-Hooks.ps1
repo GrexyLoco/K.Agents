@@ -75,6 +75,7 @@ $guardrailScript  = Join-Path $hooksDir 'releaseflow-guardrail.ps1'
 $postToolScript   = Join-Path $hooksDir 'post_tool_call.ps1'
 
 function Get-ClaudeSettingsPath {
+    [CmdletBinding()]
     param([string]$Scope)
     if ($Scope -eq 'user') {
         $userHome = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
@@ -84,6 +85,7 @@ function Get-ClaudeSettingsPath {
 }
 
 function New-ClaudeHookEntry {
+    [CmdletBinding()]
     param([Parameter(Mandatory)][string]$ScriptPath)
     $quoted = "`"$ScriptPath`""
     # OS-Overrides fuer Cross-Platform-Kompatibilitaet (VS Code auto-erkennt Claude-Format).
@@ -99,6 +101,7 @@ function New-ClaudeHookEntry {
 }
 
 function Install-ClaudeHooks {
+    [CmdletBinding()]
     param([string]$Scope, [switch]$Uninstall, [switch]$Force)
 
     $settingsPath = Get-ClaudeSettingsPath -Scope $Scope
@@ -170,12 +173,15 @@ function Install-ClaudeHooks {
 }
 
 function Show-VSCodeHint {
+    [CmdletBinding()]
     Write-Output ''
     Write-Output '--- VS Code Copilot Integration ---'
     Write-Output ''
     Write-Output 'Die Hook-Definition ist bereits bereit:'
-    Write-Output "  - Claude-Format (Plugin-Discovery): $pluginRoot/hooks/hooks.json"
-    Write-Output "  - Copilot-CLI-Format (Plugin-Root): $pluginRoot/hooks.json"
+    $claudeHooksJson  = Join-Path $pluginRoot 'hooks' 'hooks.json'
+    $copilotHooksJson = Join-Path $pluginRoot 'hooks.json'
+    Write-Output "  - Claude-Format (Plugin-Discovery): $claudeHooksJson"
+    Write-Output "  - Copilot-CLI-Format (Plugin-Root): $copilotHooksJson"
     Write-Output ''
     Write-Output 'Beide Dateien nutzen ${CLAUDE_PLUGIN_ROOT} Token-Syntax und OS-spezifische'
     Write-Output 'Command-Overrides (windows/linux/osx). VS Code Copilot Chat und Copilot CLI'
@@ -204,4 +210,5 @@ switch ($Target) {
 $logsDir = Join-Path $pluginRoot 'logs'
 Write-Output ''
 Write-Output "Logs: $logsDir"
-Write-Output "Log-Rotation: $PSScriptRoot/cleanup-logs.ps1 -RetentionDays 30"
+$cleanupScript = Join-Path $PSScriptRoot 'cleanup-logs.ps1'
+Write-Output "Log-Rotation: $cleanupScript -RetentionDays 30"
