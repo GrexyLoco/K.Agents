@@ -48,7 +48,7 @@ $lineNum = 0
 foreach ($line in ($content -split "`n")) {
     $lineNum++
     if ($line -match '\bWrite-Host\b' -and $line -notmatch '^\s*#') {
-        $null = $violations.Add("Z.$lineNum: Write-Host gefunden — je nach Kontext ersetzen durch: Write-Output (Daten), Write-Verbose (Debug), Write-Information (Fortschritt), Write-Warning (Warnungen)")
+        $null = $violations.Add("Z.${lineNum}: Write-Host gefunden — je nach Kontext ersetzen durch: Write-Output (Daten), Write-Verbose (Debug), Write-Information (Fortschritt), Write-Warning (Warnungen)")
     }
 }
 
@@ -57,7 +57,7 @@ $lineNum = 0
 foreach ($line in ($content -split "`n")) {
     $lineNum++
     if ($line -match '[A-Z]:\\' -and $line -notmatch '^\s*#') {
-        $null = $violations.Add("Z.$lineNum: Hardcoded Windows-Pfad gefunden — Join-Path verwenden")
+        $null = $violations.Add("Z.${lineNum}: Hardcoded Windows-Pfad gefunden — Join-Path verwenden")
     }
 }
 
@@ -66,7 +66,7 @@ $lineNum = 0
 foreach ($line in ($content -split "`n")) {
     $lineNum++
     if ($line -match '\$env:USERPROFILE\b' -and $line -notmatch '^\s*#') {
-        $null = $violations.Add("Z.$lineNum: `$env:USERPROFILE — plattformunabhaengig: 'if (`$env:USERPROFILE) { `$env:USERPROFILE } else { `$HOME }'")
+        $null = $violations.Add("Z.${lineNum}: `$env:USERPROFILE — plattformunabhaengig: 'if (`$env:USERPROFILE) { `$env:USERPROFILE } else { `$HOME }'")
     }
 }
 
@@ -75,7 +75,7 @@ $lineNum = 0
 foreach ($line in ($content -split "`n")) {
     $lineNum++
     if ($line -match '\bGet-WmiObject\b' -and $line -notmatch '^\s*#') {
-        $null = $violations.Add("Z.$lineNum: Get-WmiObject — Get-CimInstance verwenden (cross-platform)")
+        $null = $violations.Add("Z.${lineNum}: Get-WmiObject — Get-CimInstance verwenden (cross-platform)")
     }
 }
 
