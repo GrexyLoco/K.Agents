@@ -26,6 +26,18 @@
         ]
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/conventional-commit-guard.ps1\"",
+            "windows": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/hooks/conventional-commit-guard.ps1\"",
+            "linux": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/conventional-commit-guard.ps1'",
+            "osx": "pwsh -NoProfile -File '${CLAUDE_PLUGIN_ROOT}/hooks/conventional-commit-guard.ps1'"
+          }
+        ]
+      },
+      {
         "hooks": [
           {
             "type": "command",
