@@ -218,7 +218,7 @@ Neben Agents und Skills liefert das Plugin auch **Hooks** und **MCP-Server** aut
 
 ### Hooks (Logging & Audit-Trail)
 
-Das Plugin registriert drei Lifecycle-Hooks, die automatisch bei jeder Agent-Interaktion feuern:
+Das Plugin registriert zwei Lifecycle-Hooks, die automatisch bei jeder Agent-Interaktion feuern:
 
 | Hook | Event | Funktion |
 |------|-------|----------|
@@ -228,7 +228,10 @@ Das Plugin registriert drei Lifecycle-Hooks, die automatisch bei jeder Agent-Int
 **Log-Format:** JSONL (ein JSON-Objekt pro Zeile), eine Datei pro Tag.
 **Log-Pfad:** `${CLAUDE_PLUGIN_ROOT}/logs/` (innerhalb des Plugin-Verzeichnisses, nicht im Workspace).
 
-Die Hooks werden über die `hooks.json` im Plugin definiert und automatisch bei **VS Code** und **Claude Code** aktiviert. Es ist **keine manuelle Konfiguration** in den User Settings nötig.
+Die Hooks sind in zwei Dateien definiert: `plugins/kagents/hooks/hooks.json` (Claude Code Format) und `plugins/kagents/hooks.json` (VS Code Copilot Format). Beide verwenden `${CLAUDE_PLUGIN_ROOT}` Token-Syntax und OS-spezifische Command-Overrides.
+
+**VS Code:** Hooks werden automatisch beim Plugin-Start aktiviert — keine manuelle Konfiguration nötig.
+**Claude Code:** Hooks einmalig via `Install-Hooks.ps1` registrieren (User- oder Project-Scope).
 
 > **Wichtig:** Hooks werden von **Visual Studio 2026** nicht unterstützt (kein Plugin-System für Hooks).
 
