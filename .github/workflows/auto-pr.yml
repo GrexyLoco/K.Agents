@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Auto-PR Pipeline
-# version: untagged@f3f8389
-# commit: f3f8389
-# updated: 2026-04-20
-# content-hash: AE53BADF
+# version: v1.9.13
+# commit: 9f8a3fa
+# updated: 2026-04-25
+# content-hash: B0A78867
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -11,11 +11,17 @@
 #   → Eigenen Workflow mit repository_dispatch erstellen.
 #   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
 # ═══════════════════════════════════════════════════════════════
-name: Auto-PR
+name: "RF: 🔧 Auto-PR"
 
-# Trigger: Push auf fix/* oder feature/* Branches.
-# Legt automatisch einen PR gegen den aktiven Train-Branch an.
-# KEIN workflow_dispatch — nicht manuell auslösbar.
+# Trigger:
+#   - Push auf fix/* oder feature/* Branches (primär)
+#   - workflow_dispatch als Retry-Workaround (#408)
+#
+# Hintergrund zu workflow_dispatch (#408): In K.Agents Train 1.12 wurde
+# beobachtet, dass der push-Trigger beim *ersten* Push eines Branches
+# sporadisch silent ausfällt (~28%, vermutlich Webhook-Propagation-Race).
+# workflow_dispatch erlaubt Consumer/Maintainer das manuelle Nachtriggern
+# per 'gh workflow run auto-pr.yml --ref <branch>' ohne weiteren Push.
 #
 # Voraussetzungen:
 #   vars.RELEASEFLOW_APP_ID            — GitHub App ID
@@ -25,10 +31,11 @@ on:
     branches:
       - 'fix/**'
       - 'feature/**'
+  workflow_dispatch:
 
 jobs:
   auto-pr:
-    name: Auto-PR erstellen
+    name: 🤖 Auto-PR erstellen
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -46,6 +53,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          fetch-tags: true  # (#410) Tag-basierte Beta-Detection braucht lokale Tags
 
       # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
       # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar.
@@ -125,11 +133,17 @@ jobs:
           echo "rel_branch=$REL_BRANCH" >> "$GITHUB_OUTPUT"
           echo "found=true"             >> "$GITHUB_OUTPUT"
 
-          # Beta-Erkennung
+          # Beta-Erkennung (#410): Tag-basiert, nicht Branch-basiert.
+          # Branch release/vX.Y.Z kann durch Legacy-Setup oder manuellen Anlage
+          # existieren, OHNE dass jemals ein Freeze-Dispatch lief — dann wäre
+          # eine Branch-basierte Phase-Detection ein false positive (Beta ohne
+          # echten Freeze). Der Freeze-Tag vX.Y.Z-freeze wird dagegen nur durch
+          # erfolgreichen Freeze-Dispatch gesetzt — Tag-Präsenz ist das echte
+          # Beta-Signal.
+          FREEZE_TAG=$(git tag -l "${TAG}-freeze" 2>/dev/null)
           BETA_TAGS=$(git tag -l "${TAG}-beta.*" 2>/dev/null)
-          REL_EXISTS=$(gh api "repos/$REPO/branches/$REL_BRANCH" --jq '.name' 2>/dev/null || true)
 
-          if [ -n "$BETA_TAGS" ] || [ -n "$REL_EXISTS" ]; then
+          if [ -n "$FREEZE_TAG" ] || [ -n "$BETA_TAGS" ]; then
             echo "phase=beta" >> "$GITHUB_OUTPUT"
           else
             echo "phase=alpha" >> "$GITHUB_OUTPUT"
