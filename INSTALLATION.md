@@ -223,8 +223,7 @@ Das Plugin registriert drei Lifecycle-Hooks, die automatisch bei jeder Agent-Int
 | Hook | Event | Funktion |
 |------|-------|----------|
 | `pre_tool_call.ps1` | `PreToolUse` | Loggt `agent_start`-Events, führt Log-Rotation durch (max. 7 Dateien) |
-| `post_tool_call.ps1` | `PostToolUse` | Loggt `agent_complete`- und `agent_handoff`-Events |
-| `on_error.ps1` | `PostToolUseFailure` | Loggt `error`- und `fallback`-Events |
+| `post_tool_call.ps1` | `PostToolUse` | Loggt Erfolg- (`post_tool_use`) und Fehler-Events (`post_tool_use_failure`); vereint ehemaliges `on_error.ps1` (VS-Code-kompatibel) |
 
 **Log-Format:** JSONL (ein JSON-Objekt pro Zeile), eine Datei pro Tag.
 **Log-Pfad:** `${CLAUDE_PLUGIN_ROOT}/logs/` (innerhalb des Plugin-Verzeichnisses, nicht im Workspace).
