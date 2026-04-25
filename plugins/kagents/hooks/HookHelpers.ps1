@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
     Gemeinsame Hilfsfunktionen fuer K.Agents Claude Code Hooks.
 
 .DESCRIPTION
-    Wird per dot-sourcing in pre_tool_call, post_tool_call und on_error eingebunden.
+    Wird per dot-sourcing in pre_tool_call und post_tool_call eingebunden.
     Stellt Funktionen bereit fuer stdin-Lesen, Log-Initialisierung, Korrelations-IDs
     und Input-Vorschau.
 #>
@@ -105,4 +105,84 @@ function Write-HookLogEntry {
 
     $json = $Entry | ConvertTo-Json -Compress
     Add-Content -Path $LogFile -Value $json -Encoding utf8
+}
+
+function New-SessionSummary {
+<#
+.SYNOPSIS
+    Berechnet Session-Metriken aus JSONL-Logs und schreibt einen session_summary Eintrag.
+.DESCRIPTION
+    Liest alle .jsonl-Dateien im LogDir und filtert Events der angegebenen Session.
+    Berechnet: Dauer, Tool-Call-Anzahl, Error-Rate, Top-5-Tools.
+    Erster Aufruf ohne vorhandene Events schreibt keinen Summary.
+.PARAMETER SessionId
+    ID der abgeschlossenen Session.
+.PARAMETER LogDir
+    Verzeichnis mit den .jsonl Log-Dateien.
+.EXAMPLE
+    New-SessionSummary -SessionId 'abc123' -LogDir '/path/to/logs'
+#>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SessionId,
+        [Parameter(Mandatory)][string]$LogDir
+    )
+
+    if (-not (Test-Path $LogDir)) { return }
+
+    # Alle Events der Session aus allen .jsonl-Dateien sammeln
+    $allEvents = [System.Collections.Generic.List[hashtable]]::new()
+    foreach ($logFile in (Get-ChildItem -Path $LogDir -Filter '*.jsonl' | Sort-Object Name)) {
+        foreach ($line in (Get-Content $logFile.FullName -Encoding utf8)) {
+            if (-not $line.Trim()) { continue }
+            try {
+                $entry = $line | ConvertFrom-Json -AsHashtable
+                if ($entry.ContainsKey('session_id') -and $entry['session_id'] -eq $SessionId) {
+                    $null = $allEvents.Add($entry)
+                }
+            } catch { continue }
+        }
+    }
+
+    if ($allEvents.Count -eq 0) { return }
+
+    # Metriken berechnen
+    $timestamps   = $allEvents | Where-Object { $_.ContainsKey('timestamp') } | ForEach-Object { [datetime]$_['timestamp'] }
+    $startTime    = ($timestamps | Sort-Object)[0].ToString('o')
+    $endTime      = ($timestamps | Sort-Object -Descending)[0].ToString('o')
+    $duration     = [math]::Round((([datetime]$endTime) - ([datetime]$startTime)).TotalMinutes, 1)
+
+    $toolCalls    = @($allEvents | Where-Object { $_.ContainsKey('event') -and $_['event'] -eq 'pre_tool_use' })
+    $totalCalls   = $toolCalls.Count
+    $errorCount   = @($allEvents | Where-Object { $_.ContainsKey('event') -and $_['event'] -eq 'post_tool_use_failure' }).Count
+    $errorRate    = [math]::Round($errorCount / [math]::Max($totalCalls, 1) * 100, 1)
+
+    $uniqueTools  = @($toolCalls | Where-Object { $_.ContainsKey('tool_name') } | ForEach-Object { $_['tool_name'] } | Sort-Object -Unique)
+
+    $toolCounts   = @{}
+    foreach ($tc in $toolCalls) {
+        if ($tc.ContainsKey('tool_name')) {
+            $name = $tc['tool_name']
+            $toolCounts[$name] = ($toolCounts[$name] ?? 0) + 1
+        }
+    }
+    $topTools = $toolCounts.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 5 | ForEach-Object {
+        [ordered]@{ tool = $_.Key; count = $_.Value }
+    }
+
+    # Summary schreiben
+    $currentLogFile = Initialize-LogFile
+    Write-HookLogEntry -LogFile $currentLogFile -Entry ([ordered]@{
+        timestamp          = (Get-Date -Format 'o')
+        event              = 'session_summary'
+        session_id         = $SessionId
+        start_time         = $startTime
+        end_time           = $endTime
+        duration_minutes   = $duration
+        total_tool_calls   = $totalCalls
+        unique_tools       = $uniqueTools
+        error_count        = $errorCount
+        error_rate_percent = $errorRate
+        top_tools          = @($topTools)
+    })
 }
