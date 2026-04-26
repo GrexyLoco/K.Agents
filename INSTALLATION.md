@@ -216,14 +216,28 @@ cp -r .github/skills/* .claude/skills/
 
 Neben Agents und Skills liefert das Plugin auch **Hooks** und **MCP-Server** automatisch aus. Diese müssen nicht separat konfiguriert werden.
 
-### Hooks (Logging & Audit-Trail)
+### Hooks (Guards & Audit-Trail)
 
-Das Plugin registriert zwei Lifecycle-Hooks, die automatisch bei jeder Agent-Interaktion feuern:
+Das Plugin registriert **Guards** (präventive Prüfungen vor einem Tool-Aufruf) und **Lifecycle-Hooks** (Logging nach jedem Tool-Aufruf).
+
+#### Guards (PreToolUse)
+
+| Guard | Matcher | Prüft | Break-Glass |
+|-------|---------|-------|-------------|
+| `secret-scanner.ps1` | — (alle Tools) | Secrets/Tokens im Tool-Input (API-Keys, Passwörter, Zertifikate) | `KAGENTS_SECRET_BYPASS=1` |
+| `destructive-command-guard.ps1` | `Bash` | Destruktive Shell-Kommandos (`rm -rf`, `format`, `DROP TABLE` etc.) | `KAGENTS_DESTRUCTIVE_BYPASS=1` |
+| `releaseflow-guardrail.ps1` | `Bash` | Direkte `gh pr create/merge` auf master ohne ReleaseFlow-Pfad | `RELEASEFLOW_BYPASS=1` |
+| `conventional-commit-guard.ps1` | `Bash` | Conventional-Commit-Format bei `git commit` | `KAGENTS_COMMIT_BYPASS=1` |
+| `crossplatform-lint-guard.ps1` | `Write` | Cross-Platform-Probleme in `.ps1`-Dateien (`Write-Host`, Hardcoded-Pfade etc.) | `KAGENTS_LINT_BYPASS=1` |
+| `pre_tool_call.ps1` | — (alle Tools) | Kein Block — Logging + Session-Wechsel-Erkennung (Session Summary) | — |
+
+#### Lifecycle-Hook (PostToolUse)
 
 | Hook | Event | Funktion |
 |------|-------|----------|
-| `pre_tool_call.ps1` | `PreToolUse` | Loggt `agent_start`-Events, führt Log-Rotation durch (max. 7 Dateien) |
-| `post_tool_call.ps1` | `PostToolUse` | Loggt Erfolg- (`post_tool_use`) und Fehler-Events (`post_tool_use_failure`); vereint ehemaliges `on_error.ps1` (VS-Code-kompatibel) |
+| `post_tool_call.ps1` | `PostToolUse` | Loggt Erfolg- (`post_tool_use`) und Fehler-Events (`post_tool_use_failure`); VS-Code-kompatibel |
+
+**Break-Glass:** Bypass-Variable in der Shell setzen und den Agenten neu starten. Der Bypass wird ins Log geschrieben.
 
 **Log-Format:** JSONL (ein JSON-Objekt pro Zeile), eine Datei pro Tag.
 **Log-Pfad:** `${CLAUDE_PLUGIN_ROOT}/logs/` (innerhalb des Plugin-Verzeichnisses, nicht im Workspace).

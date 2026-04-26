@@ -27,8 +27,12 @@ on:
       - '**/*.md'
       - 'docs/**'
 
-# Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
-# Action selbst.
+# Serialisiert Beta-Releases pro release/v*-Branch — verhindert Race Condition
+# analog zu alpha-release.yml (Issue #55).
+# cancel-in-progress: false — jeder Push bekommt seinen eigenen Beta-Tag.
+concurrency:
+  group: beta-release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
