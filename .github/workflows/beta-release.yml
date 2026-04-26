@@ -21,11 +21,9 @@ name: "RF: Beta Release Pipeline"
 #   beta-release.yml  → release/v* → Beta
 #   release.yml       → master     → Stable
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: ['release/v*']
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
 
 # Serialisiert Beta-Releases pro release/v*-Branch — verhindert Race Condition
 # analog zu alpha-release.yml (Issue #55).
@@ -43,6 +41,9 @@ permissions:
 jobs:
   beta-release:
     name: Beta Release
+    if: >-
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'fix/')
     runs-on: ubuntu-latest
     steps:
       # GitHub App Token ZUERST (#406) — siehe Kommentar in basic.yml
@@ -103,7 +104,7 @@ jobs:
         if: steps.release.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BODY: ${{ github.event_name == 'pull_request' && github.event.pull_request.body || '' }}
         shell: bash
         run: |
           ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
