@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "kagents",
-      "version": "1.12.0",
+      "version": "v1.13.0",
       "description": "14 spezialisierte Agenten mit Orchestrator fuer .NET 10, PowerShell Core, Azure und GitHub Actions",
       "source": "./plugins/kagents",
       "category": "development",
