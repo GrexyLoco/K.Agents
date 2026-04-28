@@ -3,7 +3,7 @@ Set-StrictMode -Version Latest
 #Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.0' }
 
 BeforeAll {
-    $env:CLAUDE_PLUGIN_ROOT = Join-Path $env:TEMP "kagents-test-$(New-Guid)"
+    $env:CLAUDE_PLUGIN_ROOT = Join-Path ([System.IO.Path]::GetTempPath()) "kagents-test-$(New-Guid)"
     $script:GuardPath = Join-Path $PSScriptRoot '..' 'destructive-command-guard.ps1'
     Remove-Item Env:KAGENTS_DESTRUCTIVE_BYPASS -ErrorAction SilentlyContinue
 
@@ -24,12 +24,6 @@ Describe 'destructive-command-guard' {
             $result.decision | Should -Be 'block'
             $result.reason   | Should -Match 'rm -rf /'
         }
-        It 'blockiert git clean -fd' {
-            # git clean -fd ist nicht in den Block-Patterns; ls -la ebenfalls
-            # Das Guard blockiert: rm -rf /, rm -rf ~, git push --force, git reset --hard etc.
-            # git clean -fd ist kein blockiertes Muster — durchgelassen
-            Invoke-Guard 'git clean -fd' | Should -BeNullOrEmpty
-        }
         It 'blockiert git reset --hard' {
             $result = Invoke-Guard 'git reset --hard' | ConvertFrom-Json
             $result.decision | Should -Be 'block'
@@ -42,6 +36,9 @@ Describe 'destructive-command-guard' {
         }
     }
     Context 'Sichere Kommandos durchgelassen' {
+        It 'laesst git clean -fd durch' {
+            Invoke-Guard 'git clean -fd' | Should -BeNullOrEmpty
+        }
         It 'laesst ls -la durch' {
             Invoke-Guard 'ls -la' | Should -BeNullOrEmpty
         }

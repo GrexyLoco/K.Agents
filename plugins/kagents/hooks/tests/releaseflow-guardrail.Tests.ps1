@@ -3,12 +3,12 @@ Set-StrictMode -Version Latest
 #Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.0' }
 
 BeforeAll {
-    $env:CLAUDE_PLUGIN_ROOT = Join-Path $env:TEMP "kagents-test-$(New-Guid)"
+    $env:CLAUDE_PLUGIN_ROOT = Join-Path ([System.IO.Path]::GetTempPath()) "kagents-test-$(New-Guid)"
     $script:GuardPath = Join-Path $PSScriptRoot '..' 'releaseflow-guardrail.ps1'
     Remove-Item Env:RELEASEFLOW_BYPASS -ErrorAction SilentlyContinue
 
     function script:New-TempReleaseFlowRepo([string]$BranchName) {
-        $tmpDir = Join-Path $env:TEMP "kagents-rf-$(New-Guid)"
+        $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) "kagents-rf-$(New-Guid)"
         New-Item -ItemType Directory -Path $tmpDir | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $tmpDir '.github') | Out-Null
         Set-Content -Path (Join-Path $tmpDir '.github' 'releaseflow.json') -Value '{}' -Encoding utf8
@@ -26,7 +26,7 @@ BeforeAll {
 
     $script:FeatureRepo  = New-TempReleaseFlowRepo 'feature/test-feature'
     $script:ReleaseRepo  = New-TempReleaseFlowRepo 'release/v1.0.0'
-    $script:NonRFRepo    = Join-Path $env:TEMP "kagents-norf-$(New-Guid)"
+    $script:NonRFRepo    = Join-Path ([System.IO.Path]::GetTempPath()) "kagents-norf-$(New-Guid)"
     New-Item -ItemType Directory -Path $script:NonRFRepo | Out-Null
 
     function script:Invoke-Guard([string]$Command, [string]$Cwd, [string]$ToolName = 'Bash') {

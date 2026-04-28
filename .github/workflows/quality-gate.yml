@@ -34,7 +34,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          Install-Module Pester -Force -Scope CurrentUser -SkipPublisherCheck
+          Install-Module Pester -Force -Scope CurrentUser -SkipPublisherCheck -MinimumVersion 5.6 -MaximumVersion 5.99
           $env:CLAUDE_PLUGIN_ROOT = (Join-Path ([System.IO.Path]::GetTempPath()) 'kagents-ci')
           $result = Invoke-Pester `
             -Path plugins/kagents/hooks/tests/ `

@@ -3,7 +3,7 @@ Set-StrictMode -Version Latest
 #Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.0' }
 
 BeforeAll {
-    $script:PluginRoot = Join-Path $env:TEMP "kagents-test-$(New-Guid)"
+    $script:PluginRoot = Join-Path ([System.IO.Path]::GetTempPath()) "kagents-test-$(New-Guid)"
     $env:CLAUDE_PLUGIN_ROOT = $script:PluginRoot
     $script:GuardPath = Join-Path $PSScriptRoot '..' 'post_tool_call.ps1'
     $script:LogFile   = Join-Path $script:PluginRoot 'logs' "$(Get-Date -Format 'yyyy-MM-dd').jsonl"

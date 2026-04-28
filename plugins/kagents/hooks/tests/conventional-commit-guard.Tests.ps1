@@ -3,7 +3,7 @@ Set-StrictMode -Version Latest
 #Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.0' }
 
 BeforeAll {
-    $env:CLAUDE_PLUGIN_ROOT = Join-Path $env:TEMP "kagents-test-$(New-Guid)"
+    $env:CLAUDE_PLUGIN_ROOT = Join-Path ([System.IO.Path]::GetTempPath()) "kagents-test-$(New-Guid)"
     $script:GuardPath = Join-Path $PSScriptRoot '..' 'conventional-commit-guard.ps1'
     Remove-Item Env:KAGENTS_COMMIT_BYPASS -ErrorAction SilentlyContinue
 
