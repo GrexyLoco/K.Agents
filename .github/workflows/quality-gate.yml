@@ -24,6 +24,29 @@ permissions:
   contents: read
 
 jobs:
+  unit-tests:
+    name: Pester Unit-Tests (Hook Guards)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Pester Unit-Tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Install-Module Pester -Force -Scope CurrentUser -SkipPublisherCheck
+          $env:CLAUDE_PLUGIN_ROOT = (Join-Path ([System.IO.Path]::GetTempPath()) 'kagents-ci')
+          $result = Invoke-Pester `
+            -Path plugins/kagents/hooks/tests/ `
+            -PassThru `
+            -Output Detailed
+
+          if ($result.FailedCount -gt 0) {
+            Write-Output "::error::$($result.FailedCount) Pester Unit-Test(s) fehlgeschlagen."
+            exit 1
+          }
+          Write-Output "Pester: $($result.PassedCount) Tests bestanden, $($result.FailedCount) fehlgeschlagen."
+
   quality-gate:
     name: quality-gate
     runs-on: ubuntu-latest
@@ -112,4 +135,5 @@ jobs:
             echo "|-------|--------|"
             echo "| PSScriptAnalyzer (plugins/kagents) | ${{ job.status }} |"
             echo "| Plugin-Manifest-Validation | ${{ job.status }} |"
+            echo "| Pester Unit-Tests (Hook Guards) | siehe Job 'unit-tests' |"
           } >> "$GITHUB_STEP_SUMMARY"
