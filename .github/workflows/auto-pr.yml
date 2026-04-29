@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Auto-PR Pipeline
-# version: v1.9.13
-# commit: 9f8a3fa
-# updated: 2026-04-25
-# content-hash: B0A78867
+# version: v1.9.16
+# commit: 7c5a9ef
+# updated: 2026-04-29
+# content-hash: 148F7DD6
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -243,3 +243,57 @@ jobs:
             -f "client_payload[pr-url]=${{ steps.pr.outputs.pr_url }}" \
             -f "client_payload[branch]=${{ steps.branch.outputs.branch }}" \
             -f "client_payload[phase]=auto-pr"
+
+      - name: Summary
+        if: always()
+        env:
+          HEAD_BRANCH: ${{ steps.branch.outputs.branch }}
+          BASE_BRANCH: ${{ steps.target.outputs.base }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+          PR_CREATED: ${{ steps.pr.outputs.pr_created }}
+          ISSUE_NR: ${{ steps.branch.outputs.issue }}
+          HAS_ISSUE: ${{ steps.branch.outputs.has_issue }}
+          TRAIN_FOUND: ${{ steps.train.outputs.found }}
+          PHASE: ${{ steps.train.outputs.phase }}
+          VERSION: ${{ steps.train.outputs.version }}
+        shell: bash
+        run: |
+          REPO_URL="https://github.com/${{ github.repository }}"
+
+          echo "## 🤖 Auto-PR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> 💡 Branch `$HEAD_BRANCH` wurde gepusht — PR wird automatisch auf den aktiven Release-Train erstellt." >> $GITHUB_STEP_SUMMARY
+          echo ">" >> $GITHUB_STEP_SUMMARY
+          echo "> 📖 [Zur Dokumentation](https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#auto-pr-auto-pryml)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Feld | Wert |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Source** | [\`$HEAD_BRANCH\`]($REPO_URL/tree/$HEAD_BRANCH) |" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "$BASE_BRANCH" ]; then
+            echo "| **Target** | [\`$BASE_BRANCH\`]($REPO_URL/tree/$BASE_BRANCH) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Target** | — |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$TRAIN_FOUND" = "true" ]; then
+            echo "| **Train** | v$VERSION ($PHASE) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Train** | ❌ Kein aktiver Train gefunden |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$HAS_ISSUE" = "true" ]; then
+            echo "| **Issue** | [#$ISSUE_NR]($REPO_URL/issues/$ISSUE_NR) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Issue** | ⚠️ Keine Issue-Nummer im Branch-Namen |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -n "$PR_URL" ]; then
+            if [ "$PR_CREATED" = "true" ]; then
+              echo "| **PR** | [PR öffnen]($PR_URL) *(neu erstellt)* |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| **PR** | [PR öffnen]($PR_URL) *(existiert bereits)* |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "| **PR** | — |" >> $GITHUB_STEP_SUMMARY
+          fi

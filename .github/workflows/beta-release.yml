@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Beta Release Pipeline
-# version: v1.9.13
-# commit: 9f8a3fa
-# updated: 2026-04-25
-# content-hash: 395714A6
+# version: v1.9.16
+# commit: 7c5a9ef
+# updated: 2026-04-29
+# content-hash: 893D3691
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -21,16 +21,14 @@ name: "RF: Beta Release Pipeline"
 #   beta-release.yml  → release/v* → Beta
 #   release.yml       → master     → Stable
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: ['release/v*']
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
 
-# Serialisiert Beta-Releases pro release/v*-Branch — verhindert Race Condition
-# analog zu alpha-release.yml (Issue #55).
-# cancel-in-progress: false — jeder Push bekommt seinen eigenen Beta-Tag.
-concurrency:
-  group: beta-release-${{ github.ref }}
-  cancel-in-progress: false
+# Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
+# Action selbst.
 
 permissions:
   contents: write
@@ -41,9 +39,6 @@ permissions:
 jobs:
   beta-release:
     name: Beta Release
-    if: >-
-      github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'fix/')
     runs-on: ubuntu-latest
     steps:
       # GitHub App Token ZUERST (#406) — siehe Kommentar in basic.yml
@@ -104,7 +99,7 @@ jobs:
         if: steps.release.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_BODY: ${{ github.event_name == 'pull_request' && github.event.pull_request.body || '' }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         shell: bash
         run: |
           ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u)

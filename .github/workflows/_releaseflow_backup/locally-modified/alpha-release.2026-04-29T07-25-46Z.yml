@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Alpha Release Pipeline
-# version: v1.9.16
-# commit: 7c5a9ef
-# updated: 2026-04-29
-# content-hash: A82C3005
+# version: v1.9.13
+# commit: 9f8a3fa
+# updated: 2026-04-25
+# content-hash: D64CED40
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -31,8 +31,12 @@ on:
     branches: ['dev/v*']
   workflow_dispatch:
 
-# Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
-# Action selbst (New-PreReleaseTag mit atomarer gh-api-Reservierung + Retry).
+# Serialisiert Alpha-Releases pro dev/v*-Branch — verhindert Race Condition
+# in New-PreReleaseTag bei simultanen Merges (Issue #55).
+# cancel-in-progress: false — jeder Merge bekommt seinen eigenen Alpha-Tag.
+concurrency:
+  group: alpha-release-${{ github.event.pull_request.base.ref || github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
