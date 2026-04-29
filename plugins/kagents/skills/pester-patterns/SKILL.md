@@ -438,7 +438,7 @@ Describe 'Test' {
 
 ### Ausführungsreihenfolge (Pester 5)
 
-```
+```text
 Phase 1: DISCOVERY
   └─ Pester scannt ALLE Dateien/Blocks
   └─ Code außerhalb von BeforeAll/It/Context wird ausgeführt ⚠️

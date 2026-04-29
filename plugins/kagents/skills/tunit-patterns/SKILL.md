@@ -76,7 +76,7 @@ public async Task Endpoint_Returns_Ok(WebAppFixture app)
 
 Der Red-Green-Refactor Zyklus ist die Kernmethodik für testgetriebene Entwicklung mit TUnit:
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │                    TDD RED-GREEN-REFACTOR                 │
 │                                                          │
@@ -230,7 +230,7 @@ Dependency Injection in Tests über `ClassDataSource` mit Lifecycle Management:
 // Fixture Definition
 public sealed class DatabaseFixture : IAsyncLifetime
 {
-    private readonly IContainer _container;
+    private IContainer _container;
     public DbContext Context { get; private set; }
 
     public async Task InitializeAsync()
@@ -285,19 +285,19 @@ public async Task FastUnitTest()
     // Keine Einschränkung, läuft mit allen anderen
 }
 
-// Ressourcen-limitiert: Nur 2 gleichzeitig
-[Test]
-[ParallelLimit<TwoParallel>]  // Custom Limit mit 2
-public async Task DatabaseTest()
-{
-    // Läuft mit max 1 anderen DB-Test parallel
-}
-
 // Custom Parallel Limit definieren
 public class DatabaseLimit : IParallelLimit
 {
     public const int MaxCount = 3;
     public static ResourceLimit MaxParallel { get; } = new(MaxCount);
+}
+
+// Ressourcen-limitiert: Max 3 gleichzeitig
+[Test]
+[ParallelLimit<DatabaseLimit>]
+public async Task DatabaseTest()
+{
+    // Läuft mit max 2 anderen DB-Tests parallel
 }
 
 [Test]
