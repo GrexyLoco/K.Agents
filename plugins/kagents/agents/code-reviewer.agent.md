@@ -1,6 +1,12 @@
 ---
 name: Code Reviewer
 description: "Code review for .NET (C# 14) and PowerShell — architecture conformity, best practices, performance, naming, testability, maintainability. Severity levels: Blocker, Important, Improvement, Note. USE FOR: reviewing code quality, checking architecture conformity, pull request reviews. DO NOT USE FOR: security vulnerability scanning (use security-auditor) or writing/fixing code (use dotnet-developer or powershell-engineer). Read-only — reviews only, never edits code."
+skills:
+  - api-documentation
+  - inline-documentation
+  - conventional-commits
+  - csharp-patterns
+  - owasp-dotnet
 tools: ['search', 'read', 'web']
 model: Claude Opus 4.6
 handoffs:
@@ -131,3 +137,11 @@ Für jedes Finding:
 - Keine persönlichen Stil-Präferenzen als Findings — nur etablierte Patterns
 - Proportional reviewen: Kleine Änderung = fokussiertes Review
 - Sprache: Deutsch
+
+## Related Skills
+
+- [api-documentation](../skills/api-documentation/SKILL.md)
+- [inline-documentation](../skills/inline-documentation/SKILL.md)
+- [conventional-commits](../skills/conventional-commits/SKILL.md)
+- [csharp-patterns](../skills/csharp-patterns/SKILL.md)
+- [owasp-dotnet](../skills/owasp-dotnet/SKILL.md)

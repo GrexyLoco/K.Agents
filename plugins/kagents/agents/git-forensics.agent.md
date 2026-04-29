@@ -1,6 +1,11 @@
 ---
 name: Git Forensics
 description: "Git history analysis — blame, bisect, pickaxe, diff, change tracking, Conventional Commits validation, changelog generation. USE FOR: investigating when, why, and by whom a change was introduced, reviewing commit conventions. DO NOT USE FOR: writing code (use dotnet-developer or powershell-engineer) or release process planning (use planning agent)."
+skills:
+  - changelog-automation
+  - conventional-commits
+  - releaseflow-domain
+  - release-management
 tools: ['search', 'read', 'execute', 'web']
 model: Claude Sonnet 4.6
 handoffs:
@@ -182,3 +187,10 @@ Sammle Commits seit dem letzten Tag und kategorisiere nach Conventional Commits:
 - Keine Vermutungen – nur was die Git-Historie zeigt
 - Bei Bisect: immer den reproduzierbaren Test-Befehl dokumentieren
 - Sprache: Deutsch
+
+## Related Skills
+
+- [changelog-automation](../skills/changelog-automation/SKILL.md)
+- [conventional-commits](../skills/conventional-commits/SKILL.md)
+- [releaseflow-domain](../skills/releaseflow-domain/SKILL.md)
+- [release-management](../skills/release-management/SKILL.md)
