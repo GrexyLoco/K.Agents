@@ -59,10 +59,11 @@ $command = if ($toolInput -is [hashtable] -and $toolInput.ContainsKey('command')
 
 if (-not $command) { exit 0 }
 
-# Nur gh pr create/merge pruefen
+# Nur relevante Kommandos pruefen
 $isPrCreate = $command -match '\bgh\s+pr\s+create\b'
 $isPrMerge  = $command -match '\bgh\s+pr\s+merge\b'
-if (-not $isPrCreate -and -not $isPrMerge) { exit 0 }
+$isGitPush  = $command -match '\bgit\s+push\b'
+if (-not $isPrCreate -and -not $isPrMerge -and -not $isGitPush) { exit 0 }
 
 $cwd = $hookData['cwd']
 if (-not $cwd -or -not (Test-Path $cwd)) { exit 0 }
