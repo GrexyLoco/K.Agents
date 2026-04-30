@@ -136,6 +136,47 @@ function Write-GuardrailBlock {
 }
 
 # =========================================================
+# Check 0: git push auf feature/* oder fix/* → aktiver Train erforderlich
+# =========================================================
+$isGitPush = $command -match '\bgit\s+push\b'
+if ($isGitPush -and $currentBranch -match '^(feature|fix)/') {
+    $repoSlug = try {
+        $result = & git -C $cwd remote get-url origin 2>$null
+        if ($LASTEXITCODE -eq 0 -and $result -match 'github\.com[:/](.+?)(?:\.git)?$') {
+            $Matches[1]
+        } else { '' }
+    } catch { '' }
+
+    if ($repoSlug) {
+        $draftCount = try {
+            $result = & gh api "repos/$repoSlug/releases" `
+                --jq '[.[] | select(.draft == true and (.tag_name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")))] | length' `
+                2>$null
+            if ($LASTEXITCODE -eq 0) { [int]($result.Trim()) } else { -1 }
+        } catch { -1 }
+
+        if ($draftCount -eq 0) {
+            Write-GuardrailBlock -Reason @"
+⛔ ReleaseFlow-Guardrail: Kein aktiver Train — Push blockiert
+
+Branch '$currentBranch' kann nicht gepusht werden, da kein aktiver ReleaseFlow-Train existiert.
+Ohne Train schlägt auto-pr.yml mit "Kein aktiver Draft Release Intent gefunden" fehl.
+
+Lösung:
+  1. plan-release.yml dispatchen:
+       gh workflow run plan-release.yml --repo $repoSlug -f target_version=X.Y.Z
+  2. Warten bis Draft-Release erstellt ist (ca. 30s)
+  3. Dann erneut pushen
+
+Break-Glass (falls beabsichtigt):
+  Setze RELEASEFLOW_BYPASS=1 und starte den Agenten erneut.
+"@
+            exit 0
+        }
+    }
+}
+
+# =========================================================
 # Check 1: gh pr create
 # =========================================================
 if ($isPrCreate) {

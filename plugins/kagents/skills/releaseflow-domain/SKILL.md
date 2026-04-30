@@ -276,6 +276,7 @@ gh run list --repo OWNER/REPO --limit 5
 | PR erstellen (`feature/*`, `fix/*`) | `gh pr create --base dev/vX.Y.Z` |
 | Auf Befehl Promo-PR erstellen | `gh pr create --base release/vX.Y.Z --head dev/vX.Y.Z` |
 | Anomalien melden | Audit-Issue öffnen, User informieren |
+| Wenn `releaseflow-guardrail` Push blockiert | Fehlermeldung lesen → `plan-release.yml` dispatchen → erneut pushen |
 
 **Polling-Intervalle:**
 - CI-Status nach Commit: Warten ~2 Minuten, dann prüfen — Intervall ≥ 5 Minuten
@@ -290,4 +291,4 @@ gh run list --repo OWNER/REPO --limit 5
 | Direkt auf `master`, `release/*` pushen | Push-Sentinel → Audit-Issue |
 | PR von `feature/*` auf `release/v*` | G2/G3-Verletzung + Branch-Prefix-Guard-Block |
 | Branch ohne Prefix `feature/` oder `fix/` erstellen | branch-prefix-guard blockiert PR |
-| Ohne aktiven Train (kein Draft-Intent) Features committen | G1-Verletzung |
+| Auf `feature/*` oder `fix/*` pushen ohne aktiven Train | `releaseflow-guardrail`-Hook blockiert automatisch — Fehlermeldung enthält Fix-Befehl |
