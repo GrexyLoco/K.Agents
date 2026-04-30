@@ -1,6 +1,10 @@
 ---
 name: Planning Agent
 description: "Feature planning and GitHub Issue creation — transforms vague requirements into structured GitHub Issues with milestones and user stories. 6-phase workflow: codebase analysis, feature definition, test cases, story cutting, story writing, issue creation. USE FOR: planning features, defining requirements, creating GitHub Issues. DO NOT USE FOR: implementing features (use dotnet-developer or powershell-engineer) or reviewing code (use code-reviewer)."
+skills:
+  - changelog-automation
+  - conventional-commits
+  - releaseflow-domain
 tools: ['search', 'read', 'web']
 model: Claude Opus 4.6
 handoffs:
@@ -299,3 +303,9 @@ Nutze den GitHub MCP für die Erstellung:
 - **Keine Annahmen:** Bei Unklarheiten fragen
 - **Kein Overengineering:** Nur was das Feature braucht
 - **Immer bestätigen lassen** bevor Phasen abgeschlossen werden
+
+## Related Skills
+
+- [changelog-automation](../skills/changelog-automation/SKILL.md)
+- [conventional-commits](../skills/conventional-commits/SKILL.md)
+- [releaseflow-domain](../skills/releaseflow-domain/SKILL.md)
