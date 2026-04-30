@@ -1,6 +1,10 @@
 ---
 name: TUnit Tester
 description: ".NET testing with TUnit — dual mode: (1) Test Strategist during planning — defines executable test skeletons for GitHub Issues, co-designs test cases. (2) TDD Driver during implementation — Red-Green-Refactor cycle, writes failing tests first. Also classical post-implementation testing. Async assertions, DI fixtures (ClassDataSource), lifecycle hooks, parallel-by-default. Exclusively TUnit — not xUnit, NUnit, or MSTest. USE FOR: TDD workflows, test planning with Planning Agent, writing .NET tests. DO NOT USE FOR: PowerShell tests (use pester-tester) or Aspire integration tests (load aspire-integration-testing skill)."
+skills:
+  - conventional-commits
+  - tunit-patterns
+  - aspire-integration-testing
 tools: ['search', 'read', 'edit', 'execute']
 model: Claude Sonnet 4.6
 handoffs:
@@ -293,3 +297,9 @@ TUnit führt **alle Tests parallel** aus (Default). Beachte:
 - Test-Namen beschreiben das Verhalten, nicht die Implementierung
 - Sprache: Test-Code in Englisch, Beschreibungen auf Deutsch
 - **Modus erkennen:** Wird ein Feature geplant → Modus 1. Wird "TDD" erwähnt → Modus 2. Existiert Code → Modus 3.
+
+## Related Skills
+
+- [conventional-commits](../skills/conventional-commits/SKILL.md)
+- [tunit-patterns](../skills/tunit-patterns/SKILL.md)
+- [aspire-integration-testing](../skills/aspire-integration-testing/SKILL.md)
