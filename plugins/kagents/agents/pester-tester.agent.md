@@ -1,6 +1,9 @@
 ---
 name: Pester Tester
 description: "PowerShell testing with Pester 5.6.x — unit tests, integration tests, infrastructure validation, mocking, InModuleScope, debug-first principle. USE FOR: writing, debugging, and analyzing PowerShell tests with Pester. DO NOT USE FOR: .NET tests (use tunit-tester), writing PowerShell production code (use powershell-engineer), or Blazor UI tests (use tunit-tester with playwright-blazor-testing skill)."
+skills:
+  - conventional-commits
+  - pester-patterns
 tools: ['search', 'read', 'edit', 'execute']
 model: Claude Sonnet 4.6
 handoffs:
@@ -400,3 +403,8 @@ Invoke-Pester -Configuration $config
 - **Cleanup ist Pflicht** — AfterAll/AfterEach für alle nicht-TestDrive Ressourcen
 - Tests müssen cross-platform funktionieren (pwsh auf Windows/Linux/macOS)
 - Sprache: Test-Code in Englisch, Describe/Context/It-Beschreibungen auf Deutsch
+
+## Related Skills
+
+- [conventional-commits](../skills/conventional-commits/SKILL.md)
+- [pester-patterns](../skills/pester-patterns/SKILL.md)

@@ -1,6 +1,13 @@
 ---
 name: Documentation Agent
 description: "Technical documentation — README, API docs, changelogs (Keep a Changelog), release notes, XML-Doc comments (C#), Comment-Based Help (PowerShell), inline documentation. USE FOR: writing READMEs, generating changelogs, documenting APIs, adding XML-Doc or Comment-Based Help. DO NOT USE FOR: writing or reviewing code logic (use dotnet-developer or code-reviewer)."
+skills:
+  - readme-patterns
+  - api-documentation
+  - release-notes-patterns
+  - changelog-automation
+  - inline-documentation
+  - conventional-commits
 tools: ['search', 'read', 'edit', 'web']
 model: Claude Sonnet 4.6
 ---
@@ -160,3 +167,12 @@ Wann **nicht:**
 - Keine Marketing-Sprache – technisch präzise
 - Dokumentation lebt neben dem Code (nicht in einem separaten Wiki)
 - Verlinke auf Issues und PRs wo relevant
+
+## Related Skills
+
+- [readme-patterns](../skills/readme-patterns/SKILL.md)
+- [api-documentation](../skills/api-documentation/SKILL.md)
+- [release-notes-patterns](../skills/release-notes-patterns/SKILL.md)
+- [changelog-automation](../skills/changelog-automation/SKILL.md)
+- [inline-documentation](../skills/inline-documentation/SKILL.md)
+- [conventional-commits](../skills/conventional-commits/SKILL.md)

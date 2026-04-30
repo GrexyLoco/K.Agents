@@ -1,6 +1,14 @@
 ---
 name: .NET Developer
 description: "C# 14 / .NET 10 development — Blazor components, MAUI views, ASP.NET Core APIs, services, DTOs, dependency injection, middleware. USE FOR: writing, refactoring, and debugging .NET code across Blazor, MAUI, and ASP.NET Core. DO NOT USE FOR: database schema design (use database-engineer), architecture decisions (use app-architect), or writing tests (use tunit-tester)."
+skills:
+  - api-documentation
+  - inline-documentation
+  - api-design-patterns
+  - csharp-patterns
+  - blazor-patterns
+  - maui-patterns
+  - minimal-api-patterns
 tools: ['search', 'read', 'edit', 'execute', 'web']
 model: Claude Sonnet 4.6
 handoffs:
@@ -120,3 +128,13 @@ Verwende **immer** aktuelle Sprachfeatures:
 - Wenn kein Pattern existiert, erkläre deine Wahl
 - Keine NuGet-Pakete einführen ohne Begründung
 - Sprache: Code in Englisch, Kommentare und Commits auf Deutsch
+
+## Related Skills
+
+- [api-documentation](../skills/api-documentation/SKILL.md)
+- [inline-documentation](../skills/inline-documentation/SKILL.md)
+- [api-design-patterns](../skills/api-design-patterns/SKILL.md)
+- [csharp-patterns](../skills/csharp-patterns/SKILL.md)
+- [blazor-patterns](../skills/blazor-patterns/SKILL.md)
+- [maui-patterns](../skills/maui-patterns/SKILL.md)
+- [minimal-api-patterns](../skills/minimal-api-patterns/SKILL.md)
