@@ -221,3 +221,59 @@ Allowlist konfigurierbar in `.github/releaseflow.json`:
 | `milestone-url` | URL des Milestones | plan-release |
 | `milestone-title` | Milestone-Titel | plan-release |
 | `error-message` | Fehlermeldung bei Guardrail-Fehler | Bei Fehler |
+
+## KI-Verhalten im ReleaseFlow-Kontext
+
+### Was ReleaseFlow AUTOMATISCH erledigt — KI darf das NICHT manuell tun
+
+| Aufgabe | Automatisch durch | KI-Reaktion |
+|---------|-------------------|-------------|
+| Promotion-PR (dev → release) | `auto-pr.yml` + `RF: 🔧 Auto-PR` | **Warten**, nicht selbst erstellen |
+| Freeze-Tag setzen | `release.yml` beim Freeze-Merge | **Warten**, nie `git tag` manuell |
+| Beta-Tag erstellen | `beta-release.yml` | **Warten** auf nächsten Auto-PR |
+| Stable-Promo-PR | `auto-pr.yml` nach Beta | **Warten**, nicht selbst erstellen |
+| Phase-Labels setzen | `alpha/beta-release.yml` | KI nur bei Guardrail-Blockern eingreifen |
+
+### Train-Status prüfen
+
+Bei Frage "Wie ist der aktuelle Train-Status?" prüft die KI:
+1. `gh release list` → Welcher Train ist aktiv (Draft-Intent vorhanden?)
+2. `git tag -l 'vX.Y.Z*'` → Welche Tags existieren (alpha, freeze, beta, stable)?
+3. `gh run list` → Letzte Runs auf `dev/v*` und `release/v*` — sind alle grün?
+4. `gh pr list --state open` → Offene Auto-PRs von ReleaseFlow
+5. Bewertung: Phase bestimmen (Alpha/Freeze/Beta/Stable) + Plausibilitätsprüfung (erwartete Tags für Phase vorhanden? Runs erfolgreich?)
+
+### Wartezeiten beim Überwachen
+
+Beim Überwachen von laufenden Workflows gelten diese Richtwerte:
+- Quality Gate (Pester): ~30–60 s
+- Alpha/Beta-Release Workflow: ~45–90 s
+- Freeze/Stable-Release Workflow: ~60–120 s
+- Polling-Intervall: alle 10–15 s prüfen, max. 5 min warten, dann Anomalie melden
+
+### Was die KI TUN darf/soll
+
+1. **Überwachen:** Workflow-Status mit `gh run list` prüfen
+2. **Guardrail-Fehler beheben:** z. B. fehlende `phase:in-alpha`-Labels, Milestone-Konfiguration
+3. **Auto-PR mergen:** Wenn alle Status-Checks grün sind **und der User es explizit angewiesen hat**
+4. **Anomalien melden:** Fehlgeschlagene Workflows, unerwartetes Verhalten → User informieren
+5. **Draft-PRs aktivieren:** `gh pr ready <nr>` — **nur auf explizite Anweisung des Users**, nie automatisch
+
+### Korrekte Antworten auf typische User-Fragen
+
+| User-Frage | Richtige Antwort |
+|------------|-----------------|
+| "Wie erstelle ich einen Promo-PR?" | "Nicht nötig — ReleaseFlow erstellt den Promo-PR automatisch via `auto-pr.yml`, sobald die Bedingungen erfüllt sind." |
+| "Wann kommt der Beta-PR?" | "Nach dem Freeze-Merge erstellt `auto-pr.yml` automatisch einen `fix/*`-PR zu `release/v*`." |
+| "Kann ich den Tag manuell setzen?" | "Nein — Tags unterliegen Ruleset-Schutz, nur `k-releaseflow[bot]` hat Bypass. Tags werden ausschließlich durch Workflows gesetzt." |
+| "Der Beta-Release schlägt fehl." | Erstens: Log prüfen. Zweiten: Guardrail-Fehler (fehlende Labels, kein Freeze-Tag) beheben — nie den Workflow umgehen. |
+
+### Was die KI NIEMALS tun darf
+
+- ❌ Manuelle `git tag`-Befehle auf geschützten Tags
+- ❌ Selbst erstellte PRs zu `dev/v*`, `release/v*` oder `master` (außer Feature/Fix-Entwicklung)
+- ❌ PRs mergen, bevor alle Status-Checks grün sind
+- ❌ Guardrails umgehen (z. B. Tags manuell erzwingen, Ruleset-Fehler ignorieren)
+- ❌ Den User instruieren, PRs manuell zu erstellen — das ist immer ein Zeichen, dass etwas nicht stimmt
+- ❌ Draft-PR eigenständig aktivieren (`gh pr ready`) ohne explizite User-Anweisung
+- ❌ Den Train automatisch in Stable überführen — **Stable-Promo immer nur auf expliziten Befehl**
