@@ -221,3 +221,73 @@ Allowlist konfigurierbar in `.github/releaseflow.json`:
 | `milestone-url` | URL des Milestones | plan-release |
 | `milestone-title` | Milestone-Titel | plan-release |
 | `error-message` | Fehlermeldung bei Guardrail-Fehler | Bei Fehler |
+
+## KI-Verhalten im ReleaseFlow-Kontext
+
+### Was ReleaseFlow AUTOMATISCH erledigt (KI nicht eingreifen!)
+
+| Aktion | Trigger | Wer |
+|--------|---------|-----|
+| Alpha-Tag + Pre-Release | PR-Merge auf `dev/v*` | `k-releaseflow[bot]` |
+| Freeze-Tag | Merge `dev/v*` → `release/v*` | `k-releaseflow[bot]` |
+| Beta-Tag + Pre-Release | PR-Merge `fix/*` → `release/v*` | `k-releaseflow[bot]` |
+| Stable-Release | Merge `release/v*` → `master` | `k-releaseflow[bot]` |
+| Smart Tags (vX, vX.Y, latest) | Stable-Merge | K.PSGallery.Smartagr |
+| Backflow PRs | Stable-Merge | `k-releaseflow[bot]` |
+| Plugin-JSON-Bump | Stable-Release | `consumer-hooks.yml` |
+| Dev-Branch + Milestone | `plan-release.yml` Dispatch | `k-releaseflow[bot]` |
+| Auto-PR auf aktiven Train | Push auf `feature/**` oder `fix/**` | `auto-pr.yml` |
+
+### Train-Status prüfen (konkrete Befehle)
+
+```powershell
+# Aktive Releases / Phase bestimmen
+gh release list --repo OWNER/REPO --limit 10
+
+# Draft-Intent (aktiver Train) ermitteln
+gh api repos/OWNER/REPO/releases --jq '.[] | select(.draft==true) | .tag_name'
+
+# Freeze-Status prüfen (Tag vorhanden?)
+gh api repos/OWNER/REPO/git/refs/tags --jq '.[].ref' | grep freeze
+
+# Offene PRs im Train
+gh pr list --repo OWNER/REPO --state open
+
+# CI-Status letzter Workflows
+gh run list --repo OWNER/REPO --limit 5
+```
+
+**Phase erkennen:**
+
+| Letzter Tag-Suffix | Aktuelle Phase |
+|--------------------|----------------|
+| `-alphaN` | Alpha läuft |
+| `-freeze` | Freeze abgeschlossen, Beta bereit |
+| `-betaN` | Beta läuft |
+| (clean, z.B. `v1.2.0`) | Stable — kein aktiver Train |
+
+### Was die KI TUN DARF
+
+| Aktion | Befehl |
+|--------|--------|
+| Status überwachen | `gh release list`, `gh run list` |
+| Phase bestimmen | Tag-Suffix analysieren |
+| Guardrail-Fehler fixen | Fix-Commit auf bestehendem Branch |
+| PR erstellen (`feature/*`, `fix/*`) | `gh pr create --base dev/vX.Y.Z` |
+| Auf Befehl Promo-PR erstellen | `gh pr create --base release/vX.Y.Z --head dev/vX.Y.Z` |
+| Anomalien melden | Audit-Issue öffnen, User informieren |
+
+**Polling-Intervalle:**
+- CI-Status nach Commit: Warten ~2 Minuten, dann prüfen — Intervall ≥ 5 Minuten
+- Phase-Progression nach Merge: Warten ~1 Minute, dann prüfen — Intervall ≥ 3 Minuten
+
+### Was die KI NIEMALS tun darf
+
+| Verbotene Aktion | Konsequenz |
+|------------------|------------|
+| Manuell Tags erstellen (`git tag`, `gh release create`) | Korrumpiert Tag-Sequenz, bricht Smart Tags |
+| Promo-PR (dev→release oder release→master) ohne expliziten Befehl | Überspringt Phase-Gate |
+| Direkt auf `master`, `release/*` pushen | Push-Sentinel → Audit-Issue |
+| PR von `feature/*` auf `release/v*` | G2/G3-Verletzung + Branch-Prefix-Guard-Block |
+| Branch ohne Prefix `feature/` oder `fix/` erstellen | branch-prefix-guard blockiert PR |
+| Ohne aktiven Train (kein Draft-Intent) Features committen | G1-Verletzung |
