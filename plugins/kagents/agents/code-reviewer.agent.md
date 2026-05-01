@@ -7,6 +7,7 @@ skills:
   - conventional-commits
   - csharp-patterns
   - owasp-dotnet
+  - powershell-module-design
 tools: ['search', 'read', 'web']
 model: Claude Opus 4.6
 handoffs:
@@ -74,9 +75,6 @@ Du bist ein erfahrener Code Reviewer für .NET (C# 14) und PowerShell Core. Du l
 - Einheitliche Result-Objects? (`[PSCustomObject]@{ Passed = ...; Message = ... }`)
 - GitHub Outputs korrekt? (`Out-File -FilePath $env:GITHUB_OUTPUT -Append`)
 
-### PSScriptAnalyzer-Kriterien
-Die PSScriptAnalyzer-Konfiguration prüft nur Error und Warning Severity. Information-Level wird ignoriert. Keine Regeln sind ausgenommen.
-
 ### 4. Performance
 - N+1 Queries in EF Core?
 - Unnecessary Allocations (String Concatenation in Loops, LINQ in Hot Paths)?
@@ -138,10 +136,11 @@ Für jedes Finding:
 - Proportional reviewen: Kleine Änderung = fokussiertes Review
 - Sprache: Deutsch
 
-## Related Skills
+## Skill-Referenzen
 
 - [api-documentation](../skills/api-documentation/SKILL.md)
 - [inline-documentation](../skills/inline-documentation/SKILL.md)
 - [conventional-commits](../skills/conventional-commits/SKILL.md)
 - [csharp-patterns](../skills/csharp-patterns/SKILL.md)
 - [owasp-dotnet](../skills/owasp-dotnet/SKILL.md)
+- [powershell-module-design](../skills/powershell-module-design/SKILL.md)
