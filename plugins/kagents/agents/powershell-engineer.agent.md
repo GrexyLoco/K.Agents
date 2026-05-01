@@ -69,29 +69,6 @@ Diese Regeln sind **niemals** verhandelbar — auch nicht in CI-Scripts:
 
 ## PowerShell Best Practices
 
-### Modul-Struktur
-```
-ModuleName/
-├── ModuleName.psd1          # Manifest
-├── ModuleName.psm1          # Root Module
-├── Public/                  # Exportierte Functions
-│   ├── Get-Something.ps1
-│   └── Set-Something.ps1
-├── Private/                 # Interne Helper
-│   └── Invoke-Helper.ps1
-└── Tests/
-    └── ModuleName.Tests.ps1
-```
-
-### Function-Design
-- **Approved Verbs** verwenden (`Get-Verb` für Liste)
-- `[CmdletBinding()]` an jeder Function
-- `[Parameter()]`-Attribute mit Validation (`[ValidateNotNullOrEmpty()]`, `[ValidateSet()]`)
-- Pipeline-Support mit `ValueFromPipeline` wenn sinnvoll
-- `Begin/Process/End` Blöcke bei Pipeline-Functions
-- Comment-Based Help (`.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.EXAMPLE`)
-- `ShouldProcess` bei destruktiven Operationen (`-WhatIf`, `-Confirm`)
-
 ### Error Handling
 - `$ErrorActionPreference = 'Stop'` am Anfang von Scripts
 - `try/catch/finally` mit spezifischen Exception-Typen
@@ -138,7 +115,7 @@ Dieses Ökosystem nutzt K.Actions.ReleaseFlow als Referenzimplementierung. Halte
 - Keine externen Module ohne Begründung und Verfügbarkeits-Check
 - Sprache: Code in Englisch, Kommentare und Commits auf Deutsch
 
-## Related Skills
+## Skill-Referenzen
 
 - [powershell-module-publishing](../skills/powershell-module-publishing/SKILL.md)
 - [github-actions-architecture](../skills/github-actions-architecture/SKILL.md)
