@@ -59,10 +59,11 @@ $command = if ($toolInput -is [hashtable] -and $toolInput.ContainsKey('command')
 
 if (-not $command) { exit 0 }
 
-# Nur gh pr create/merge pruefen
+# Nur relevante Kommandos pruefen
 $isPrCreate = $command -match '\bgh\s+pr\s+create\b'
 $isPrMerge  = $command -match '\bgh\s+pr\s+merge\b'
-if (-not $isPrCreate -and -not $isPrMerge) { exit 0 }
+$isGitPush  = $command -match '\bgit\s+push\b'
+if (-not $isPrCreate -and -not $isPrMerge -and -not $isGitPush) { exit 0 }
 
 $cwd = $hookData['cwd']
 if (-not $cwd -or -not (Test-Path $cwd)) { exit 0 }
@@ -133,6 +134,46 @@ function Write-GuardrailBlock {
     [CmdletBinding()]
     param([string]$Reason)
     @{ decision = 'block'; reason = $Reason } | ConvertTo-Json -Compress | Write-Output
+}
+
+# =========================================================
+# Check 0: git push auf feature/* oder fix/* → aktiver Train erforderlich
+# =========================================================
+if ($isGitPush -and $currentBranch -match '^(feature|fix)/') {
+    $repoSlug = try {
+        $result = & git -C $cwd remote get-url origin 2>$null
+        if ($LASTEXITCODE -eq 0 -and $result -match 'github\.com[:/](.+?)(?:\.git)?$') {
+            $Matches[1]
+        } else { '' }
+    } catch { '' }
+
+    if ($repoSlug) {
+        $draftCount = try {
+            $result = & gh api "repos/$repoSlug/releases" `
+                --jq '[.[] | select(.draft == true and (.tag_name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")))] | length' `
+                2>$null
+            if ($LASTEXITCODE -eq 0 -and $result) { [int]($result.ToString().Trim()) } else { -1 }
+        } catch { -1 }
+
+        if ($draftCount -eq 0) {
+            Write-GuardrailBlock -Reason @"
+⛔ ReleaseFlow-Guardrail: Kein aktiver Train — Push blockiert
+
+Branch '$currentBranch' kann nicht gepusht werden, da kein aktiver ReleaseFlow-Train existiert.
+Ohne Train schlägt auto-pr.yml mit "Kein aktiver Draft Release Intent gefunden" fehl.
+
+Lösung:
+  1. plan-release.yml dispatchen:
+       gh workflow run plan-release.yml --repo $repoSlug -f target_version=X.Y.Z
+  2. Warten bis Draft-Release erstellt ist (ca. 30s)
+  3. Dann erneut pushen
+
+Break-Glass (falls beabsichtigt):
+  Setze `$env:RELEASEFLOW_BYPASS = '1'` und starte den Agenten erneut.
+"@
+            exit 0
+        }
+    }
 }
 
 # =========================================================

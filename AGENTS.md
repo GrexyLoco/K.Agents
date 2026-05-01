@@ -19,6 +19,14 @@ Dieses Projekt verfügt über 14 Agents (13 spezialisierte + 1 Orchestrator). De
 
 Wähle den Orchestrator im **Agent-Picker** (Copilot Chat, Claude Code).
 
+**Beispiele — Orchestrator leitet automatisch weiter:**
+
+| Eingabe | Ziel-Agent |
+|---------|------------|
+| "Implementiere einen User-Service mit EF Core Repository-Pattern" | `dotnet-developer` |
+| "Schreibe Pester-Tests für das Deployment-Script" | `pester-tester` |
+| "Welche Azure-Ressourcen brauchen wir für .NET Aspire mit EU-Daten?" | `azure-specialist` |
+
 Wähle direkt einen spezialisierten Agenten, wenn der Aufgabentyp klar ist:
 
 | Aufgabe | Agent |
