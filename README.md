@@ -55,7 +55,13 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 |-------|-------------|-------|
 | [Orchestrator](plugins/kagents/agents/orchestrator.agent.md) | Automatisches Routing — analysiert Aufgabe und delegiert sofort | Haiku |
 
-**Nutzung:** Orchestrator im Agent-Picker wählen (Copilot Chat, Claude Code) oder direkt in der CLI starten.
+**Nutzung:** Orchestrator im Agent-Picker wählen oder direkt aufrufen:
+
+| Platform | Aufruf |
+|----------|--------|
+| VS Code Copilot Chat | `@Orchestrator <Aufgabe>` im Chat-Eingabefeld |
+| Claude Code (CLI) | `claude` starten → Shift+Tab → Agent-Picker → `Orchestrator` wählen |
+| Visual Studio 2026 | Copilot Chat öffnen → Agent-Dropdown → `Orchestrator` wählen |
 
 #### Warum Orchestrator?
 
