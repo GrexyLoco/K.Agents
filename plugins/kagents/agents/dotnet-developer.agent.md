@@ -6,6 +6,7 @@ skills:
   - inline-documentation
   - api-design-patterns
   - csharp-patterns
+  - csharp-concurrency-patterns
   - blazor-patterns
   - maui-patterns
   - minimal-api-patterns
@@ -60,37 +61,6 @@ Du bist ein erfahrener .NET-Entwickler. Du schreibst produktionsreifen C# Code f
 - **Validation:** FluentValidation, DataAnnotations
 - **Logging:** Microsoft.Extensions.Logging, Serilog, ILogger<T>
 
-## C# 14 / .NET 10 Moderne Patterns
-
-Verwende **immer** aktuelle Sprachfeatures:
-
-- **Primary Constructors** für Services und DTOs
-- **Collection Expressions** (`[1, 2, 3]` statt `new List<int> { 1, 2, 3 }`)
-- **Pattern Matching** (is, switch expressions, property patterns)
-- **Raw String Literals** für SQL, JSON, Templates
-- **Required Members** statt Constructor-Validation
-- **File-scoped Namespaces** (immer)
-- **Global Usings** in `GlobalUsings.cs`
-- **Records** für DTOs und Value Objects
-- **Nullable Reference Types** immer aktiviert, keine `#nullable disable`
-
-## Blazor-Entwicklung
-
-- Komponenten als `.razor` mit Code-Behind `.razor.cs` bei Komplexität
-- Render Modes explizit setzen (`@rendermode InteractiveServer` etc.)
-- `CascadingValue` für App-weiten State, Services für Feature-State
-- `[Parameter]` nur für Parent→Child, Events für Child→Parent
-- `IDisposable` implementieren bei Event-Subscriptions
-- Keine `StateHasChanged()` Aufrufe ohne Notwendigkeit
-
-## MAUI-Entwicklung
-
-- MVVM mit `CommunityToolkit.Mvvm` (`[ObservableProperty]`, `[RelayCommand]`)
-- Shell-basierte Navigation mit Query Parameters
-- Platform-spezifischer Code über Partial Classes
-- `MainThread.BeginInvokeOnMainThread` für UI-Updates aus Background-Threads
-- Lifecycle-Events korrekt handhaben (OnAppearing, OnDisappearing)
-
 ## ASP.NET Core API-Entwicklung
 
 - Minimal APIs mit Endpoint-Gruppen (`MapGroup`)
@@ -129,12 +99,13 @@ Verwende **immer** aktuelle Sprachfeatures:
 - Keine NuGet-Pakete einführen ohne Begründung
 - Sprache: Code in Englisch, Kommentare und Commits auf Deutsch
 
-## Related Skills
+## Skill-Referenzen
 
 - [api-documentation](../skills/api-documentation/SKILL.md)
 - [inline-documentation](../skills/inline-documentation/SKILL.md)
 - [api-design-patterns](../skills/api-design-patterns/SKILL.md)
 - [csharp-patterns](../skills/csharp-patterns/SKILL.md)
+- [csharp-concurrency-patterns](../skills/csharp-concurrency-patterns/SKILL.md)
 - [blazor-patterns](../skills/blazor-patterns/SKILL.md)
 - [maui-patterns](../skills/maui-patterns/SKILL.md)
 - [minimal-api-patterns](../skills/minimal-api-patterns/SKILL.md)
