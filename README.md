@@ -55,7 +55,46 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 |-------|-------------|-------|
 | [Orchestrator](plugins/kagents/agents/orchestrator.agent.md) | Automatisches Routing — analysiert Aufgabe und delegiert sofort | Haiku |
 
-**Nutzung:** Orchestrator im Agent-Picker wählen (Copilot Chat, Claude Code) oder direkt in der CLI starten.
+**Nutzung:** Orchestrator im Agent-Picker wählen oder direkt aufrufen:
+
+| Platform | Aufruf |
+|----------|--------|
+| VS Code Copilot Chat | `@Orchestrator <Aufgabe>` im Chat-Eingabefeld |
+| Claude Code (CLI) | `claude` starten → Shift+Tab → Agent-Picker → `Orchestrator` wählen |
+| Visual Studio 2026 | Copilot Chat öffnen → Agent-Dropdown → `Orchestrator` wählen |
+
+#### Warum Orchestrator?
+
+K.Agents enthält 13 spezialisierte Agents — für neue User ist es nicht immer offensichtlich, welcher Agent für welche Aufgabe zuständig ist. Der Orchestrator nimmt diese kognitive Last ab: Einfach beschreiben, was gemacht werden soll, und der Orchestrator leitet automatisch an den richtigen Spezialisten weiter. Das kostet genau einen zusätzlichen Haiku-LLM-Call — schnell und günstig. Er ist der empfohlene Einstiegspunkt für alle K.Agents-Workflows.
+
+#### Was der Orchestrator NICHT tut
+
+- Führt niemals Tasks selbst aus — kein Code, keine Datei-Änderungen, keine technischen Erklärungen
+- Beantwortet keine fachlichen oder technischen Fragen direkt
+- Stellt maximal eine Rückfrage bei echter Unklarheit, delegiert danach immer sofort
+- Hat keine Tools — kann ausschließlich über Handoffs an Spezialisten weiterleiten
+
+#### Aufrufbeispiele
+
+| Eingabe | Ziel-Agent | Begründung |
+|---------|------------|------------|
+| "Implementiere einen User-Service mit EF Core Repository-Pattern" | `dotnet-developer` | C#/.NET Implementierungsaufgabe |
+| "Schreibe Pester-Tests für das Deployment-Script" | `pester-tester` | PowerShell-Tests mit Pester-Kontext |
+| "Plane das Feature für automatische Benachrichtigungen als GitHub Issues" | `planning` | Feature-Planung und Issue-Erstellung |
+| "Welche Azure-Ressourcen brauchen wir für .NET Aspire mit EU-Daten?" | `azure-specialist` | Azure/Aspire + EU-Souveränitätsfrage |
+| "Review meinen Code und schreib danach die Docs" | `code-reviewer` | Code Review zuerst — der macht dann Handoff an `documentation` |
+
+#### Orchestrator vs. direkter Agent-Aufruf
+
+| Situation | Empfehlung |
+|-----------|-----------|
+| Aufgabe ist klar beschreibbar, aber welcher Agent zuständig ist, ist unklar | Orchestrator nutzen |
+| Aufgabe ergibt sich aus einem laufenden Flow (Handoff-Button sichtbar) | Handoff direkt nutzen |
+| Zuständiger Spezialist ist bekannt und 1 LLM-Call soll gespart werden | Direkt den Spezialisten aufrufen |
+
+#### Integration in K.Agents-Flows
+
+Der Orchestrator ist der empfohlene Einstieg für alle Flows (Feature-Flow, CI/CD-Flow, TDD-Zyklus etc.). Folgeschritte innerhalb eines Flows — z.B. vom Planning Agent weiter zum App Architect — laufen über die eingebauten Handoff-Buttons direkt zwischen den Spezialisten, ohne erneuten Orchestrator-Umweg.
 
 ### Strategie & Planung
 | Agent | Beschreibung | Model |
