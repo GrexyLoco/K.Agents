@@ -4,7 +4,7 @@
 
 Dieses Projekt nutzt das **K.Agents Plugin** mit:
 - 14 Agenten (13 spezialisierte + 1 Orchestrator)
-- 27 Skills (Domain-spezifisches Wissen)
+- 32 Skills (Domain-spezifisches Wissen)
 - 2 MCP-Server (Microsoft Learn, GitHub)
 - Logging-Hooks fuer Audit-Trail
 
@@ -13,7 +13,7 @@ Dieses Projekt nutzt das **K.Agents Plugin** mit:
 | Feature | Claude Code | VS Code Copilot Chat | VS 2026 |
 |---|---|---|---|
 | Agents (14) | Automatisch via Plugin | Automatisch via Plugin | `Install-KAgentsVS.ps1` |
-| Skills (27) | Automatisch via Plugin | Automatisch via Plugin | `Install-KAgentsVS.ps1` |
+| Skills (32) | Automatisch via Plugin | Automatisch via Plugin | `Install-KAgentsVS.ps1` |
 | MCP-Server (2) | Automatisch via Plugin | Automatisch via Plugin | Nicht verfuegbar |
 | Hooks/Logging | Automatisch via Plugin | Automatisch via Plugin | Nicht verfuegbar |
 | Instructions | `Setup-Instructions.ps1` | `Setup-Instructions.ps1` | `Install-KAgentsVS.ps1` |

@@ -85,11 +85,11 @@ Im **Copilot CLI- oder Claude Code-Prompt** (nicht im Terminal):
 
 Skills verwenden **Progressive Disclosure** — ein dreistufiges Ladesystem:
 
-1. **Discovery (immer geladen):** Nur `name` und `description` aus dem YAML-Frontmatter jedes Skills. Bei 27 Skills sind das ca. 50–100 Tokens — vernachlässigbar.
+1. **Discovery (immer geladen):** Nur `name` und `description` aus dem YAML-Frontmatter jedes Skills. Bei 32 Skills sind das ca. 50–100 Tokens — vernachlässigbar.
 2. **Instructions (bei Bedarf):** Der vollständige SKILL.md-Body wird erst geladen, wenn Copilot erkennt, dass der Skill für die aktuelle Aufgabe relevant ist.
 3. **Resources (bei Bedarf):** Zusätzliche Dateien im Skill-Ordner (Scripts, Templates) werden nur geladen, wenn der Skill sie referenziert.
 
-**In der Praxis:** Bei einem typischen Prompt werden 1–3 Skills geladen, nicht alle 27. Der Token-Overhead ist minimal.
+**In der Praxis:** Bei einem typischen Prompt werden 1–3 Skills geladen, nicht alle 32. Der Token-Overhead ist minimal.
 
 > **Quelle:** [Agent Skills in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-skills) — *"This three-level loading system means you can install many skills without consuming context. Copilot loads only what is relevant for each task."*
 
@@ -502,8 +502,8 @@ code C:\repos\MeinProjekt\.github\copilot-instructions.md
 
 ## FAQ
 
-### Verbrauchen 27 Skills nicht zu viele Tokens?
-Nein. Im Discovery-Schritt werden nur Name und Description geladen (~50-100 Tokens für alle 27). Der vollständige Skill-Inhalt wird erst bei Bedarf geladen (1-3 Skills pro Prompt).
+### Verbrauchen 32 Skills nicht zu viele Tokens?
+Nein. Im Discovery-Schritt werden nur Name und Description geladen (~50-100 Tokens für alle 32). Der vollständige Skill-Inhalt wird erst bei Bedarf geladen (1-3 Skills pro Prompt).
 
 ### Muss ich das Plugin in jedem Repo installieren?
 Nein. Plugin-Installation ist User-global. Einmal installieren = in allen Repos verfügbar.
