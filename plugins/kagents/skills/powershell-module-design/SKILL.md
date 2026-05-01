@@ -71,3 +71,15 @@ if ($env:GITHUB_OUTPUT) {
 ```powershell
 [PSCustomObject]@{ Passed = $true; Skipped = $false; Message = '...' }
 ```
+
+## PSScriptAnalyzer-Review-Policy
+Nur **Error** und **Warning** Severity prüfen — Information-Findings ignorieren.
+Keine `ExcludeRules` erlaubt (Regeln dürfen nicht unterdrückt werden).
+
+```powershell
+# CI-Aufruf (konform zur Policy)
+Invoke-ScriptAnalyzer -Path . -Recurse -Severity @('Error', 'Warning')
+```
+
+Findings der Severity **Error** blockieren den Build.
+Findings der Severity **Warning** werden als Review-Kommentar gemeldet, blockieren nicht.
