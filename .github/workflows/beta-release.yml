@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Beta Release Pipeline
-# version: v1.9.16
-# commit: 7c5a9ef
-# updated: 2026-04-29
-# content-hash: 893D3691
+# version: v1.9.17
+# commit: 0f0f46a
+# updated: 2026-05-01
+# content-hash: 00000000
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -13,19 +13,21 @@
 # ═══════════════════════════════════════════════════════════════
 name: "RF: Beta Release Pipeline"
 
-# Trigger: Push auf release/v* Branches (Fix-PR oder Promotion-PR gemerged)
+# Trigger: PR-Merge auf release/v* Branches (Fix-PR oder Promotion-PR gemerged)
 # Erzeugt vX.Y.Z-beta.N Tag + GitHub Pre-release
 #
 # Architektur: Option A — Getrennte Workflows (empfohlen)
-#   alpha-release.yml → dev/v*    → Alpha
-#   beta-release.yml  → release/v* → Beta
-#   release.yml       → master     → Stable
+#   alpha-release.yml → PR-close auf dev/v*      → Alpha
+#   beta-release.yml  → PR-close auf release/v*  → Beta
+#   release.yml       → PR-close auf main/master → Stable
+#
+# Wichtig: pull_request:closed (nicht push!) damit GITHUB_EVENT_PATH
+# das pull_request-Objekt enthält, das Get-ReleaseContext benötigt.
+# Siehe Issue #119.
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: ['release/v*']
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
 
 # Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
 # Action selbst.
@@ -40,6 +42,7 @@ jobs:
   beta-release:
     name: Beta Release
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     steps:
       # GitHub App Token ZUERST (#406) — siehe Kommentar in basic.yml
       - name: 🔑 GitHub App Token generieren
@@ -96,7 +99,7 @@ jobs:
       # Label integrierte Issues mit phase:in-beta (#287)
       # Parst Closing-Keywords aus dem PR-Body und labelt referenzierte Issues.
       - name: Label integrated issues with phase:in-beta
-        if: steps.release.outcome == 'success'
+        if: steps.release.outcome == 'success' && startsWith(github.event.pull_request.head.ref, 'fix/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_BODY: ${{ github.event.pull_request.body }}
