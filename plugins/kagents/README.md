@@ -1,6 +1,6 @@
 # K.Agents
 
-**14 AI-Agents (13 spezialisierte + 1 Orchestrator) und 27 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
+**14 AI-Agents (13 spezialisierte + 1 Orchestrator) und 32 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
 
 ## Überblick
 
@@ -47,7 +47,7 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 | Documentation | README, Changelog, API-Docs | Sonnet |
 | Git Forensics | Blame, Bisect, Conventional Commits | Sonnet |
 
-## Skills (27)
+## Skills (32)
 
 | Kategorie | Skills |
 |-----------|--------|
@@ -60,9 +60,20 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 | CI/CD | `github-actions-patterns`, `github-actions-debugging` |
 | PowerShell | `powershell-module-design` |
 | Azure | `azure-monitoring` |
-| Security | `owasp-dotnet` |
+| Security | `owasp-dotnet`, `security-audit` |
 | Release | `release-management`, `conventional-commits`, `releaseflow-domain`, `releaseflow-coding-patterns` |
 | Build | `dotnet-build-diagnosis`, `dotnet-aot-compat` |
+| Architektur | `app-architecture`, `automation-architecture` |
+| VCS/Git | `git-forensics` |
+| Dokumentation | `documentation-patterns` |
+
+## Skill-Mechanismus
+
+Skills werden über zwei Mechanismen geladen:
+- **`skills:` Frontmatter** (Claude Code): Automatisches Laden beim Agent-Start
+- **Markdown-Links** im Agent-Body (VS Code Copilot): Via `## Skill-Referenzen` Sektion
+
+Beide Mechanismen verwenden denselben `SKILL.md`-Inhalt — das Verhalten ist plattformunabhängig identisch.
 
 ## Besonderheiten
 
