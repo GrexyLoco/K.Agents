@@ -132,6 +132,52 @@ $path | Should -Exist
 { code } | Should -Throw -ExceptionType ([System.IO.FileNotFoundException])
 ```
 
+## Tag-basierte selektive Ausführung
+Tags an `It`-Blöcken vergeben und bei `Invoke-Pester` filtern:
+
+```powershell
+It 'Integrationstest mit echter DB' -Tag 'Integration' {
+    # ...
+}
+
+It 'Schneller Unit-Test' -Tag 'Unit', 'Fast' {
+    # ...
+}
+```
+
+```powershell
+# Nur Integration-Tests
+Invoke-Pester -Tag 'Integration'
+
+# Alles außer langsame Tests
+Invoke-Pester -ExcludeTag 'Slow', 'Integration'
+
+# Kombination
+Invoke-Pester -Tag 'Unit' -ExcludeTag 'WIP'
+```
+
+## TestDrive: — temporäres Dateisystem
+`TestDrive:` ist ein pro-Test-Session bereinigtes virtuelles Laufwerk für Datei-System-Tests:
+
+```powershell
+It 'liest Konfigurationsdatei korrekt' {
+    # TestDrive: wird nach dem Test automatisch bereinigt
+    $configPath = Join-Path TestDrive: 'config.json'
+    Set-Content -Path $configPath -Value '{"key":"value"}' -Encoding utf8
+
+    $result = Read-Config -Path $configPath
+    $result.key | Should -Be 'value'
+}
+
+It 'legt Verzeichnisstruktur an' {
+    New-Item -ItemType Directory -Path (Join-Path TestDrive: 'sub') | Out-Null
+    Join-Path TestDrive: 'sub' | Should -Exist
+}
+```
+
+> `TestDrive:` wird nur innerhalb von Pester-Contexts aufgelöst.
+> Verwende `$TestDrive` (Variable) wenn du den absoluten Pfad brauchst.
+
 ## Environment Variables in Tests
 ```powershell
 BeforeEach {

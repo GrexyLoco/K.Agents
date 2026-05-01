@@ -90,6 +90,34 @@ Describe 'releaseflow-guardrail' {
             Invoke-Guard 'git status' $script:FeatureRepo | Should -BeNullOrEmpty
         }
     }
+    Context 'Check 0: git push ohne Remote — fail-open' {
+        It 'laesst git push auf feature/* ohne origin-Remote durch (kein repoSlug ermittelbar)' {
+            # Kein Remote konfiguriert → gh api wird nicht aufgerufen → fail-open → kein Block
+            Invoke-Guard 'git push -u origin feature/test' $script:FeatureRepo |
+                Should -BeNullOrEmpty
+        }
+        It 'laesst git push auf master durch (kein feature/fix Branch)' {
+            $masterRepo = New-TempReleaseFlowRepo 'master'
+            try {
+                Invoke-Guard 'git push origin master' $masterRepo | Should -BeNullOrEmpty
+            } finally {
+                Remove-Item $masterRepo -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+        It 'laesst git push in Nicht-RF-Repo durch' {
+            Invoke-Guard 'git push origin feature/test' $script:NonRFRepo |
+                Should -BeNullOrEmpty
+        }
+        It 'laesst git push auf feature/* mit RELEASEFLOW_BYPASS=1 durch' {
+            $env:RELEASEFLOW_BYPASS = '1'
+            try {
+                Invoke-Guard 'git push origin feature/test' $script:FeatureRepo |
+                    Should -BeNullOrEmpty
+            } finally {
+                Remove-Item Env:RELEASEFLOW_BYPASS -ErrorAction SilentlyContinue
+            }
+        }
+    }
     Context 'Break-Glass' {
         It 'laesst blockiertes Kommando durch wenn RELEASEFLOW_BYPASS=1' {
             $env:RELEASEFLOW_BYPASS = '1'
