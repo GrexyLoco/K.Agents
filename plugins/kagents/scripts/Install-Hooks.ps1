@@ -100,6 +100,70 @@ function New-ClaudeHookEntry {
     }
 }
 
+function Test-IsLegacyHookEntry {
+    <#
+    .SYNOPSIS
+        Prueft ob ein Hook-Eintrag das veraltete Muster verwendet.
+    .DESCRIPTION
+        Erkennt Legacy-Eintraege die mit powershell.exe (5.1) ausgefuehrt werden:
+        - Eintrag hat eine 'shell'-Property (neues Format hat keine)
+        - command nutzt '& "' (PS-Invoke-Syntax statt direktem pwsh-Aufruf)
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][hashtable]$HookEntry)
+    if ($HookEntry.ContainsKey('shell')) { return $true }
+    if ($HookEntry.ContainsKey('command') -and $HookEntry['command'] -match '^\s*&\s+"') { return $true }
+    return $false
+}
+
+function Remove-LegacyHookEntries {
+    <#
+    .SYNOPSIS
+        Entfernt veraltete K.Agents Hook-Eintraege aus dem hooks-Block.
+    .DESCRIPTION
+        Durchsucht alle Hook-Typen (PreToolUse, PostToolUse) nach Eintraegen
+        mit dem Legacy-Muster und entfernt diese. Fremde Hooks (kein kagents-Bezug)
+        bleiben unveraendert.
+        Gibt $true zurueck wenn mindestens ein Legacy-Eintrag entfernt wurde.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory)][hashtable]$Settings)
+
+    if (-not $Settings.ContainsKey('hooks')) { return $false }
+
+    $removed = $false
+    foreach ($hookType in @('PreToolUse', 'PostToolUse')) {
+        if (-not $Settings['hooks'].ContainsKey($hookType)) { continue }
+        $matchers = $Settings['hooks'][$hookType]
+        $updatedMatchers = [System.Collections.Generic.List[object]]::new()
+        foreach ($matcher in $matchers) {
+            if (-not $matcher.ContainsKey('hooks')) {
+                $updatedMatchers.Add($matcher)
+                continue
+            }
+            $filteredHooks = [System.Collections.Generic.List[object]]::new()
+            foreach ($hook in $matcher['hooks']) {
+                $isKAgentsHook = $hook.ContainsKey('command') -and
+                    $hook['command'] -match 'kagents|pre_tool_call|post_tool_call|releaseflow-guardrail'
+                if ($isKAgentsHook -and (Test-IsLegacyHookEntry -HookEntry $hook)) {
+                    $removed = $true
+                } else {
+                    $filteredHooks.Add($hook)
+                }
+            }
+            # Matcher beibehalten wenn noch Hooks verbleiben; leere Matcher weglassen
+            if ($filteredHooks.Count -gt 0) {
+                $matcher['hooks'] = $filteredHooks.ToArray()
+                $updatedMatchers.Add($matcher)
+            }
+        }
+        $Settings['hooks'][$hookType] = $updatedMatchers.ToArray()
+    }
+    return $removed
+}
+
 function Install-ClaudeHooks {
     [CmdletBinding()]
     param([string]$Scope, [switch]$Uninstall, [switch]$Force)
@@ -124,7 +188,14 @@ function Install-ClaudeHooks {
         return
     }
 
-    if ($settings.ContainsKey('hooks') -and -not $Force) {
+    # Legacy-Migration: veraltete Eintraege (shell: powershell / & "...") automatisch ersetzen
+    $legacyMigrated = Remove-LegacyHookEntries -Settings $settings
+    if ($legacyMigrated) {
+        Write-Warning "Veraltete K.Agents Hook-Eintraege (powershell.exe/& `"-Muster) wurden migriert."
+        Write-Warning "Schreibe neue Eintraege mit pwsh -NoProfile -File..."
+    }
+
+    if (-not $legacyMigrated -and $settings.ContainsKey('hooks') -and -not $Force) {
         $existingHooks = $settings['hooks']
         $hasKAgentsHook = $false
         foreach ($hookType in @('PreToolUse', 'PostToolUse')) {
@@ -132,7 +203,7 @@ function Install-ClaudeHooks {
                 foreach ($matcher in $existingHooks[$hookType]) {
                     if ($matcher.ContainsKey('hooks')) {
                         foreach ($hook in $matcher['hooks']) {
-                            if ($hook['command'] -match 'kagents') { $hasKAgentsHook = $true }
+                            if ($hook.ContainsKey('command') -and $hook['command'] -match 'kagents') { $hasKAgentsHook = $true }
                         }
                     }
                 }
@@ -155,7 +226,20 @@ function Install-ClaudeHooks {
         )
     }
 
-    $settings['hooks'] = $hooksConfig
+    # Hooks mergen: bestehende Nicht-K.Agents-Eintraege beibehalten, kagents-Eintraege anfuegen
+    if (-not $settings.ContainsKey('hooks')) { $settings['hooks'] = @{} }
+    foreach ($hookType in $hooksConfig.Keys) {
+        $merged = [System.Collections.Generic.List[object]]::new()
+        if ($settings['hooks'].ContainsKey($hookType)) {
+            foreach ($entry in @($settings['hooks'][$hookType])) {
+                $merged.Add($entry)
+            }
+        }
+        foreach ($entry in @($hooksConfig[$hookType])) {
+            $merged.Add($entry)
+        }
+        $settings['hooks'][$hookType] = $merged.ToArray()
+    }
 
     $settingsDir = Split-Path $settingsPath -Parent
     if (-not (Test-Path $settingsDir)) {
@@ -174,6 +258,7 @@ function Install-ClaudeHooks {
 
 function Show-VSCodeHint {
     [CmdletBinding()]
+    param()
     Write-Output ''
     Write-Output '--- VS Code Copilot Integration ---'
     Write-Output ''
