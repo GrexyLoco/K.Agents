@@ -88,7 +88,7 @@ Bei jeder Azure-Empfehlung muss eine EU-souveräne Alternative mit Kostenverglei
 Validation Loop: QS-Agents (TUnit Tester, Pester Tester, Security Auditor, Code Reviewer) können Findings zurück an Implementierungs-Agents delegieren. Der Kreislauf läuft bis alle Findings behoben sind.
 
 ### Keine Implementierung ohne Issue
-Vor dem Start jeder Implementierung muss eine GitHub-Issue-Nummer vorliegen. Fehlt sie, fragt der Agent nach oder schlägt vor, zuerst ein Issue zu erstellen (via `planning`-Agent). Gilt für alle Implementierungs-Agents: `dotnet-developer`, `powershell-engineer`, `tunit-tester`, `pester-tester`.
+Vor dem Start jeder Implementierung muss eine GitHub-Issue-Nummer vorliegen. Fehlt sie, fragt der Agent nach oder schlägt vor, zuerst ein Issue zu erstellen (via `planning`-Agent). Bei Einstieg über den `orchestrator` darf nur an einen Implementierungs-Agenten delegiert werden, wenn eine Issue-Nummer vorliegt. Gilt für alle Implementierungs-Agents: `dotnet-developer`, `powershell-engineer`, `tunit-tester`, `pester-tester`.
 
 ### Keine Annahmen
 Wenn etwas unklar ist: **fragen**, nicht raten. Kein Overengineering, kein Gold-Plating.
