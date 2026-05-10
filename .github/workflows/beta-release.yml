@@ -105,7 +105,12 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         shell: bash
         run: |
-          ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+          # grep liefert exit code 1 wenn keine Treffer gefunden werden — das ist normales
+          # POSIX-Verhalten und kein Fehler. Ohne "|| true" wuerde GitHub Actions' Shell-Option
+          # "-eo pipefail" (bash --noprofile --norc -eo pipefail) die Pipeline als Fehler werten
+          # und das Script hier abbrechen, bevor "if [ -z ... ]" ueberhaupt laeuft.
+          # Quelle: BashFAQ/105 — echte Assignments propagieren den Exit-Code der Subshell.
+          ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u || true)
 
           if [ -z "$ISSUE_NUMBERS" ]; then
             echo "No closing keywords found — no issues to label."
