@@ -9,7 +9,7 @@
     {
       "name": "kagents",
       "version": "v1.13.2",
-      "description": "14 spezialisierte Agenten mit Orchestrator fuer .NET 10, PowerShell Core, Azure und GitHub Actions",
+      "description": "15 spezialisierte Agenten mit Orchestrator fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, Azure und GitHub Actions",
       "source": "./plugins/kagents",
       "category": "development",
       "homepage": "https://github.com/GrexyLoco/K.Agents"
