@@ -1,7 +1,7 @@
 {
   "name": "kagents",
-  "description": "14 spezialisierte AI-Agents und 32 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
-  "version": "v1.13.4",
+  "description": "15 spezialisierte AI-Agents und 34 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
+  "version": "v1.14.0",
   "author": {
     "name": "GrexyLoco",
     "email": "noreply@grexyloco.dev"
@@ -33,7 +33,8 @@
     "../agents/powershell-engineer.agent.md",
     "../agents/security-auditor.agent.md",
     "../agents/tunit-tester.agent.md",
-    "../agents/orchestrator.agent.md"
+    "../agents/orchestrator.agent.md",
+    "../agents/dotnet-architect.agent.md"
   ],
   "skills": [
     "../skills/csharp-patterns",
@@ -67,6 +68,8 @@
     "../skills/automation-architecture",
     "../skills/security-audit",
     "../skills/git-forensics",
-    "../skills/documentation-patterns"
+    "../skills/documentation-patterns",
+    "../skills/setup-identity",
+    "../skills/init-project"
   ]
 }
