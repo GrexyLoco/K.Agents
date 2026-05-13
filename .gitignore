@@ -14,3 +14,6 @@ Thumbs.db
 
 # K.Agents Laufzeit-Logs
 plugins/kagents/logs/
+
+# Claude Code lokal-spezifische Einstellungen
+.claude/settings.local.json
