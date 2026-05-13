@@ -1,0 +1,62 @@
+name: Commit Message Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  lint-commits:
+    name: Conventional Commits pruefen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Commit Messages validieren
+        shell: pwsh
+        run: |
+          $base = "${{ github.event.pull_request.base.sha }}"
+          $head = "${{ github.event.pull_request.head.sha }}"
+
+          $commits = git log --format="%H" "${base}..${head}" | Where-Object { $_ }
+          $failed = 0
+
+          $scriptPath = Join-Path $env:GITHUB_WORKSPACE 'plugins/kagents/hooks/commit-msg.ps1'
+
+          foreach ($sha in $commits) {
+            # Merge-Commits ueberspringen (mehr als 1 Parent)
+            $parents = (git cat-file -p $sha | Select-String '^parent ').Count
+            if ($parents -gt 1) {
+              Write-Output "SKIP (merge): $sha"
+              continue
+            }
+
+            $msg = (git log --format='%B' -n 1 $sha) -join "`n"
+
+            # [skip ci] ueberspringen
+            if ($msg -match '\[skip ci\]') {
+              Write-Output "SKIP (skip ci): $sha"
+              continue
+            }
+
+            # Nachricht in Temp-Datei schreiben und Skript aufrufen (BOM-freies UTF-8)
+            $tmpFile = [System.IO.Path]::GetTempFileName()
+            try {
+              [System.IO.File]::WriteAllText($tmpFile, $msg, [System.Text.UTF8Encoding]::new($false))
+              & pwsh -NoProfile -File $scriptPath $tmpFile
+              if ($LASTEXITCODE -ne 0) {
+                Write-Error "FAIL: $sha"
+                $failed++
+              } else {
+                Write-Output "OK: $sha"
+              }
+            } finally {
+              Remove-Item $tmpFile -ErrorAction SilentlyContinue
+            }
+          }
+
+          if ($failed -gt 0) {
+            Write-Error "$failed Commit(s) entsprechen nicht dem Conventional Commits Format"
+            exit 1
+          }
