@@ -1,6 +1,6 @@
 {
   "name": "kagents",
-  "description": "15 spezialisierte AI-Agents und 34 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
+  "description": "15 spezialisierte AI-Agents und 37 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
   "version": "v1.14.0",
   "author": {
     "name": "GrexyLoco",
@@ -70,6 +70,9 @@
     "../skills/git-forensics",
     "../skills/documentation-patterns",
     "../skills/setup-identity",
-    "../skills/init-project"
+    "../skills/init-project",
+    "../skills/releaseflow-train-status",
+    "../skills/releaseflow-conflict-fix",
+    "../skills/releaseflow-push"
   ]
 }
