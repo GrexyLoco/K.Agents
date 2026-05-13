@@ -12,9 +12,8 @@
       ein (User- oder Project-Scope).
     - Target VSCode: zeigt die Registrierungsschritte fuer VS Code Copilot
       Chat / Copilot CLI an. Die eigentliche Hook-Definition liegt in
-      plugins/kagents/hooks.json (Copilot-CLI-Format) und plugins/kagents/hooks/hooks.json
-      (Claude-Format) und wird von VS Code auto-erkannt, sobald das Plugin
-      per Plugin-Pfad registriert ist.
+      plugins/kagents/hooks/hooks.json (Claude-Format) und wird von VS Code
+      auto-erkannt, sobald das Plugin per Plugin-Pfad registriert ist.
     - Target All: beide obigen Schritte.
 
     Die Hook-Scripts loggen Agent-Events als JSONL nach plugins/kagents/logs/.
@@ -264,11 +263,9 @@ function Show-VSCodeHint {
     Write-Output ''
     Write-Output 'Die Hook-Definition ist bereits bereit:'
     $claudeHooksJson  = Join-Path $pluginRoot 'hooks' 'hooks.json'
-    $copilotHooksJson = Join-Path $pluginRoot 'hooks.json'
     Write-Output "  - Claude-Format (Plugin-Discovery): $claudeHooksJson"
-    Write-Output "  - Copilot-CLI-Format (Plugin-Root): $copilotHooksJson"
     Write-Output ''
-    Write-Output 'Beide Dateien nutzen ${CLAUDE_PLUGIN_ROOT} Token-Syntax und OS-spezifische'
+    Write-Output 'Die Datei nutzt ${CLAUDE_PLUGIN_ROOT} Token-Syntax und OS-spezifische'
     Write-Output 'Command-Overrides (windows/linux/osx). VS Code Copilot Chat und Copilot CLI'
     Write-Output 'erkennen die Hooks automatisch, sobald das Plugin in der entsprechenden'
     Write-Output 'Agent-Plugin-Konfiguration registriert ist.'
