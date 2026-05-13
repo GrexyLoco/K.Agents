@@ -52,6 +52,11 @@
 - Quality Gate: GitLeaks → PSScriptAnalyzer → Pester → Evaluation
 - CI-Scripts in `.github/scripts/` auslagern (nicht inline YAML)
 
+### ReleaseFlow-Bedienung
+Vor jedem `git push feature/*` oder `fix/*`: `/releaseflow-push` Skill aufrufen.
+Bei Merge-Konflikten (DIRTY-Status): `/releaseflow-conflict-fix` Skill aufrufen.
+Train-Status prüfen: `/releaseflow-train-status` Skill aufrufen.
+
 ### Testing
 - **.NET:** TUnit Framework (nicht xUnit/NUnit/MSTest)
   - Async Assertions: `await Assert.That(...)`

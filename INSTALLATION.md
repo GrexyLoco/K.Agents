@@ -242,7 +242,7 @@ Das Plugin registriert **Guards** (präventive Prüfungen vor einem Tool-Aufruf)
 **Log-Format:** JSONL (ein JSON-Objekt pro Zeile), eine Datei pro Tag.
 **Log-Pfad:** `${CLAUDE_PLUGIN_ROOT}/logs/` (innerhalb des Plugin-Verzeichnisses, nicht im Workspace).
 
-Die Hooks sind in zwei Dateien definiert: `plugins/kagents/hooks/hooks.json` (Claude Code Format) und `plugins/kagents/hooks.json` (VS Code Copilot Format). Beide verwenden `${CLAUDE_PLUGIN_ROOT}` Token-Syntax und OS-spezifische Command-Overrides.
+Die Hooks sind in `plugins/kagents/hooks/hooks.json` (Claude Code Format) definiert. Die Datei verwendet `${CLAUDE_PLUGIN_ROOT}` Token-Syntax und OS-spezifische Command-Overrides.
 
 **VS Code:** Hooks werden automatisch beim Plugin-Start aktiviert — keine manuelle Konfiguration nötig.
 **Claude Code:** Hooks einmalig via `Install-Hooks.ps1` registrieren (User- oder Project-Scope).
@@ -260,7 +260,7 @@ Das Plugin liefert zwei MCP-Server mit, die automatisch gestartet werden:
 | **Microsoft Learn** | Docs-Suche, API-Referenzen, Code-Beispiele (`microsoft_docs_search`, `microsoft_docs_fetch`, `microsoft_code_sample_search`) |
 | **GitHub** | Issues, PRs, Repos, Code-Suche, Advisory Database |
 
-Die Server sind in `mcp-servers.json` definiert und werden vom Plugin-System automatisch registriert.
+Die Server sind in `.mcp.json` definiert und werden vom Plugin-System automatisch registriert.
 
 **GitHub-Authentifizierung:** Verwendet `gh auth token` (GitHub CLI). Voraussetzung: `gh auth login` wurde einmalig ausgeführt.
 
