@@ -15,7 +15,7 @@ Diese Codebase gehört zu einer Software-Entwicklungsabteilung mit folgenden Sch
 
 ## Agent-Routing
 
-Dieses Projekt verfügt über 14 Agents (13 spezialisierte + 1 Orchestrator). Der **Orchestrator** ist der empfohlene Einstiegspunkt — er analysiert die Aufgabe und delegiert automatisch an den passenden Agenten.
+Dieses Projekt verfügt über 15 Agents (14 spezialisierte + 1 Orchestrator). Der **Orchestrator** ist der empfohlene Einstiegspunkt — er analysiert die Aufgabe und delegiert automatisch an den passenden Agenten.
 
 Wähle den Orchestrator im **Agent-Picker** (Copilot Chat, Claude Code).
 
@@ -75,6 +75,7 @@ Dieses Projekt nutzt K.Actions.ReleaseFlow für automatisierte Release-Orchestri
 - **GitHub App Token** statt PATs für CI/CD
 - **Quality Gate:** GitLeaks → PSScriptAnalyzer → Pester → Evaluation
 - Siehe Skills `releaseflow-domain` und `releaseflow-coding-patterns` für Details
+- Skills: `releaseflow-train-status`, `releaseflow-push`, `releaseflow-conflict-fix` — KI-Interface für ReleaseFlow-Aktionen
 
 ### Testing
 - **.NET Tests:** Ausschließlich TUnit (nicht xUnit, NUnit, MSTest)
