@@ -1,6 +1,6 @@
 # K.Agents
 
-**14 AI-Agents (13 spezialisierte + 1 Orchestrator) und 32 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
+**15 AI-Agents (14 spezialisierte + 1 Orchestrator) und 37 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
 
 ## Überblick
 
@@ -47,7 +47,7 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 | Documentation | README, Changelog, API-Docs | Sonnet |
 | Git Forensics | Blame, Bisect, Conventional Commits | Sonnet |
 
-## Skills (32)
+## Skills (37)
 
 | Kategorie | Skills |
 |-----------|--------|
@@ -61,11 +61,20 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 | PowerShell | `powershell-module-design` |
 | Azure | `azure-monitoring` |
 | Security | `owasp-dotnet`, `security-audit` |
-| Release | `release-management`, `conventional-commits`, `releaseflow-domain`, `releaseflow-coding-patterns` |
+| Release | `release-management`, `conventional-commits`, `releaseflow-domain`, `releaseflow-coding-patterns`, `releaseflow-train-status`, `releaseflow-conflict-fix`, `releaseflow-push` |
 | Build | `dotnet-build-diagnosis`, `dotnet-aot-compat` |
 | Architektur | `app-architecture`, `automation-architecture` |
 | VCS/Git | `git-forensics` |
 | Dokumentation | `documentation-patterns` |
+
+## Tools
+
+Ausführbare PowerShell-Scripts für KI-Agenten zur deterministischen ReleaseFlow-Steuerung.
+
+| Tool | Beschreibung |
+|------|-------------|
+| `releaseflow/Get-ReleaseTrain` | Train-Status, Phase, erlaubte Branches, Milestone, blockierende Issues |
+| `releaseflow/Invoke-ReleaseConflictFix` | ReleaseFlow-spezifischer Merge-Konflikt-Workflow |
 
 ## Skill-Mechanismus
 
