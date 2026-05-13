@@ -50,6 +50,14 @@
 .EXAMPLE
     .\Install-Hooks.ps1 -Uninstall
     # Entfernt Claude Code Hooks aus der settings.json
+
+.EXAMPLE
+    .\Install-Hooks.ps1 -GitHooks
+    # Installiert den git commit-msg Hook im aktuellen Repository
+
+.EXAMPLE
+    .\Install-Hooks.ps1 -Target All -GitHooks
+    # Installiert Claude Code Hooks (User-Scope) + git commit-msg Hook
 #>
 [CmdletBinding()]
 param(
@@ -60,7 +68,9 @@ param(
     [string]$Scope = 'user',
 
     [switch]$Uninstall,
-    [switch]$Force
+    [switch]$Force,
+
+    [switch]$GitHooks
 )
 
 Set-StrictMode -Version Latest
@@ -273,6 +283,66 @@ function Show-VSCodeHint {
     Write-Output 'Dokumentation: https://code.visualstudio.com/docs/copilot/customization/agent-plugins'
 }
 
+function Install-GitHooks {
+    <#
+    .SYNOPSIS
+        Installiert den git commit-msg Hook als nativen git Hook im aktuellen Repository.
+    .DESCRIPTION
+        Schreibt einen Shell-Shim nach .git/hooks/commit-msg der commit-msg.ps1 aufruft.
+        Prueft vorher ob core.hooksPath gesetzt ist — falls ja, Warnung und Abbruch.
+        Auf Linux/macOS wird der Shim ausfuehrbar gemacht (chmod +x).
+    #>
+    [CmdletBinding()]
+    param()
+
+    # Pruefe ob wir in einem git-Repository sind
+    $gitDir = git rev-parse --git-dir 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning 'Kein git-Repository gefunden. git commit-msg Hook konnte nicht installiert werden.'
+        Write-Warning 'Fuehre Install-Hooks.ps1 aus dem Wurzelverzeichnis eines git-Repos aus.'
+        return
+    }
+
+    # core.hooksPath pruefen — falls gesetzt, kann .git/hooks/ ignoriert werden
+    $customHooksPath = git config --get core.hooksPath 2>&1
+    if ($LASTEXITCODE -eq 0 -and $customHooksPath) {
+        Write-Warning "git config core.hooksPath ist gesetzt: '$customHooksPath'"
+        Write-Warning "Der Shim kann nicht automatisch nach .git/hooks/commit-msg geschrieben werden."
+        Write-Warning "Kopiere commit-msg.ps1 manuell in: $customHooksPath"
+        Write-Warning "Und erstelle dort einen Shim (commit-msg ohne Erweiterung) der commit-msg.ps1 aufruft."
+        return
+    }
+
+    # commit-msg.ps1 absoluten Pfad ermitteln
+    $commitMsgScript = (Resolve-Path (Join-Path $PSScriptRoot '..' 'hooks' 'commit-msg.ps1')).Path
+
+    # .git/hooks/ Verzeichnis
+    $gitDirPath = (Resolve-Path $gitDir).Path
+    $hooksPath = Join-Path $gitDirPath 'hooks'
+    if (-not (Test-Path $hooksPath)) {
+        New-Item -ItemType Directory -Path $hooksPath -Force | Out-Null
+    }
+
+    $shimPath = Join-Path $hooksPath 'commit-msg'
+
+    # Shim-Inhalt mit LF-Zeilenenden (git for Windows erfordert LF)
+    $shimContent = "#!/bin/sh`nexec pwsh -NoProfile -File `"$commitMsgScript`" `"`$@`"`n"
+
+    # BOM-freies UTF-8 mit LF (BOM bricht Shebang auf Linux/macOS)
+    [System.IO.File]::WriteAllText($shimPath, $shimContent, [System.Text.UTF8Encoding]::new($false))
+
+    # Auf Linux/macOS: ausfuehrbar machen
+    if (-not $IsWindows) {
+        chmod +x $shimPath
+    }
+
+    Write-Output "git commit-msg Hook installiert: $shimPath"
+    Write-Output "  -> $commitMsgScript"
+    Write-Output ''
+    Write-Output 'Der Hook wird bei jedem git commit ausgefuehrt (unabhaengig vom verwendeten Tool).'
+    Write-Output "Break-Glass: `$env:KAGENTS_COMMIT_BYPASS = '1'"
+}
+
 # --- Ausfuehrung ---
 switch ($Target) {
     'ClaudeCode' { Install-ClaudeHooks -Scope $Scope -Uninstall:$Uninstall -Force:$Force }
@@ -287,6 +357,10 @@ switch ($Target) {
         Install-ClaudeHooks -Scope $Scope -Uninstall:$Uninstall -Force:$Force
         if (-not $Uninstall) { Show-VSCodeHint }
     }
+}
+
+if ($GitHooks) {
+    Install-GitHooks
 }
 
 $logsDir = Join-Path $pluginRoot 'logs'

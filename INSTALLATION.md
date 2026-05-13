@@ -227,7 +227,6 @@ Das Plugin registriert **Guards** (präventive Prüfungen vor einem Tool-Aufruf)
 | `secret-scanner.ps1` | — (alle Tools) | Secrets/Tokens im Tool-Input (API-Keys, Passwörter, Zertifikate) | `KAGENTS_SECRET_BYPASS=1` |
 | `destructive-command-guard.ps1` | `Bash` | Destruktive Shell-Kommandos (`rm -rf`, `format`, `DROP TABLE` etc.) | `KAGENTS_DESTRUCTIVE_BYPASS=1` |
 | `releaseflow-guardrail.ps1` | `Bash` | Direkte `gh pr create/merge` auf master ohne ReleaseFlow-Pfad | `RELEASEFLOW_BYPASS=1` |
-| `conventional-commit-guard.ps1` | `Bash` | Conventional-Commit-Format bei `git commit` | `KAGENTS_COMMIT_BYPASS=1` |
 | `crossplatform-lint-guard.ps1` | `Write` | Cross-Platform-Probleme in `.ps1`-Dateien (`Write-Host`, Hardcoded-Pfade etc.) | `KAGENTS_LINT_BYPASS=1` |
 | `pre_tool_call.ps1` | — (alle Tools) | Kein Block — Logging + Session-Wechsel-Erkennung (Session Summary) | — |
 
@@ -246,6 +245,23 @@ Die Hooks sind in `plugins/kagents/hooks/hooks.json` (Claude Code Format) defini
 
 **VS Code:** Hooks werden automatisch beim Plugin-Start aktiviert — keine manuelle Konfiguration nötig.
 **Claude Code:** Hooks einmalig via `Install-Hooks.ps1` registrieren (User- oder Project-Scope).
+
+#### Git Hook (commit-msg)
+
+Der `commit-msg` Hook wird als nativer git Hook installiert — er läuft bei JEDEM Commit, unabhängig vom verwendeten Tool (Terminal, IDE, Script):
+
+```powershell
+# Nur git commit-msg Hook installieren:
+./plugins/kagents/tools/Install-Hooks.ps1 -GitHooks
+
+# Alle Hooks (Claude Code + git):
+./plugins/kagents/tools/Install-Hooks.ps1 -Target All -GitHooks
+```
+
+**Bestehende Nutzer** (Upgrade von v1.15.1 oder früher): Der `conventional-commit-guard` PreToolUse-Hook wurde entfernt. Falls er noch in `~/.claude/settings.json` registriert ist, muss der Eintrag manuell gelöscht werden:
+1. `~/.claude/settings.json` öffnen
+2. Den Block mit `conventional-commit-guard.ps1` aus `hooks.PreToolUse` entfernen
+3. Alternativ: `Install-Hooks.ps1 -Uninstall` + `Install-Hooks.ps1` ausführen (registriert alle aktuellen Hooks neu)
 
 > **Wichtig:** Hooks werden von **Visual Studio 2026** nicht unterstützt (kein Plugin-System für Hooks).
 
