@@ -328,8 +328,8 @@ function Install-GitHooks {
     # Shim-Inhalt mit LF-Zeilenenden (git for Windows erfordert LF)
     $shimContent = "#!/bin/sh`nexec pwsh -NoProfile -File `"$commitMsgScript`" `"`$@`"`n"
 
-    # Explizit LF-Zeilenenden schreiben (Windows-Trap: Set-Content schreibt CRLF)
-    [System.IO.File]::WriteAllText($shimPath, $shimContent, [System.Text.Encoding]::UTF8)
+    # BOM-freies UTF-8 mit LF (BOM bricht Shebang auf Linux/macOS)
+    [System.IO.File]::WriteAllText($shimPath, $shimContent, [System.Text.UTF8Encoding]::new($false))
 
     # Auf Linux/macOS: ausfuehrbar machen
     if (-not $IsWindows) {

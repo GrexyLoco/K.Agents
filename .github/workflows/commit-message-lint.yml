@@ -32,7 +32,7 @@ jobs:
               continue
             }
 
-            $msg = git log --format='%B' -n 1 $sha
+            $msg = (git log --format='%B' -n 1 $sha) -join "`n"
 
             # [skip ci] ueberspringen
             if ($msg -match '\[skip ci\]') {
@@ -40,10 +40,10 @@ jobs:
               continue
             }
 
-            # Nachricht in Temp-Datei schreiben und Skript aufrufen
+            # Nachricht in Temp-Datei schreiben und Skript aufrufen (BOM-freies UTF-8)
             $tmpFile = [System.IO.Path]::GetTempFileName()
             try {
-              [System.IO.File]::WriteAllText($tmpFile, $msg, [System.Text.Encoding]::UTF8)
+              [System.IO.File]::WriteAllText($tmpFile, $msg, [System.Text.UTF8Encoding]::new($false))
               & pwsh -NoProfile -File $scriptPath $tmpFile
               if ($LASTEXITCODE -ne 0) {
                 Write-Error "FAIL: $sha"
