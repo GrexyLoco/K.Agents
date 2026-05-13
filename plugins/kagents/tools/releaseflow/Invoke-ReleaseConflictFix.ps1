@@ -53,7 +53,7 @@ function Invoke-Git {
     param([string[]]$Args)
     $output = git @Args 2>&1
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "git $($Args -join ' ') failed (exit $LASTEXITCODE):`n$output"
+        throw "git $($Args -join ' ') failed (exit $LASTEXITCODE):`n$output"
     }
     return $output
 }
@@ -63,7 +63,7 @@ function Invoke-Gh {
     param([string[]]$Args)
     $output = gh @Args 2>&1
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "gh $($Args -join ' ') failed (exit $LASTEXITCODE):`n$output"
+        throw "gh $($Args -join ' ') failed (exit $LASTEXITCODE):`n$output"
     }
     return $output
 }
@@ -145,9 +145,6 @@ function Invoke-Complete {
     # 3. Push
     Write-Information "Pushing Branch..." -InformationAction Continue
     Invoke-Git @('push', '-u', 'origin', 'HEAD') | Out-Null
-
-    # Aktuellen Branch-Namen ermitteln
-    $currentBranch = (git branch --show-current 2>&1).Trim()
 
     # 4. PR erstellen
     $prTitle = "FIX: Merge-Konflikte ${ReleaseBranch} <- ${SourceBranch}"
