@@ -375,6 +375,18 @@ _* Automation Architect delegiert an powershell-engineer für Script-Implementie
 
 Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Richtlinien.
 
+### Kritische Repo-Dateien
+
+#### `.claude-plugin/marketplace.json`
+
+Claude Code sucht beim Hinzufügen eines GitHub-Repos als Marketplace zwingend unter `.claude-plugin/marketplace.json`. Ohne diese Datei schlägt die Installation fehl:
+
+```text
+Plugin "kagents" not found in marketplace "kagents"
+```
+
+Das Verzeichnis `.claude-plugin/` darf **nicht entfernt** werden — auch nicht bei Strukturbereinigungen. Hintergrund: [Issue #149](https://github.com/GrexyLoco/K.Agents/issues/149), [Claude Code Docs](https://code.claude.com/docs/en/discover-plugins).
+
 ## Danksagung
 
 OSS-Skills adaptiert von:
