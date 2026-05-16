@@ -24,6 +24,9 @@ dev = [
     "httpx>=0.28",
     "respx>=0.21",
 ]
+windows = [
+    "pywin32>=308",
+]
 
 [project.scripts]
 k-switchboard = "k_switchboard.__main__:main"
