@@ -79,19 +79,32 @@ foreach ($dir in @($AgentsPath, $SkillsPath)) {
 }
 
 # Agents kopieren (VS Code-spezifische Tools entfernen)
-$agentFiles = Get-ChildItem -Path $agentsSource -Filter '*.agent.md'
-foreach ($file in $agentFiles) {
-    $dest = Join-Path $AgentsPath $file.Name
-    if ($PSCmdlet.ShouldProcess($dest, 'Agent kopieren')) {
-        if (-not (Test-Path $AgentsPath)) {
-            New-Item -ItemType Directory -Path $AgentsPath -Force | Out-Null
+# Guard: Wenn das K.Agents Copilot-Plugin installiert ist, werden Agents NICHT nach
+# ~/.github/agents/ kopiert, da das Plugin bereits als primäre Quelle dient.
+# Doppelte Einträge im VS Code Agent Picker werden so verhindert. (#163)
+$copilotPluginAgentsPath = Join-Path $env:USERPROFILE '.copilot' 'installed-plugins' 'kagents' 'kagents' 'agents'
+$copilotPluginInstalled = Test-Path $copilotPluginAgentsPath
+
+if ($copilotPluginInstalled) {
+    Write-Information "K.Agents Copilot-Plugin erkannt ($copilotPluginAgentsPath)." -Tags 'Install'
+    Write-Information "Agents werden NICHT nach $AgentsPath kopiert, um Duplikate im Agent Picker zu vermeiden." -Tags 'Install'
+    Write-Output "Agents-Kopie übersprungen: Copilot-Plugin bereits installiert (Duplikat-Schutz aktiv)."
+    $agentFiles = @()
+} else {
+    $agentFiles = Get-ChildItem -Path $agentsSource -Filter '*.agent.md'
+    foreach ($file in $agentFiles) {
+        $dest = Join-Path $AgentsPath $file.Name
+        if ($PSCmdlet.ShouldProcess($dest, 'Agent kopieren')) {
+            if (-not (Test-Path $AgentsPath)) {
+                New-Item -ItemType Directory -Path $AgentsPath -Force | Out-Null
+            }
+            $content = Get-Content -Path $file.FullName -Raw
+            $transformed = ConvertTo-VS2026AgentContent -Content $content
+            Set-Content -Path $dest -Value $transformed -NoNewline
         }
-        $content = Get-Content -Path $file.FullName -Raw
-        $transformed = ConvertTo-VS2026AgentContent -Content $content
-        Set-Content -Path $dest -Value $transformed -NoNewline
     }
+    Write-Output "$($agentFiles.Count) Agents kopiert nach: $AgentsPath"
 }
-Write-Output "$($agentFiles.Count) Agents kopiert nach: $AgentsPath"
 
 # Skills kopieren (jeder Skill ist ein Unterordner)
 $skillDirs = Get-ChildItem -Path $skillsSource -Directory
