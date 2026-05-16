@@ -213,6 +213,28 @@ Der Client erhält den Response-Header `X-K-Switchboard-Fallback-Used: original 
 
 **Warum beide Ebenen nötig?** Ebene 1 (VS Code) fängt ab, wenn ein Modellname dem Client gänzlich unbekannt ist. Ebene 2 (Switchboard) fängt ab, wenn das Modell bekannt ist, aber der Provider zur Laufzeit nicht antwortet.
 
+## Deinstallation
+
+### Windows
+
+```powershell
+# 1. Autostart entfernen (Task und/oder Dienst — idempotent, kein Fehler wenn nichts registriert)
+.\scripts\install-windows.ps1 -Unregister
+
+# 2. Software deinstallieren
+pip uninstall k-switchboard
+
+# 3. Konfiguration entfernen (optional — eigene Anpassungen gehen verloren)
+Remove-Item -Recurse -Force "$env:APPDATA\K.Switchboard"
+```
+
+### Linux / macOS
+
+```bash
+pip uninstall k-switchboard
+rm -rf ~/.config/k-switchboard
+```
+
 ## Server starten
 
 ```bash
