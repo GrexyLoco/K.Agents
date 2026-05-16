@@ -4,13 +4,15 @@ Transparenter HTTP-Proxy, der zwischen **Claude Max Subscription** und lokalen *
 
 ## Was ist K.Switchboard?
 
-K.Switchboard läuft lokal auf Port `3456` und verhält sich wie die Anthropic API. **Clients** — das sind Tools wie Claude CLI, Claude Code Extension oder andere Anthropic-API-kompatible Anwendungen — zeigen einfach ihre API-URL auf `http://localhost:3456`:
+K.Switchboard läuft lokal auf Port `3456` und verhält sich wie die Anthropic API. **Clients** zeigen einfach ihre API-URL auf `http://localhost:3456`:
 
 - **Lokale Modelle** (konfigurierte Aliase wie `local-coder`) → **Provider: Ollama** (kostenlos, lokal)
 - **Claude-Modelle** (z.B. `claude-sonnet-latest`) → **Provider: Anthropic API** (kostenpflichtig, transparent durchgeleitet)
 - **Fallback**: Bei nicht erreichbarem Provider greift die konfigurierte [Fallback-Kette](#fallback-verhalten)
 
-**Providers** sind die Backends, an die K.Switchboard Anfragen weiterleitet. Aktuell werden zwei Provider unterstützt: `anthropic` (Cloud, kostenpflichtig) und `ollama` (lokal, kostenlos).
+Ein **Client** ist jede Anwendung, die Anfragen im Anthropic-API-Format sendet — z.B. Claude CLI, Claude Code Extension, Continue.dev oder eigene Skripte. **Nicht kompatibel:** `claude.ai` (Web-Frontend, kein `ANTHROPIC_BASE_URL`-Support) und VS Code Copilot Chat (eigenes GitHub-Protokoll, nicht Anthropic-API).
+
+**Providers** sind die KI-Dienste, an die K.Switchboard Anfragen weiterleitet. Aktuell werden zwei Provider unterstützt: `anthropic` (Cloud, kostenpflichtig) und `ollama` (lokal, kostenlos).
 
 Der eigene `ANTHROPIC_API_KEY` bleibt im Client und wird bitidentisch weitergeleitet — K.Switchboard liest ihn nicht aus.
 
@@ -73,12 +75,7 @@ model: mistral:7b   # ':' im Namen → K.Switchboard routet automatisch zu Ollam
 ---
 ```
 
-**Für eigene Anthropic-API-kompatible Clients** (Python-SDK, CLI, etc.):
-
-```python
-# ':' im Modellnamen → automatisch Ollama-Provider
-client.messages.create(model="mistral:7b", ...)
-```
+Eigene API-Clients (Python-SDK, CLI, etc.) übergeben `mistral:7b` einfach als Modellname — der Doppelpunkt sorgt automatisch für Ollama-Routing.
 
 Vollständige Konfigurationsdokumentation: [`config.example.yaml`](config.example.yaml)
 
@@ -120,7 +117,7 @@ Jeder Client, der `ANTHROPIC_BASE_URL` oder einen konfigurierbaren Basis-URL-Par
 
 ### Copilot Chat (VS Code) — nicht unterstützt
 
-VS Code Copilot Chat ist **kein Anthropic-API-Client** und lässt sich nicht über K.Switchboard routen. Copilot Chat kommuniziert direkt mit `api.githubcopilot.com` via GitHub-Token und ignoriert `ANTHROPIC_BASE_URL`. Empirische Verifikation: [Spike #162](https://github.com/GrexyLoco/K.Agents/issues/162).
+VS Code Copilot Chat ist **kein Anthropic-API-Client** und lässt sich nicht über K.Switchboard routen. Copilot Chat kommuniziert direkt mit `api.githubcopilot.com` via GitHub-Token und ignoriert `ANTHROPIC_BASE_URL`. Verifikation via [Spike #162](https://github.com/GrexyLoco/K.Agents/issues/162) (ausstehend).
 
 ## Agent-Modelle und Aliase
 
