@@ -19,11 +19,18 @@ $stateFile  = Join-Path (Split-Path $logFile -Parent) '.last-session'
 $currentSid = $hookData['session_id']
 $lastSid    = if (Test-Path $stateFile) { (Get-Content $stateFile -Raw -Encoding utf8).Trim() } else { $null }
 
-if ($null -ne $lastSid -and $lastSid -ne $currentSid) {
-    New-SessionSummary -SessionId $lastSid -LogDir (Split-Path $logFile -Parent)
+$haveBothSids = -not [string]::IsNullOrWhiteSpace($currentSid) -and -not [string]::IsNullOrWhiteSpace($lastSid)
+if ($haveBothSids -and $lastSid -ne $currentSid) {
+    try {
+        New-SessionSummary -SessionId $lastSid -LogDir (Split-Path $logFile -Parent)
+    } catch {
+        # Summary-Fehler darf den Tool-Call nicht blockieren
+    }
 }
 
-Set-Content -Path $stateFile -Value $currentSid -Encoding utf8 -NoNewline
+if (-not [string]::IsNullOrWhiteSpace($currentSid)) {
+    Set-Content -Path $stateFile -Value $currentSid -Encoding utf8 -NoNewline
+}
 
 $inputPreview  = Format-InputPreview -HookData $hookData
 $correlationId = New-CorrelationId `

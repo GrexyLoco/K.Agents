@@ -21,6 +21,8 @@ function Read-HookStdin {
     [OutputType([hashtable])]
     param()
 
+    # Nicht-blockierender Early-Return wenn stdin nicht angeschlossen ist.
+    if (-not [Console]::IsInputRedirected) { return @{} }
     $rawInput = try { [Console]::In.ReadToEnd() } catch { '' }
     if ($rawInput.Trim()) {
         try { $rawInput | ConvertFrom-Json -AsHashtable } catch { @{} }
