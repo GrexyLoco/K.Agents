@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "kagents",
-      "version": "v1.15.3",
+      "version": "v1.16.0",
       "description": "14 spezialisierte AI-Agents und 27 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, Azure und GitHub Actions",
       "source": "./plugins/kagents",
       "category": "development",
