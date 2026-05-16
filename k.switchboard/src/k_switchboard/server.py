@@ -9,7 +9,7 @@ import time
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 
-from .backends import passthrough_anthropic, proxy_ollama
+from .providers import passthrough_anthropic, proxy_ollama
 from .config import SwitchboardConfig
 from .costing import get_daily_stats, record_usage
 from .fallback import execute_with_fallback
@@ -99,15 +99,15 @@ def create_app(config: SwitchboardConfig) -> FastAPI:
                 status_code=400, detail="Pflichtfeld 'model' fehlt im Request-Body"
             )
 
-        resolved_model, backend = resolve_model(model_name, config)
+        resolved_model, provider = resolve_model(model_name, config)
         logger.debug(
-            "Route: '%s' → '%s' (Backend: %s)", model_name, resolved_model, backend
+            "Route: '%s' → '%s' (Provider: %s)", model_name, resolved_model, provider
         )
 
         async def _request_func(target_model: str) -> Response:
-            """Sendet den Request mit dem angegebenen Modellnamen ans Backend."""
-            target_resolved_model, target_backend = resolve_model(target_model, config)
-            if target_backend == "ollama":
+            """Sendet den Request mit dem angegebenen Modellnamen an den Provider."""
+            target_resolved_model, target_provider = resolve_model(target_model, config)
+            if target_provider == "ollama":
                 return await proxy_ollama(request, target_resolved_model, config)
             return await passthrough_anthropic(request, target_resolved_model, config)
 

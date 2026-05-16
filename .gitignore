@@ -12,6 +12,11 @@ Thumbs.db
 *.tmp
 *.bak
 
+# Python-Artefakte
+__pycache__/
+*.py[cod]
+uv.lock
+
 # K.Agents Laufzeit-Logs
 plugins/kagents/logs/
 

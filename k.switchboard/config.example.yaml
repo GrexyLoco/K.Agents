@@ -3,21 +3,46 @@
 #   Windows: %APPDATA%\K.Switchboard\config.yaml
 #   Linux/macOS: ~/.config/k-switchboard/config.yaml
 
+# ---------------------------------------------------------------------------
+# Server-Port
+# K.Switchboard lauscht auf diesem Port. Clients müssen ANTHROPIC_BASE_URL
+# auf http://localhost:<port> setzen. Standard: 3456.
+# ---------------------------------------------------------------------------
 port: 3456
 
-# Anthropic API — wird für Claude-Modelle genutzt
+# ---------------------------------------------------------------------------
+# Anthropic-Provider
+# Basis-URL der Anthropic API. Nur ändern, wenn ein anderer Anthropic-
+# kompatibler Endpunkt (z.B. Azure AI Gateway) genutzt werden soll.
+# Der ANTHROPIC_API_KEY wird bitidentisch aus dem Client weitergeleitet.
+# ---------------------------------------------------------------------------
 anthropic_base_url: https://api.anthropic.com
 
-# Ollama — wird für lokale Modelle genutzt
+# ---------------------------------------------------------------------------
+# Ollama-Provider
+# Basis-URL der lokalen Ollama-Instanz. Modelle mit ':' im Namen (z.B.
+# llama3.2:3b) sowie konfigurierte Aliase werden automatisch hier geroutet.
+# Voraussetzung: Ollama läuft lokal (ollama serve).
+# ---------------------------------------------------------------------------
 ollama_base_url: http://localhost:11434
 
-# Aliase: Kurzname → echter Modellname
-# Modelle mit ':' im Namen werden automatisch als Ollama-Modelle erkannt
+# ---------------------------------------------------------------------------
+# Modell-Aliase
+# Bilden einen Kurznamen auf einen echten Provider-Modellnamen ab.
+# Modelle mit ':' im Namen werden automatisch als Ollama-Modelle erkannt,
+# auch ohne Alias-Eintrag. Aliase sind case-sensitiv.
+# ---------------------------------------------------------------------------
 model_aliases:
   local-coder: codellama:13b
   local-fast: llama3.2:3b
 
-# Fallback-Ketten: wenn 'from' nicht erreichbar, wird 'to' versucht
+# ---------------------------------------------------------------------------
+# Fallback-Ketten
+# Wenn ein Modell einen Fehler zurückgibt (Netzwerkfehler oder HTTP 4xx/5xx),
+# versucht K.Switchboard das unter 'to' angegebene Modell. Ketten können
+# mehrere Stufen haben. Der Client erhält den Header
+# X-K-Switchboard-Fallback-Used: <from> -> <to>.
+# ---------------------------------------------------------------------------
 fallback_chains:
   - from: local-coder
     to: claude-sonnet-latest
