@@ -1,4 +1,4 @@
-"""Tests für den Anthropic-Passthrough-Backend."""
+"""Tests für den Anthropic-Passthrough-Provider."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import respx
 from fastapi.responses import StreamingResponse
 from starlette.requests import Request as StarletteRequest
 
-from k_switchboard.backends import passthrough_anthropic
+from k_switchboard.providers import passthrough_anthropic
 from k_switchboard.config import SwitchboardConfig
 
 

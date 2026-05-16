@@ -1,4 +1,4 @@
-"""Backend-Implementierungen: Anthropic Passthrough und Ollama-Proxy."""
+"""Provider-Implementierungen: Anthropic Passthrough und Ollama-Proxy."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from .config import SwitchboardConfig
 
 logger = logging.getLogger(__name__)
 
-# Headers die niemals ans Backend weitergeleitet werden
+# Headers die niemals an den Provider weitergeleitet werden
 _EXCLUDED_REQUEST_HEADERS = frozenset(
     {
         "host",
@@ -46,7 +46,7 @@ async def passthrough_anthropic(
         config: Switchboard-Konfiguration mit anthropic_base_url.
 
     Returns:
-        Response oder StreamingResponse vom Anthropic-Backend.
+        Response oder StreamingResponse vom Anthropic-Provider.
     """
     body_bytes = await request.body()
 

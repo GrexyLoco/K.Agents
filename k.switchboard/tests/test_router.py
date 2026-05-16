@@ -43,36 +43,36 @@ class TestIsOllamaModel:
 
 
 class TestResolveModel:
-    def test_alias_auf_ollama_gibt_ollama_backend(
+    def test_alias_auf_ollama_gibt_ollama_provider(
         self, config: SwitchboardConfig
     ) -> None:
-        resolved, backend = resolve_model("local-coder", config)
+        resolved, provider = resolve_model("local-coder", config)
         assert resolved == "codellama:13b"
-        assert backend == "ollama"
+        assert provider == "ollama"
 
-    def test_alias_auf_claude_gibt_anthropic_backend(
+    def test_alias_auf_claude_gibt_anthropic_provider(
         self, config: SwitchboardConfig
     ) -> None:
-        resolved, backend = resolve_model("claude-alias", config)
+        resolved, provider = resolve_model("claude-alias", config)
         assert resolved == "claude-sonnet-latest"
-        assert backend == "anthropic"
+        assert provider == "anthropic"
 
     def test_direkter_ollama_tag(self, config: SwitchboardConfig) -> None:
-        resolved, backend = resolve_model("mistral:7b", config)
+        resolved, provider = resolve_model("mistral:7b", config)
         assert resolved == "mistral:7b"
-        assert backend == "ollama"
+        assert provider == "ollama"
 
     def test_claude_modell_direkt(self, config: SwitchboardConfig) -> None:
-        resolved, backend = resolve_model("claude-haiku-latest", config)
+        resolved, provider = resolve_model("claude-haiku-latest", config)
         assert resolved == "claude-haiku-latest"
-        assert backend == "anthropic"
+        assert provider == "anthropic"
 
     def test_unbekanntes_modell_wird_anthropic(self, config: SwitchboardConfig) -> None:
-        resolved, backend = resolve_model("gpt-4-turbo", config)
+        resolved, provider = resolve_model("gpt-4-turbo", config)
         assert resolved == "gpt-4-turbo"
-        assert backend == "anthropic"
+        assert provider == "anthropic"
 
     def test_local_fast_alias_aufloesen(self, config: SwitchboardConfig) -> None:
-        resolved, backend = resolve_model("local-fast", config)
+        resolved, provider = resolve_model("local-fast", config)
         assert resolved == "llama3.2:3b"
-        assert backend == "ollama"
+        assert provider == "ollama"
