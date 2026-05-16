@@ -1,0 +1,47 @@
+# Konfigurationsbeispiel für K.Switchboard
+# Kopieren nach:
+#   Windows: %APPDATA%\K.Switchboard\config.yaml
+#   Linux/macOS: ~/.config/k-switchboard/config.yaml
+
+port: 3456
+
+# Anthropic API — wird für Claude-Modelle genutzt
+anthropic_base_url: https://api.anthropic.com
+
+# Ollama — wird für lokale Modelle genutzt
+ollama_base_url: http://localhost:11434
+
+# Aliase: Kurzname → echter Modellname
+# Modelle mit ':' im Namen werden automatisch als Ollama-Modelle erkannt
+model_aliases:
+  local-coder: codellama:13b
+  local-fast: llama3.2:3b
+
+# Fallback-Ketten: wenn 'from' nicht erreichbar, wird 'to' versucht
+fallback_chains:
+  - from: local-coder
+    to: claude-sonnet-latest
+  - from: local-fast
+    to: claude-haiku-latest
+  - from: claude-opus-latest
+    to: claude-sonnet-latest
+  - from: claude-sonnet-latest
+    to: claude-haiku-latest
+
+# Preise in USD per 1M Tokens (Stand Mai 2026)
+pricing:
+  claude-opus-latest:
+    input: 15.0
+    output: 75.0
+  claude-sonnet-latest:
+    input: 3.0
+    output: 15.0
+  claude-haiku-latest:
+    input: 0.25
+    output: 1.25
+  local-coder:
+    input: 0.0
+    output: 0.0
+  local-fast:
+    input: 0.0
+    output: 0.0

@@ -37,7 +37,7 @@
         ]
       },
       {
-        "matcher": "Write",
+        "matcher": "Write|Edit|NotebookEdit",
         "hooks": [
           {
             "type": "command",
@@ -49,6 +49,7 @@
         ]
       },
       {
+        "matcher": "Bash|Write|Edit|NotebookEdit",
         "hooks": [
           {
             "type": "command",
@@ -62,6 +63,7 @@
     ],
     "PostToolUse": [
       {
+        "matcher": "Bash|Write|Edit|NotebookEdit",
         "hooks": [
           {
             "type": "command",
