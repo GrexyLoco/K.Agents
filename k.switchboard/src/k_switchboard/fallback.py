@@ -1,4 +1,4 @@
-"""Fallback-Logik: Bei Backend-Fehler auf ein alternatives Modell ausweichen."""
+"""Fallback-Logik: Bei Provider-Fehler auf ein alternatives Modell ausweichen."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ async def execute_with_fallback(
     Fallback-Kette versucht.
 
     Der Header X-K-Switchboard-Fallback-Used wird nur an den Client
-    gesendet, niemals ans Backend weitergeleitet.
+    gesendet, niemals an den Provider weitergeleitet.
 
     Args:
         model: Der ursprünglich angeforderte (bereits aufgelöste) Modellname.
