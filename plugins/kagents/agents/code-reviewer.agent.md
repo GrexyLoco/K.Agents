@@ -9,32 +9,34 @@ skills:
   - owasp-dotnet
   - powershell-module-design
 tools: ['search', 'read', 'web']
-model: Claude Opus 4.6
+model:
+  - local-coder
+  - Claude Opus 4.6
 handoffs:
   - label: Findings beheben (.NET)
-    agent: dotnet-developer
+    agent: .NET Developer
     prompt: >
       Bitte behebe die folgenden Review-Findings im .NET-Code.
     send: false
   - label: Findings beheben (PowerShell)
-    agent: powershell-engineer
+    agent: PowerShell Engineer
     prompt: >
       Bitte behebe die folgenden Review-Findings im PowerShell-Code.
     send: false
   - label: Security-Audit anfordern
-    agent: security-auditor
+    agent: Security Auditor
     prompt: >
       Das Code Review hat potenzielle Sicherheitsbedenken aufgedeckt.
       Führe ein Security-Audit für die betroffenen Komponenten durch.
     send: false
   - label: Tests ergänzen (TUnit)
-    agent: tunit-tester
+    agent: TUnit Tester
     prompt: >
       Das Code Review hat fehlende Testabdeckung im .NET-Code identifiziert.
       Ergänze TUnit-Tests für die genannten Bereiche.
     send: false
   - label: Tests ergänzen (Pester)
-    agent: pester-tester
+    agent: Pester Tester
     prompt: >
       Das Code Review hat fehlende Testabdeckung im PowerShell-Code identifiziert.
       Ergänze Pester-Tests für die genannten Bereiche.
