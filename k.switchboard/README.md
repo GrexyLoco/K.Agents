@@ -22,9 +22,40 @@ Der eigene `ANTHROPIC_API_KEY` bleibt im Client und wird bitidentisch weitergele
 # Python 3.11+ vorausgesetzt
 pip install .
 
-# Konfiguration + optionaler Windows-Task
+# Nur Konfiguration, kein Autostart
 .\scripts\install-windows.ps1
-.\scripts\install-windows.ps1 -AsTask   # automatisch bei Anmeldung starten
+
+# Als Scheduled Task (empfohlen — kein Admin erforderlich)
+.\scripts\install-windows.ps1 -AsTask
+
+# Als Scheduled Task mit sichtbarem Konsolenfenster (Debugging)
+.\scripts\install-windows.ps1 -AsTask -Interactive
+
+# Als Windows-Dienst (Admin erforderlich, startet beim Booten)
+.\scripts\install-windows.ps1 -AsService
+
+# Task und/oder Dienst nachträglich entfernen
+.\scripts\install-windows.ps1 -Unregister
+```
+
+#### Task vs. Dienst
+
+| | Scheduled Task | Windows Service |
+|---|---|---|
+| **Startet** | Bei Benutzeranmeldung | Beim Systemstart (vor Anmeldung) |
+| **Kontext** | Aktueller Benutzer | SYSTEM oder Service-Account |
+| **Admin erforderlich** | Nein | Ja |
+| **Empfohlen für** | Einzelner Entwickler-PC | Geteilte Maschine / CI-Server |
+
+Ein **Scheduled Task** (`-AsTask`) läuft im Kontext des angemeldeten Benutzers und hat Zugriff auf dessen Umgebungsvariablen und Netzlaufwerke. Er startet automatisch bei der nächsten Anmeldung. Ein **Windows Service** (`-AsService`) läuft unabhängig von Anmeldungen als Hintergrunddienst — erfordert jedoch Administratorrechte bei der Registrierung.
+
+**Modus nachträglich wechseln** — keine Neuinstallation nötig:
+```powershell
+# 1. Bestehenden Autostart entfernen (idempotent — kein Fehler wenn nichts registriert)
+.\scripts\install-windows.ps1 -Unregister
+
+# 2. Mit gewünschtem Modus neu registrieren
+.\scripts\install-windows.ps1 -AsTask    # oder -AsService
 ```
 
 ### Linux / macOS
