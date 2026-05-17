@@ -4,8 +4,12 @@
     Installiert K.Switchboard als Windows-Dienst oder portabel.
 
 .DESCRIPTION
-    Kopiert K.Switchboard.exe nach %LOCALAPPDATA%\K.Switchboard\ und
-    registriert den Dienst optional als Windows-Service via sc.exe.
+        Kopiert K.Switchboard.exe je nach Modus in einen passenden Zielpfad
+        und registriert den Dienst optional als Windows-Service via sc.exe.
+
+        Pfade:
+            Portabel: %LOCALAPPDATA%\K.Switchboard\
+            Service:  %ProgramData%\K.Switchboard\
 
     Der Dienst läuft unter dem NetworkService-Konto mit verzögertem
     automatischen Start (Automatic Delayed). Intern nutzt die EXE
@@ -55,7 +59,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $script:ServiceName = 'K.Switchboard'
-$script:InstallDir  = Join-Path $env:LOCALAPPDATA 'K.Switchboard'
+$script:PortableInstallDir = Join-Path $env:LOCALAPPDATA 'K.Switchboard'
+$script:ServiceInstallDir  = Join-Path $env:ProgramData 'K.Switchboard'
 
 # --- Hilfsfunktionen ---
 
@@ -83,17 +88,20 @@ function Assert-AdminRights {
 
 function Install-Portable {
     [CmdletBinding(SupportsShouldProcess)]
-    param([string]$SourceExe)
+    param(
+        [string]$SourceExe,
+        [string]$TargetDir
+    )
 
     if (-not (Test-Path $SourceExe)) {
         throw "EXE nicht gefunden: $SourceExe"
     }
 
-    if ($PSCmdlet.ShouldProcess($script:InstallDir, 'Installationsverzeichnis erstellen')) {
-        $null = New-Item -ItemType Directory -Path $script:InstallDir -Force
+    if ($PSCmdlet.ShouldProcess($TargetDir, 'Installationsverzeichnis erstellen')) {
+        $null = New-Item -ItemType Directory -Path $TargetDir -Force
     }
 
-    $destExe = Join-Path $script:InstallDir 'K.Switchboard.exe'
+    $destExe = Join-Path $TargetDir 'K.Switchboard.exe'
 
     if ($PSCmdlet.ShouldProcess($destExe, 'EXE kopieren')) {
         Copy-Item -Path $SourceExe -Destination $destExe -Force
@@ -101,6 +109,43 @@ function Install-Portable {
     }
 
     return $destExe
+}
+
+function Set-ServiceInstallPermissions {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([string]$TargetDir)
+
+    Assert-AdminRights
+
+    if (-not (Test-Path $TargetDir)) {
+        throw "Service-Installationspfad existiert nicht: $TargetDir"
+    }
+
+    if ($PSCmdlet.ShouldProcess($TargetDir, 'ACL für NetworkService (ReadAndExecute) setzen')) {
+        $acl = Get-Acl -Path $TargetDir
+        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+            'NT AUTHORITY\NETWORK SERVICE',
+            'ReadAndExecute, Synchronize',
+            'ContainerInherit, ObjectInherit',
+            'None',
+            'Allow'
+        )
+
+        $exists = $false
+        foreach ($entry in $acl.Access) {
+            if ($entry.IdentityReference -eq 'NT AUTHORITY\NETWORK SERVICE' -and
+                $entry.AccessControlType -eq 'Allow' -and
+                ($entry.FileSystemRights.ToString().Contains('ReadAndExecute'))) {
+                $exists = $true
+                break
+            }
+        }
+
+        if (-not $exists) {
+            $null = $acl.AddAccessRule($rule)
+            Set-Acl -Path $TargetDir -AclObject $acl
+        }
+    }
 }
 
 function Register-WindowsService {
@@ -192,7 +237,8 @@ if ($Unregister) {
     Unregister-WindowsService
     Write-Output ''
     Write-Output 'Manuelle Bereinigung (optional):'
-    Write-Output "  Remove-Item -Recurse -Force `"$($script:InstallDir)`""
+    Write-Output "  Remove-Item -Recurse -Force `"$($script:PortableInstallDir)`""
+    Write-Output "  Remove-Item -Recurse -Force `"$($script:ServiceInstallDir)`""
     Write-Output "  Remove-Item -Recurse -Force `"$env:APPDATA\K.Switchboard`""
     Write-Output "  Remove-Item -Recurse -Force `"$env:ProgramData\K.Switchboard`""
     return
@@ -202,9 +248,11 @@ if ($ExePath -eq '') {
     throw 'K.Switchboard.exe nicht gefunden. Gib -ExePath an oder lege die EXE neben das Skript.'
 }
 
-$installedExe = Install-Portable -SourceExe $ExePath
+$targetDir = if ($AsService) { $script:ServiceInstallDir } else { $script:PortableInstallDir }
+$installedExe = Install-Portable -SourceExe $ExePath -TargetDir $targetDir
 
 if ($AsService) {
+    Set-ServiceInstallPermissions -TargetDir $targetDir
     Register-WindowsService -ExeFullPath $installedExe
 }
 else {
