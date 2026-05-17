@@ -88,8 +88,11 @@ try
 
     app.MapHealthChecks("/health");
 
-    app.MapGet("/config", (IOptionsSnapshot<SwitchboardOptions> opts) =>
-        TypedResults.Ok(opts.Value));
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapGet("/config", (IOptionsSnapshot<SwitchboardOptions> opts) =>
+            TypedResults.Ok(opts.Value));
+    }
 
     // --- Proxy-Endpoint: POST /v1/messages ---
     app.MapPost("/v1/messages", async (HttpContext ctx, ModelRouter router, FallbackService fallback, CancellationToken ct) =>
