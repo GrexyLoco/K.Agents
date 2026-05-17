@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Serilog nutzt intern Reflection und ist noch nicht vollständig trim-kompatibel (IL2104).
+       TrimmerRootAssembly stellt sicher, dass die Assemblies vollständig behalten werden.
+       Statt globaler Warnungsunterdrückung wird nur IL2104 gezielt unterdrückt. -->
+  <ItemGroup Condition="'$(PublishTrimmed)'=='true'">
+    <TrimmerRootAssembly Include="Serilog" />
+    <TrimmerRootAssembly Include="Serilog.Settings.Configuration" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(PublishTrimmed)'=='true'">
+    <NoWarn>$(NoWarn);IL2104</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>K.Switchboard.Tests</_Parameter1>
+    </AssemblyAttribute>
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0-preview.4.25258.110" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+</Project>

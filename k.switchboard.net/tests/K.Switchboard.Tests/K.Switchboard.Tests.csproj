@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="TUnit" Version="0.21.7" />
+    <ProjectReference Include="..\..\src\K.Switchboard\K.Switchboard.csproj" />
+  </ItemGroup>
+
+</Project>
