@@ -64,6 +64,32 @@ public sealed class FallbackServiceTests
     }
 
     [Test]
+    public async Task Forward_PrimaryFails_FallbackThrows_NoFalse200Returned()
+    {
+        var (svc, _, ctx) = Build(
+            primaryStatus: 500,
+            primaryModel: "claude-3-opus",
+            fallbacks: ["codellama:13b"],
+            fallbackThrows: true);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(ctx.Response.StatusCode).IsEqualTo(500);
+        await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
+    }
+
+    [Test]
+    public async Task Forward_PrimaryThrows_NoFallbackConfigured_ReturnsBadGateway()
+    {
+        var (svc, _, ctx) = Build(primaryThrows: true, fallbacks: []);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(ctx.Response.StatusCode).IsEqualTo(502);
+        await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
+    }
+
+    [Test]
     public async Task Forward_PrimaryJsonException_ReturnsBadRequest()
     {
         var (svc, _, ctx) = Build(primaryThrowsJson: true, fallbacks: ["codellama:13b"]);
@@ -83,9 +109,11 @@ public sealed class FallbackServiceTests
     private static (FallbackService Service, CostingService Costing, DefaultHttpContext Context) Build(
         int primaryStatus = 200,
         string primaryBody = "{}",
+        bool primaryThrows = false,
         bool primaryThrowsJson = false,
         int fallbackStatus = 200,
         string fallbackBody = "{}",
+        bool fallbackThrows = false,
         string primaryModel = "claude-3-opus",
         List<string>? fallbacks = null)
     {
@@ -102,12 +130,18 @@ public sealed class FallbackServiceTests
         // Stub-Provider: "anthropic" = primary, all fallback names also mapped
         var allProviders = new List<IProvider>
         {
-            primaryThrowsJson
-                ? new ThrowingJsonProvider("anthropic")
+            primaryThrows
+                ? new ThrowingProvider("anthropic")
+                : primaryThrowsJson
+                    ? new ThrowingJsonProvider("anthropic")
                 : new StubProvider("anthropic", primaryStatus, primaryBody)
         };
         if (fallbacks.Count > 0)
-            allProviders.Add(new StubProvider("ollama", fallbackStatus, fallbackBody));
+        {
+            allProviders.Add(fallbackThrows
+                ? new ThrowingProvider("ollama")
+                : new StubProvider("ollama", fallbackStatus, fallbackBody));
+        }
 
         // ModelRouter: aliases that route primary to anthropic, fallbacks to anthropic (no ':')
         var router = new ModelRouter(optsMon);
@@ -142,7 +176,15 @@ public sealed class FallbackServiceTests
         }
     }
 
-    /// <summary>Test-Provider der beim Forwarding eine JsonException wirft.</summary>
+    /// <summary>Test-Provider der immer eine Exception wirft.</summary>
+    private sealed class ThrowingProvider(string name) : IProvider
+    {
+        public string Name => name;
+
+        public Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct) =>
+            throw new HttpRequestException("Simulierter Netzwerkfehler");
+    }
+
     private sealed class ThrowingJsonProvider(string name) : IProvider
     {
         public string Name => name;

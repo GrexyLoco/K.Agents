@@ -34,6 +34,8 @@ public sealed class FallbackService(
         string? primaryResolvedModel = null;
         string? winnerModel = null;
         byte[]? lastCapture = null;
+        byte[]? lastFailureBody = null;
+        var lastFailureStatus = StatusCodes.Status502BadGateway;
 
         for (var i = 0; i < chain.Count; i++)
         {
@@ -53,7 +55,6 @@ public sealed class FallbackService(
             if (i > 0)
             {
                 // Fehlgeschlagene Response-State aus dem vorherigen Versuch zurücksetzen
-                context.Response.StatusCode = 200;
                 context.Response.Headers.Clear();
             }
 
@@ -109,6 +110,17 @@ public sealed class FallbackService(
             logger.LogWarning(
                 "Modell '{Model}' lieferte HTTP {Status} — {Remaining} Fallback(s) verbleiben",
                 candidate, context.Response.StatusCode, chain.Count - i - 1);
+
+            lastFailureStatus = context.Response.StatusCode;
+            lastFailureBody = lastCapture;
+        }
+
+        if (winnerModel is null)
+        {
+            context.Response.StatusCode = lastFailureStatus;
+            if (lastFailureBody is { Length: > 0 })
+                await originalBody.WriteAsync(lastFailureBody, cancellationToken);
+            return;
         }
 
         if (lastCapture is { Length: > 0 })
