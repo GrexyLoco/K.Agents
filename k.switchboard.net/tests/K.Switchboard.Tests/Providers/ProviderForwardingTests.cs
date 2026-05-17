@@ -62,6 +62,20 @@ public sealed class ProviderForwardingTests
     }
 
     [Test]
+    public async Task AnthropicProvider_DoesNotPassThroughUnknownXHeaders()
+    {
+        var hasHeader = false;
+        var (provider, _) = CreateAnthropicProvider(
+            onRequest: req => hasHeader = req.Headers.Contains("x-forward-this"));
+
+        var ctx = BuildContext("""{"model":"test","messages":[]}""");
+        ctx.Request.Headers["x-forward-this"] = "secret";
+        await provider.ForwardAsync(ctx, "test-model", CancellationToken.None);
+
+        await Assert.That(hasHeader).IsFalse();
+    }
+
+    [Test]
     public async Task AnthropicProvider_SetsResponseStatusCode()
     {
         var (provider, _) = CreateAnthropicProvider(responseCode: HttpStatusCode.Created);
@@ -105,6 +119,20 @@ public sealed class ProviderForwardingTests
 
         var doc = JsonDocument.Parse(capturedBody);
         await Assert.That(doc.RootElement.GetProperty("model").GetString()).IsEqualTo("codellama:13b");
+    }
+
+    [Test]
+    public async Task OllamaProvider_DoesNotPassThroughXHeaders()
+    {
+        var hasHeader = false;
+        var (provider, _) = CreateOllamaProvider(
+            onRequest: req => hasHeader = req.Headers.Contains("x-api-key"));
+
+        var ctx = BuildContext("""{"model":"codellama:13b","messages":[]}""");
+        ctx.Request.Headers["x-api-key"] = "should-not-pass";
+        await provider.ForwardAsync(ctx, "codellama:13b", CancellationToken.None);
+
+        await Assert.That(hasHeader).IsFalse();
     }
 
     // --- Hilfsmethoden ---

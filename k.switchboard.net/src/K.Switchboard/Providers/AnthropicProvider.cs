@@ -63,7 +63,8 @@ public sealed class AnthropicProvider(
     }
 
     private static bool ShouldPassThrough(string headerName) =>
-        headerName.StartsWith("x-", StringComparison.OrdinalIgnoreCase) ||
+        headerName.Equals("x-api-key", StringComparison.OrdinalIgnoreCase) ||
         headerName.Equals("anthropic-version", StringComparison.OrdinalIgnoreCase) ||
+        headerName.Equals("anthropic-beta", StringComparison.OrdinalIgnoreCase) ||
         headerName.Equals("authorization", StringComparison.OrdinalIgnoreCase);
 }

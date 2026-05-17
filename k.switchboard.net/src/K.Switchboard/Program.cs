@@ -3,6 +3,8 @@ using Serilog.Events;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 // --- Serilog früh konfigurieren (Bootstrap-Logger für Startup-Fehler) ---
 Log.Logger = new LoggerConfiguration()
@@ -74,6 +76,22 @@ try
         .Configure<SwitchboardOptions>(builder.Configuration)
         .AddHealthChecks();
 
+    builder.Services.AddRateLimiter(_ =>
+    {
+        var opts = builder.Configuration.Get<SwitchboardOptions>() ?? new SwitchboardOptions();
+        var permitLimit = Math.Max(1, opts.RateLimitPermitLimit);
+        var windowMinutes = Math.Max(1, opts.RateLimitWindowMinutes);
+
+        _.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        _.AddFixedWindowLimiter("proxy", limiter =>
+        {
+            limiter.PermitLimit = permitLimit;
+            limiter.Window = TimeSpan.FromMinutes(windowMinutes);
+            limiter.QueueLimit = 0;
+            limiter.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        });
+    });
+
     // --- Provider + Routing (Phase 3) ---
     builder.Services.AddHttpClient();
     builder.Services.AddSingleton<IProvider, AnthropicProvider>();
@@ -87,6 +105,8 @@ try
 
     var app = builder.Build();
 
+    app.UseRateLimiter();
+
     app.MapHealthChecks("/health");
 
     if (app.Environment.IsDevelopment())
@@ -96,8 +116,23 @@ try
     }
 
     // --- Proxy-Endpoint: POST /v1/messages ---
-    app.MapPost("/v1/messages", async (HttpContext ctx, ModelRouter router, FallbackService fallback, CancellationToken ct) =>
+    app.MapPost("/v1/messages", async (HttpContext ctx, ModelRouter router, FallbackService fallback, IOptionsSnapshot<SwitchboardOptions> options, CancellationToken ct) =>
     {
+        if (!string.IsNullOrWhiteSpace(options.Value.ApiKey))
+        {
+            var provided = ctx.Request.Headers["X-Api-Key"].ToString();
+            if (!string.Equals(provided, options.Value.ApiKey, StringComparison.Ordinal))
+            {
+                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await ctx.Response.WriteAsJsonAsync(new ProblemDetails
+                {
+                    Title = "Unauthorized",
+                    Detail = "Missing or invalid X-Api-Key header."
+                }, cancellationToken: ct);
+                return;
+            }
+        }
+
         ctx.Request.EnableBuffering();
 
         string requestedModel;
@@ -122,7 +157,7 @@ try
         ctx.Request.Body.Position = 0;
 
         await fallback.ForwardWithFallbackAsync(ctx, requestedModel, ct);
-    });
+    }).RequireRateLimiting("proxy");
 
     // --- Statistik-Endpoint: GET /stats ---
     app.MapGet("/stats", (CostingService costing) =>
