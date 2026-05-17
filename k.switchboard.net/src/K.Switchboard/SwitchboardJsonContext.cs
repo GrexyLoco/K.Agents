@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace K.Switchboard;
 
@@ -10,6 +11,7 @@ namespace K.Switchboard;
 [JsonSerializable(typeof(Dictionary<string, ModelUsage>))]
 [JsonSerializable(typeof(ModelUsage))]
 [JsonSerializable(typeof(DailyStats))]
+[JsonSerializable(typeof(ProblemDetails))]
 [JsonSourceGenerationOptions(
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]

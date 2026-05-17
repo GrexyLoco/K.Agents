@@ -128,7 +128,9 @@ try
                 {
                     Title = "Unauthorized",
                     Detail = "Missing or invalid X-Api-Key header."
-                }, cancellationToken: ct);
+                },
+                SwitchboardJsonContext.Default.ProblemDetails,
+                cancellationToken: ct);
                 return;
             }
         }
@@ -150,7 +152,9 @@ try
             {
                 Title = "Invalid JSON payload",
                 Detail = "Request body contains invalid JSON."
-            }, cancellationToken: ct);
+            },
+            SwitchboardJsonContext.Default.ProblemDetails,
+            cancellationToken: ct);
             return;
         }
 
