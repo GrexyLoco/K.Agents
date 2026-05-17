@@ -2,6 +2,7 @@ using Serilog;
 using Serilog.Events;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
+using Microsoft.AspNetCore.Mvc;
 
 // --- Serilog früh konfigurieren (Bootstrap-Logger für Startup-Fehler) ---
 Log.Logger = new LoggerConfiguration()
@@ -97,12 +98,24 @@ try
         ctx.Request.EnableBuffering();
 
         string requestedModel;
-        using (var doc = await JsonDocument.ParseAsync(ctx.Request.Body, cancellationToken: ct))
+        try
         {
+            using var doc = await JsonDocument.ParseAsync(ctx.Request.Body, cancellationToken: ct);
             requestedModel = doc.RootElement.TryGetProperty("model", out var prop)
                 ? prop.GetString() ?? string.Empty
                 : string.Empty;
         }
+        catch (JsonException)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await ctx.Response.WriteAsJsonAsync(new ProblemDetails
+            {
+                Title = "Invalid JSON payload",
+                Detail = "Request body contains invalid JSON."
+            }, cancellationToken: ct);
+            return;
+        }
+
         ctx.Request.Body.Position = 0;
 
         await fallback.ForwardWithFallbackAsync(ctx, requestedModel, ct);

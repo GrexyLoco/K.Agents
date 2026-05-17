@@ -63,11 +63,27 @@ public sealed class FallbackServiceTests
         await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
     }
 
+    [Test]
+    public async Task Forward_PrimaryJsonException_ReturnsBadRequest()
+    {
+        var (svc, _, ctx) = Build(primaryThrowsJson: true, fallbacks: ["codellama:13b"]);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(ctx.Response.StatusCode).IsEqualTo(400);
+        await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
+
+        ctx.Response.Body.Position = 0;
+        var body = await new StreamReader(ctx.Response.Body).ReadToEndAsync();
+        await Assert.That(body).Contains("Invalid JSON payload");
+    }
+
     // --- Hilfsmethoden ---
 
     private static (FallbackService Service, CostingService Costing, DefaultHttpContext Context) Build(
         int primaryStatus = 200,
         string primaryBody = "{}",
+        bool primaryThrowsJson = false,
         int fallbackStatus = 200,
         string fallbackBody = "{}",
         string primaryModel = "claude-3-opus",
@@ -86,7 +102,9 @@ public sealed class FallbackServiceTests
         // Stub-Provider: "anthropic" = primary, all fallback names also mapped
         var allProviders = new List<IProvider>
         {
-            new StubProvider("anthropic", primaryStatus, primaryBody)
+            primaryThrowsJson
+                ? new ThrowingJsonProvider("anthropic")
+                : new StubProvider("anthropic", primaryStatus, primaryBody)
         };
         if (fallbacks.Count > 0)
             allProviders.Add(new StubProvider("ollama", fallbackStatus, fallbackBody));
@@ -122,5 +140,14 @@ public sealed class FallbackServiceTests
             context.Response.ContentType = "application/json";
             await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(body), ct);
         }
+    }
+
+    /// <summary>Test-Provider der beim Forwarding eine JsonException wirft.</summary>
+    private sealed class ThrowingJsonProvider(string name) : IProvider
+    {
+        public string Name => name;
+
+        public Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct) =>
+            throw new JsonException("Simulierter JSON-Fehler");
     }
 }
