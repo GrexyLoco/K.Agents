@@ -63,13 +63,41 @@ public sealed class FallbackServiceTests
         await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
     }
 
+    [Test]
+    public async Task Forward_PrimaryFails_FallbackThrows_NoFalse200Returned()
+    {
+        var (svc, _, ctx) = Build(
+            primaryStatus: 500,
+            primaryModel: "claude-3-opus",
+            fallbacks: ["codellama:13b"],
+            fallbackThrows: true);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(ctx.Response.StatusCode).IsEqualTo(500);
+        await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
+    }
+
+    [Test]
+    public async Task Forward_PrimaryThrows_NoFallbackConfigured_ReturnsBadGateway()
+    {
+        var (svc, _, ctx) = Build(primaryThrows: true, fallbacks: []);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(ctx.Response.StatusCode).IsEqualTo(502);
+        await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
+    }
+
     // --- Hilfsmethoden ---
 
     private static (FallbackService Service, CostingService Costing, DefaultHttpContext Context) Build(
         int primaryStatus = 200,
         string primaryBody = "{}",
+        bool primaryThrows = false,
         int fallbackStatus = 200,
         string fallbackBody = "{}",
+        bool fallbackThrows = false,
         string primaryModel = "claude-3-opus",
         List<string>? fallbacks = null)
     {
@@ -86,10 +114,16 @@ public sealed class FallbackServiceTests
         // Stub-Provider: "anthropic" = primary, all fallback names also mapped
         var allProviders = new List<IProvider>
         {
-            new StubProvider("anthropic", primaryStatus, primaryBody)
+            primaryThrows
+                ? new ThrowingProvider("anthropic")
+                : new StubProvider("anthropic", primaryStatus, primaryBody)
         };
         if (fallbacks.Count > 0)
-            allProviders.Add(new StubProvider("ollama", fallbackStatus, fallbackBody));
+        {
+            allProviders.Add(fallbackThrows
+                ? new ThrowingProvider("ollama")
+                : new StubProvider("ollama", fallbackStatus, fallbackBody));
+        }
 
         // ModelRouter: aliases that route primary to anthropic, fallbacks to anthropic (no ':')
         var router = new ModelRouter(optsMon);
@@ -122,5 +156,14 @@ public sealed class FallbackServiceTests
             context.Response.ContentType = "application/json";
             await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(body), ct);
         }
+    }
+
+    /// <summary>Test-Provider der immer eine Exception wirft.</summary>
+    private sealed class ThrowingProvider(string name) : IProvider
+    {
+        public string Name => name;
+
+        public Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct) =>
+            throw new HttpRequestException("Simulierter Netzwerkfehler");
     }
 }
