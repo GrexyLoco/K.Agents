@@ -117,6 +117,56 @@ public sealed class FallbackServiceTests
         await Assert.That(body).Contains("Provider misconfiguration");
     }
 
+    [Test]
+    public async Task Forward_FallbackChain_Duplicates_AreDeduplicated()
+    {
+        var calls = new List<string>();
+        var (svc, _, ctx) = Build(
+            primaryStatus: 500,
+            fallbackStatus: 500,
+            primaryModel: "claude-3-opus",
+            fallbacks: ["codellama:13b", "codellama:13b"],
+            onProviderCall: calls.Add);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(calls.Count(static c => c == "ollama")).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Forward_FallbackChain_SelfReference_IsIgnored()
+    {
+        var calls = new List<string>();
+        var (svc, _, ctx) = Build(
+            primaryStatus: 503,
+            primaryModel: "claude-3-opus",
+            fallbacks: ["claude-3-opus"],
+            onProviderCall: calls.Add);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(ctx.Response.StatusCode).IsEqualTo(503);
+        await Assert.That(calls.Count(static c => c == "anthropic")).IsEqualTo(1);
+        await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
+    }
+
+    [Test]
+    public async Task Forward_FallbackChain_MaxDepth_IsRespected()
+    {
+        var calls = new List<string>();
+        var (svc, _, ctx) = Build(
+            primaryStatus: 500,
+            fallbackStatus: 500,
+            fallbackMaxDepth: 1,
+            primaryModel: "claude-3-opus",
+            fallbacks: ["model-a:1", "model-b:1"],
+            onProviderCall: calls.Add);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(calls.Count(static c => c == "ollama")).IsEqualTo(1);
+    }
+
     // --- Hilfsmethoden ---
 
     private static (FallbackService Service, CostingService Costing, DefaultHttpContext Context) Build(
@@ -128,13 +178,16 @@ public sealed class FallbackServiceTests
         int fallbackStatus = 200,
         string fallbackBody = "{}",
         bool fallbackThrows = false,
+        int fallbackMaxDepth = 8,
         string primaryModel = "claude-3-opus",
-        List<string>? fallbacks = null)
+        List<string>? fallbacks = null,
+        Action<string>? onProviderCall = null)
     {
         fallbacks ??= [];
 
         var opts = new SwitchboardOptions
         {
+            FallbackMaxDepth = fallbackMaxDepth,
             FallbackChains = fallbacks.Count > 0
                 ? new Dictionary<string, List<string>> { [primaryModel] = fallbacks }
                 : []
@@ -146,16 +199,16 @@ public sealed class FallbackServiceTests
         if (includePrimaryProvider)
         {
             allProviders.Add(primaryThrows
-                ? new ThrowingProvider("anthropic")
+                ? new ThrowingProvider("anthropic", onProviderCall)
                 : primaryThrowsJson
-                    ? new ThrowingJsonProvider("anthropic")
-                : new StubProvider("anthropic", primaryStatus, primaryBody));
+                    ? new ThrowingJsonProvider("anthropic", onProviderCall)
+                : new StubProvider("anthropic", primaryStatus, primaryBody, onProviderCall));
         }
         if (fallbacks.Count > 0)
         {
             allProviders.Add(fallbackThrows
-                ? new ThrowingProvider("ollama")
-                : new StubProvider("ollama", fallbackStatus, fallbackBody));
+                ? new ThrowingProvider("ollama", onProviderCall)
+                : new StubProvider("ollama", fallbackStatus, fallbackBody, onProviderCall));
         }
 
         // ModelRouter: aliases that route primary to anthropic, fallbacks to anthropic (no ':')
@@ -179,12 +232,17 @@ public sealed class FallbackServiceTests
     }
 
     /// <summary>Test-Provider der immer einen konfigurierten Status + Body liefert.</summary>
-    private sealed class StubProvider(string name, int statusCode, string body = "{}") : IProvider
+    private sealed class StubProvider(
+        string name,
+        int statusCode,
+        string body = "{}",
+        Action<string>? onProviderCall = null) : IProvider
     {
         public string Name => name;
 
         public async Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct)
         {
+            onProviderCall?.Invoke(name);
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json";
             await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(body), ct);
@@ -192,19 +250,25 @@ public sealed class FallbackServiceTests
     }
 
     /// <summary>Test-Provider der immer eine Exception wirft.</summary>
-    private sealed class ThrowingProvider(string name) : IProvider
+    private sealed class ThrowingProvider(string name, Action<string>? onProviderCall = null) : IProvider
     {
         public string Name => name;
 
-        public Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct) =>
+        public Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct)
+        {
+            onProviderCall?.Invoke(name);
             throw new HttpRequestException("Simulierter Netzwerkfehler");
+        }
     }
 
-    private sealed class ThrowingJsonProvider(string name) : IProvider
+    private sealed class ThrowingJsonProvider(string name, Action<string>? onProviderCall = null) : IProvider
     {
         public string Name => name;
 
-        public Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct) =>
+        public Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct)
+        {
+            onProviderCall?.Invoke(name);
             throw new JsonException("Simulierter JSON-Fehler");
+        }
     }
 }
