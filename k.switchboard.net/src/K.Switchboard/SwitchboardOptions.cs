@@ -27,6 +27,9 @@ public sealed record SwitchboardOptions
     /// <summary>Fallback-Ketten pro Modell-Alias (geordnete Provider-Liste).</summary>
     public Dictionary<string, List<string>> FallbackChains { get; init; } = [];
 
+    /// <summary>Maximale Anzahl von Fallback-Einträgen, die pro Request berücksichtigt werden.</summary>
+    public int FallbackMaxDepth { get; init; } = 8;
+
     /// <summary>Kosten-Konfiguration (Input/Output pro Million Tokens in USD).</summary>
     public Dictionary<string, ModelPricing> Pricing { get; init; } = [];
 }

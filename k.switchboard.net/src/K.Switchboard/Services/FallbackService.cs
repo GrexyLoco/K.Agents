@@ -147,11 +147,43 @@ public sealed class FallbackService(
             _ = usageQueue.TryEnqueue(winnerModel, lastCapture);
     }
 
-    private static List<string> BuildChain(string requestedModel, SwitchboardOptions opts)
+    private List<string> BuildChain(string requestedModel, SwitchboardOptions opts)
     {
         var chain = new List<string> { requestedModel };
-        if (opts.FallbackChains.TryGetValue(requestedModel, out var fallbacks))
-            chain.AddRange(fallbacks);
+
+        if (!opts.FallbackChains.TryGetValue(requestedModel, out var fallbacks) || fallbacks.Count == 0)
+            return chain;
+
+        var maxFallbacks = Math.Max(0, opts.FallbackMaxDepth);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { requestedModel };
+
+        foreach (var fallback in fallbacks)
+        {
+            if (chain.Count - 1 >= maxFallbacks)
+            {
+                logger.LogWarning(
+                    "Fallback-Kette für '{Model}' auf max. {MaxDepth} Einträge begrenzt",
+                    requestedModel, maxFallbacks);
+                break;
+            }
+
+            if (string.IsNullOrWhiteSpace(fallback))
+            {
+                logger.LogWarning("Leerer Fallback-Eintrag für '{Model}' ignoriert", requestedModel);
+                continue;
+            }
+
+            if (!seen.Add(fallback))
+            {
+                logger.LogWarning(
+                    "Duplizierter oder zyklischer Fallback '{Fallback}' für '{Model}' ignoriert",
+                    fallback, requestedModel);
+                continue;
+            }
+
+            chain.Add(fallback);
+        }
+
         return chain;
     }
 }
