@@ -12,6 +12,15 @@ public sealed record SwitchboardOptions
     /// <summary>Basis-URL des Ollama-Endpunkts.</summary>
     public string OllamaBaseUrl { get; init; } = "http://localhost:11434";
 
+    /// <summary>Optionaler API-Key für den Zugriff auf den Proxy-Endpunkt.</summary>
+    public string? ApiKey { get; init; }
+
+    /// <summary>Maximale Requests pro Zeitfenster für den Proxy-Endpunkt.</summary>
+    public int RateLimitPermitLimit { get; init; } = 120;
+
+    /// <summary>Zeitfenster in Minuten für das Rate-Limit.</summary>
+    public int RateLimitWindowMinutes { get; init; } = 1;
+
     /// <summary>Alias-Mapping von Modellnamen auf Provider-Modelle.</summary>
     public Dictionary<string, string> ModelAliases { get; init; } = [];
 

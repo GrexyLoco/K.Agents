@@ -62,6 +62,5 @@ public sealed class OllamaProvider(
     }
 
     private static bool ShouldPassThrough(string headerName) =>
-        headerName.StartsWith("x-", StringComparison.OrdinalIgnoreCase) ||
         headerName.Equals("authorization", StringComparison.OrdinalIgnoreCase);
 }
