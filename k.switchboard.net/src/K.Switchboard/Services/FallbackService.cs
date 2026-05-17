@@ -43,7 +43,23 @@ public sealed class FallbackService(
             var (providerName, resolvedModel) = router.Resolve(candidate);
             if (i == 0) primaryResolvedModel = resolvedModel;
 
-            var provider = registry.Get(providerName) ?? registry.Get("anthropic")!;
+            var provider = registry.Get(providerName);
+            if (provider is null)
+            {
+                context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                context.Response.Body = originalBody;
+
+                logger.LogError(
+                    "Unbekannter Provider '{Provider}' für Modell '{Model}'. Verfügbare Provider-Konfiguration prüfen.",
+                    providerName, candidate);
+
+                await context.Response.WriteAsJsonAsync(new ProblemDetails
+                {
+                    Title = "Provider misconfiguration",
+                    Detail = $"No registered provider for '{providerName}'."
+                }, cancellationToken: cancellationToken);
+                return;
+            }
 
             // Request-Body für jeden Versuch zurücksetzen (EnableBuffering macht Stream seekbar)
             context.Request.Body.Position = 0;
