@@ -1,0 +1,6 @@
+@K.Switchboard_HostAddress = http://localhost:5245
+
+GET {{K.Switchboard_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
