@@ -104,6 +104,19 @@ public sealed class FallbackServiceTests
         await Assert.That(body).Contains("Invalid JSON payload");
     }
 
+    [Test]
+    public async Task Forward_PrimaryProviderMissing_ReturnsInternalServerError()
+    {
+        var (svc, _, ctx) = Build(includePrimaryProvider: false);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(ctx.Response.StatusCode).IsEqualTo(500);
+        ctx.Response.Body.Position = 0;
+        var body = await new StreamReader(ctx.Response.Body).ReadToEndAsync();
+        await Assert.That(body).Contains("Provider misconfiguration");
+    }
+
     // --- Hilfsmethoden ---
 
     private static (FallbackService Service, CostingService Costing, DefaultHttpContext Context) Build(
@@ -111,6 +124,7 @@ public sealed class FallbackServiceTests
         string primaryBody = "{}",
         bool primaryThrows = false,
         bool primaryThrowsJson = false,
+        bool includePrimaryProvider = true,
         int fallbackStatus = 200,
         string fallbackBody = "{}",
         bool fallbackThrows = false,
@@ -128,14 +142,15 @@ public sealed class FallbackServiceTests
         var optsMon = new FakeOptionsMonitor<SwitchboardOptions>(opts);
 
         // Stub-Provider: "anthropic" = primary, all fallback names also mapped
-        var allProviders = new List<IProvider>
+        var allProviders = new List<IProvider>();
+        if (includePrimaryProvider)
         {
-            primaryThrows
+            allProviders.Add(primaryThrows
                 ? new ThrowingProvider("anthropic")
                 : primaryThrowsJson
                     ? new ThrowingJsonProvider("anthropic")
-                : new StubProvider("anthropic", primaryStatus, primaryBody)
-        };
+                : new StubProvider("anthropic", primaryStatus, primaryBody));
+        }
         if (fallbacks.Count > 0)
         {
             allProviders.Add(fallbackThrows
