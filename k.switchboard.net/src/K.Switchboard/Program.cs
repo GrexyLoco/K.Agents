@@ -69,12 +69,39 @@ try
         .Configure<SwitchboardOptions>(builder.Configuration)
         .AddHealthChecks();
 
+    // --- Provider + Routing (Phase 3) ---
+    builder.Services.AddHttpClient();
+    builder.Services.AddSingleton<IProvider, AnthropicProvider>();
+    builder.Services.AddSingleton<IProvider, OllamaProvider>();
+    builder.Services.AddSingleton<ProviderRegistry>();
+    builder.Services.AddSingleton<ModelRouter>();
+
     var app = builder.Build();
 
     app.MapHealthChecks("/health");
 
-    app.MapGet("/config", (Microsoft.Extensions.Options.IOptionsSnapshot<SwitchboardOptions> opts) =>
+    app.MapGet("/config", (IOptionsSnapshot<SwitchboardOptions> opts) =>
         TypedResults.Ok(opts.Value));
+
+    // --- Proxy-Endpoint: POST /v1/messages ---
+    app.MapPost("/v1/messages", async (HttpContext ctx, ModelRouter router, ProviderRegistry registry, CancellationToken ct) =>
+    {
+        ctx.Request.EnableBuffering();
+
+        string model;
+        using (var doc = await JsonDocument.ParseAsync(ctx.Request.Body, cancellationToken: ct))
+        {
+            model = doc.RootElement.TryGetProperty("model", out var prop)
+                ? prop.GetString() ?? string.Empty
+                : string.Empty;
+        }
+        ctx.Request.Body.Position = 0;
+
+        var (providerName, resolvedModel) = router.Resolve(model);
+        var provider = registry.Get(providerName) ?? registry.Get("anthropic")!;
+
+        await provider.ForwardAsync(ctx, resolvedModel, ct);
+    });
 
     app.Run();
 }
