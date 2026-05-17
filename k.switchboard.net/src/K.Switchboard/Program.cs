@@ -28,16 +28,20 @@ try
     {
         Directory.CreateDirectory(Path.GetDirectoryName(appDataConfig)!);
         var defaultConfig = builder.Configuration.GetSection("Switchboard").Exists()
-            ? System.Text.Json.JsonSerializer.Serialize(
+            ? JsonSerializer.Serialize(
                 builder.Configuration.GetSection("Switchboard").Get<SwitchboardOptions>() ?? new SwitchboardOptions(),
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true })
-            : System.Text.Json.JsonSerializer.Serialize(new SwitchboardOptions(),
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                SwitchboardJsonContext.Default.SwitchboardOptions)
+            : JsonSerializer.Serialize(new SwitchboardOptions(),
+                SwitchboardJsonContext.Default.SwitchboardOptions);
         File.WriteAllText(appDataConfig, defaultConfig);
         Log.Information("[Bootstrap] Default-Config erstellt: {Path}", appDataConfig);
     }
 
     builder.Configuration.AddJsonFile(appDataConfig, optional: false, reloadOnChange: true);
+
+    // --- Port aus Konfiguration setzen ---
+    var port = builder.Configuration.GetValue<int>("Port", 3456);
+    builder.WebHost.UseUrls($"http://*:{port}");
 
     // --- Serilog vollständig konfigurieren ---
     var logDir = Path.Combine(

@@ -1,0 +1,154 @@
+# Konfigurationsreferenz
+
+K.Switchboard liest seine Konfiguration aus `%APPDATA%\K.Switchboard\config.json`. Die Datei wird beim ersten Start mit Standardwerten angelegt. Änderungen werden zur Laufzeit erkannt — kein Neustart erforderlich ([IOptionsMonitor](https://learn.microsoft.com/en-us/dotnet/core/extensions/options#use-ioptionsmonitor-to-read-updated-data)).
+
+---
+
+## Port
+
+```json
+"Port": 3456
+```
+
+Der TCP-Port, auf dem K.Switchboard HTTP-Anfragen entgegennimmt.
+
+**Standardwert:** `3456`  
+**Typ:** Ganzzahl  
+**Hinweis:** Nach einer Port-Änderung muss K.Switchboard neu gestartet werden, da Kestrel den Port beim Start bindet. Stelle sicher, dass `ANTHROPIC_BASE_URL` auf den neuen Port zeigt.
+
+---
+
+## AnthropicBaseUrl
+
+```json
+"AnthropicBaseUrl": "https://api.anthropic.com"
+```
+
+Basis-URL des Anthropic-API-Endpunkts. Alle Anthropic-Anfragen werden an `{AnthropicBaseUrl}/v1/messages` weitergeleitet.
+
+**Standardwert:** `https://api.anthropic.com`  
+**Typ:** URL-Zeichenkette  
+**API-Referenz:** [Anthropic Messages API](https://docs.anthropic.com/en/api/messages)
+
+---
+
+## OllamaBaseUrl
+
+```json
+"OllamaBaseUrl": "http://localhost:11434"
+```
+
+Basis-URL des lokalen Ollama-Endpunkts. Anfragen für Modelle mit `:` im Namen (z. B. `codellama:13b`) oder explizite Ollama-Aliase werden an `{OllamaBaseUrl}/api/chat` weitergeleitet.
+
+**Standardwert:** `http://localhost:11434`  
+**Typ:** URL-Zeichenkette  
+**API-Referenz:** [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
+
+---
+
+## ModelAliases
+
+```json
+"ModelAliases": {
+  "local-coder": "codellama:13b",
+  "local-fast": "llama3.2:3b",
+  "prod": "claude-3-5-sonnet-20241022"
+}
+```
+
+Alias-Mapping von beliebigen Kurznamen auf vollständige Modellnamen. Ein Client kann `"model": "local-coder"` senden — K.Switchboard löst den Alias auf `codellama:13b` auf, bevor der passende Provider ermittelt wird.
+
+**Standardwert:** `{}` (kein Alias)  
+**Typ:** Objekt mit String-zu-String-Paaren  
+**Routing-Regel:** Modellnamen mit `:` werden automatisch zu Ollama geroutet. Alle anderen zu Anthropic.
+
+---
+
+## FallbackChains
+
+```json
+"FallbackChains": {
+  "claude-opus-latest": ["claude-sonnet-latest", "claude-haiku-latest"],
+  "local-coder": ["codellama:7b"]
+}
+```
+
+Definiert Fallback-Ketten pro Modell. Bei einem HTTP-Fehler (4xx/5xx) oder Netzwerkfehler des primären Modells versucht K.Switchboard die Modelle in der angegebenen Reihenfolge.
+
+**Standardwert:** `{}` (kein Fallback)  
+**Typ:** Objekt; Schlüssel ist der primäre Modellname, Wert ist eine geordnete Liste von Fallback-Modellen  
+**Response-Header:** Bei erfolgreichem Fallback wird `X-K-Switchboard-Fallback-Used: <primär> -> <verwendet>` gesetzt.
+
+---
+
+## Pricing
+
+```json
+"Pricing": {
+  "claude-3-5-sonnet-20241022": {
+    "InputPerMillion": 3.0,
+    "OutputPerMillion": 15.0
+  },
+  "claude-3-5-haiku-20241022": {
+    "InputPerMillion": 0.8,
+    "OutputPerMillion": 4.0
+  }
+}
+```
+
+Kosten pro Modell in USD pro Million Tokens. Wird für den `/stats`-Endpoint verwendet.
+
+**Standardwert:** `{}` (keine Kostenberechnung)  
+**Typ:** Objekt; Schlüssel ist der genaue Modellname aus der Anthropic-Antwort  
+**Hinweis:** Nur Anthropic-Modelle liefern Token-Counts im Response-Body. Ollama-Aufrufe werden nicht in Kosten umgerechnet.  
+**Preisreferenz:** [Anthropic Pricing](https://www.anthropic.com/pricing#anthropic-api)
+
+### /stats-Antwortformat
+
+```json
+{
+  "date": "2026-05-17",
+  "models": {
+    "claude-3-5-sonnet-20241022": {
+      "inputTokens": 12500,
+      "outputTokens": 3200,
+      "costUsd": 0.085500
+    }
+  },
+  "totalCostUsd": 0.085500
+}
+```
+
+Statistiken werden täglich in `%APPDATA%\K.Switchboard\costs-yyyy-MM-dd.json` gespeichert.
+
+---
+
+## Vollständiges Beispiel
+
+```json
+{
+  "Port": 3456,
+  "AnthropicBaseUrl": "https://api.anthropic.com",
+  "OllamaBaseUrl": "http://localhost:11434",
+  "ModelAliases": {
+    "local-coder": "codellama:13b",
+    "local-fast": "llama3.2:3b",
+    "prod": "claude-3-5-sonnet-20241022",
+    "fast": "claude-3-5-haiku-20241022"
+  },
+  "FallbackChains": {
+    "claude-opus-latest": ["claude-sonnet-latest"],
+    "claude-3-5-sonnet-20241022": ["claude-3-5-haiku-20241022", "codellama:13b"]
+  },
+  "Pricing": {
+    "claude-3-5-sonnet-20241022": {
+      "InputPerMillion": 3.0,
+      "OutputPerMillion": 15.0
+    },
+    "claude-3-5-haiku-20241022": {
+      "InputPerMillion": 0.8,
+      "OutputPerMillion": 4.0
+    }
+  }
+}
+```
