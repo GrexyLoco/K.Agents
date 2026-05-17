@@ -57,7 +57,9 @@ public sealed class FallbackService(
                 {
                     Title = "Provider misconfiguration",
                     Detail = $"No registered provider for '{providerName}'."
-                }, cancellationToken: cancellationToken);
+                },
+                SwitchboardJsonContext.Default.ProblemDetails,
+                cancellationToken: cancellationToken);
                 return;
             }
 
@@ -92,7 +94,9 @@ public sealed class FallbackService(
                 {
                     Title = "Invalid JSON payload",
                     Detail = "Request body contains invalid JSON."
-                }, cancellationToken: cancellationToken);
+                },
+                SwitchboardJsonContext.Default.ProblemDetails,
+                cancellationToken: cancellationToken);
                 return;
             }
             catch (Exception ex)

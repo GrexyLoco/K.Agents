@@ -2,13 +2,13 @@
 
   <!-- Serilog nutzt intern Reflection und ist noch nicht vollständig trim-kompatibel (IL2104).
        TrimmerRootAssembly stellt sicher, dass die Assemblies vollständig behalten werden.
-       SuppressTrimAnalysisWarnings unterdrückt IL2104 aus Drittanbieter-Assemblies. -->
+       Statt globaler Warnungsunterdrückung wird nur IL2104 gezielt unterdrückt. -->
   <ItemGroup Condition="'$(PublishTrimmed)'=='true'">
     <TrimmerRootAssembly Include="Serilog" />
     <TrimmerRootAssembly Include="Serilog.Settings.Configuration" />
   </ItemGroup>
   <PropertyGroup Condition="'$(PublishTrimmed)'=='true'">
-    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <NoWarn>$(NoWarn);IL2104</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
