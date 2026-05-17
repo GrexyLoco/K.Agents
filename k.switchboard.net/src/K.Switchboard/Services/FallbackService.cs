@@ -1,5 +1,7 @@
 namespace K.Switchboard.Services;
 
+using Microsoft.AspNetCore.Mvc;
+
 /// <summary>
 /// Leitet Requests mit automatischem Fallback bei Provider-Fehlern weiter.
 /// </summary>
@@ -59,6 +61,23 @@ public sealed class FallbackService(
             try
             {
                 await provider.ForwardAsync(context, resolvedModel, cancellationToken);
+            }
+            catch (JsonException ex)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.Headers.Clear();
+                context.Response.Body = originalBody;
+
+                logger.LogWarning(ex,
+                    "Ungültiges Request-JSON für Provider '{Provider}' und Modell '{Model}'",
+                    providerName, candidate);
+
+                await context.Response.WriteAsJsonAsync(new ProblemDetails
+                {
+                    Title = "Invalid JSON payload",
+                    Detail = "Request body contains invalid JSON."
+                }, cancellationToken: cancellationToken);
+                return;
             }
             catch (Exception ex)
             {

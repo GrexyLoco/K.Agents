@@ -89,12 +89,28 @@ public sealed class FallbackServiceTests
         await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
     }
 
+    [Test]
+    public async Task Forward_PrimaryJsonException_ReturnsBadRequest()
+    {
+        var (svc, _, ctx) = Build(primaryThrowsJson: true, fallbacks: ["codellama:13b"]);
+
+        await svc.ForwardWithFallbackAsync(ctx, "claude-3-opus", CancellationToken.None);
+
+        await Assert.That(ctx.Response.StatusCode).IsEqualTo(400);
+        await Assert.That(ctx.Response.Headers.ContainsKey("X-K-Switchboard-Fallback-Used")).IsFalse();
+
+        ctx.Response.Body.Position = 0;
+        var body = await new StreamReader(ctx.Response.Body).ReadToEndAsync();
+        await Assert.That(body).Contains("Invalid JSON payload");
+    }
+
     // --- Hilfsmethoden ---
 
     private static (FallbackService Service, CostingService Costing, DefaultHttpContext Context) Build(
         int primaryStatus = 200,
         string primaryBody = "{}",
         bool primaryThrows = false,
+        bool primaryThrowsJson = false,
         int fallbackStatus = 200,
         string fallbackBody = "{}",
         bool fallbackThrows = false,
@@ -116,6 +132,8 @@ public sealed class FallbackServiceTests
         {
             primaryThrows
                 ? new ThrowingProvider("anthropic")
+                : primaryThrowsJson
+                    ? new ThrowingJsonProvider("anthropic")
                 : new StubProvider("anthropic", primaryStatus, primaryBody)
         };
         if (fallbacks.Count > 0)
@@ -165,5 +183,13 @@ public sealed class FallbackServiceTests
 
         public Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct) =>
             throw new HttpRequestException("Simulierter Netzwerkfehler");
+    }
+
+    private sealed class ThrowingJsonProvider(string name) : IProvider
+    {
+        public string Name => name;
+
+        public Task ForwardAsync(HttpContext context, string resolvedModel, CancellationToken ct) =>
+            throw new JsonException("Simulierter JSON-Fehler");
     }
 }
