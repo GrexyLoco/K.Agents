@@ -1,0 +1,98 @@
+name: K.Switchboard .NET CI
+
+on:
+  pull_request:
+    branches:
+      - 'dev/v*'
+      - 'release/v*'
+      - main
+    paths:
+      - 'k.switchboard.net/**'
+      - '.github/workflows/k-switchboard-net-ci.yml'
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-publish:
+    name: Build / Test / Publish (win-x64)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: .NET SDK einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+          dotnet-quality: 'preview'
+
+      - name: NuGet-Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('k.switchboard.net/**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: dotnet restore
+        working-directory: k.switchboard.net
+        run: dotnet restore K.Switchboard.slnx
+
+      - name: dotnet build
+        working-directory: k.switchboard.net
+        run: dotnet build K.Switchboard.slnx -c Release --no-restore
+
+      - name: dotnet format prüfen
+        working-directory: k.switchboard.net
+        run: dotnet format K.Switchboard.slnx --verify-no-changes
+
+      - name: Tests (TUnit)
+        working-directory: k.switchboard.net
+        run: dotnet run --project tests/K.Switchboard.Tests -c Release
+
+      - name: Single-File Publish (win-x64)
+        working-directory: k.switchboard.net
+        run: |
+          dotnet publish src/K.Switchboard/K.Switchboard.csproj `
+            -c Release `
+            -p:PublishSingleFile=true `
+            -p:PublishTrimmed=true `
+            -r win-x64 `
+            --self-contained true `
+            -o publish/
+
+      - name: EXE als Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: K.Switchboard-win-x64
+          path: k.switchboard.net/publish/K.Switchboard.exe
+          retention-days: 30
+
+  upload-release-asset:
+    name: EXE an GitHub Release anhängen
+    needs: build-test-publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Artefakt herunterladen
+        uses: actions/download-artifact@v4
+        with:
+          name: K.Switchboard-win-x64
+          path: dist/
+
+      - name: EXE an Release hängen
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          gh release upload "$tag" "dist/K.Switchboard.exe" --clobber --repo "$env:GITHUB_REPOSITORY"
