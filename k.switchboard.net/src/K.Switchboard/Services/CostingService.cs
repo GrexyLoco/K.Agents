@@ -129,8 +129,9 @@ public sealed class CostingService(
         if (!File.Exists(path)) return [];
         try
         {
-            return JsonSerializer.Deserialize<Dictionary<string, ModelUsage>>(
-                File.ReadAllText(path)) ?? [];
+            return JsonSerializer.Deserialize(
+                File.ReadAllText(path),
+                SwitchboardJsonContext.Default.DictionaryStringModelUsage) ?? [];
         }
         catch
         {
@@ -142,7 +143,7 @@ public sealed class CostingService(
     {
         var tmp = path + ".tmp";
         await File.WriteAllTextAsync(tmp,
-            JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true }));
+            JsonSerializer.Serialize(data, SwitchboardJsonContext.Default.DictionaryStringModelUsage));
         File.Move(tmp, path, overwrite: true);
     }
 }
