@@ -1,0 +1,6 @@
+@K.Switchboard.Spike_HostAddress = http://localhost:5239
+
+GET {{K.Switchboard.Spike_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
