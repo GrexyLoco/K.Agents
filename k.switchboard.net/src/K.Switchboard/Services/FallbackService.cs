@@ -1,0 +1,110 @@
+namespace K.Switchboard.Services;
+
+/// <summary>
+/// Leitet Requests mit automatischem Fallback bei Provider-Fehlern weiter.
+/// </summary>
+/// <remarks>
+/// Fallback-Kette: primäres Modell → FallbackChains[requestedModel][0] → [1] → …
+/// Bei Erfolg eines Fallbacks wird der Header <c>X-K-Switchboard-Fallback-Used</c> gesetzt.
+/// Token-Nutzung wird nach erfolgreichem Request via <see cref="CostingService"/> erfasst.
+/// </remarks>
+public sealed class FallbackService(
+    ModelRouter router,
+    ProviderRegistry registry,
+    IOptionsMonitor<SwitchboardOptions> options,
+    CostingService costing,
+    ILogger<FallbackService> logger)
+{
+    /// <summary>
+    /// Versucht den Request weiterzuleiten. Fällt bei HTTP 4xx/5xx oder Netzwerkfehler
+    /// auf die nächste Option aus <see cref="SwitchboardOptions.FallbackChains"/> zurück.
+    /// </summary>
+    /// <param name="context">HTTP-Kontext — request body muss seekbar sein (EnableBuffering).</param>
+    /// <param name="requestedModel">Ursprünglich angeforderter Modellname (vor Alias-Auflösung).</param>
+    /// <param name="cancellationToken">Abbruch-Token.</param>
+    public async Task ForwardWithFallbackAsync(
+        HttpContext context,
+        string requestedModel,
+        CancellationToken cancellationToken)
+    {
+        var chain = BuildChain(requestedModel, options.CurrentValue);
+        var originalBody = context.Response.Body;
+        string? primaryResolvedModel = null;
+        string? winnerModel = null;
+        byte[]? lastCapture = null;
+
+        for (var i = 0; i < chain.Count; i++)
+        {
+            var candidate = chain[i];
+            var (providerName, resolvedModel) = router.Resolve(candidate);
+            if (i == 0) primaryResolvedModel = resolvedModel;
+
+            var provider = registry.Get(providerName) ?? registry.Get("anthropic")!;
+
+            // Request-Body für jeden Versuch zurücksetzen (EnableBuffering macht Stream seekbar)
+            context.Request.Body.Position = 0;
+
+            // Response in Puffer schreiben, damit bei Fehler ein Retry möglich ist
+            using var capture = new MemoryStream();
+            context.Response.Body = capture;
+
+            if (i > 0)
+            {
+                // Fehlgeschlagene Response-State aus dem vorherigen Versuch zurücksetzen
+                context.Response.StatusCode = 200;
+                context.Response.Headers.Clear();
+            }
+
+            try
+            {
+                await provider.ForwardAsync(context, resolvedModel, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                context.Response.Body = originalBody;
+                logger.LogWarning(ex,
+                    "Provider '{Provider}' für Modell '{Model}' schlug mit Netzwerkfehler fehl",
+                    providerName, candidate);
+                lastCapture = null;
+                continue;
+            }
+            finally
+            {
+                context.Response.Body = originalBody;
+            }
+
+            lastCapture = capture.ToArray();
+
+            if (context.Response.StatusCode < 400)
+            {
+                winnerModel = resolvedModel;
+                if (i > 0)
+                {
+                    var header = $"{primaryResolvedModel} -> {resolvedModel}";
+                    context.Response.Headers["X-K-Switchboard-Fallback-Used"] = header;
+                    logger.LogInformation("Fallback verwendet: {Header}", header);
+                }
+                break;
+            }
+
+            logger.LogWarning(
+                "Modell '{Model}' lieferte HTTP {Status} — {Remaining} Fallback(s) verbleiben",
+                candidate, context.Response.StatusCode, chain.Count - i - 1);
+        }
+
+        if (lastCapture is { Length: > 0 })
+            await originalBody.WriteAsync(lastCapture, cancellationToken);
+
+        // Token-Nutzung fire-and-forget (kein Warten auf Datei-I/O)
+        if (winnerModel is not null && lastCapture is { Length: > 0 })
+            _ = Task.Run(() => costing.RecordUsageAsync(winnerModel, lastCapture), CancellationToken.None);
+    }
+
+    private static List<string> BuildChain(string requestedModel, SwitchboardOptions opts)
+    {
+        var chain = new List<string> { requestedModel };
+        if (opts.FallbackChains.TryGetValue(requestedModel, out var fallbacks))
+            chain.AddRange(fallbacks);
+        return chain;
+    }
+}

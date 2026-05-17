@@ -12,3 +12,4 @@ global using Microsoft.Extensions.Options;
 global using K.Switchboard;
 global using K.Switchboard.Providers;
 global using K.Switchboard.Routing;
+global using K.Switchboard.Services;
