@@ -165,9 +165,12 @@ public sealed class FallbackServiceTests
         var tmpDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.CreateDirectory(tmpDir);
         var costing = new CostingService(optsMon, Microsoft.Extensions.Logging.Abstractions.NullLogger<CostingService>.Instance, tmpDir);
+        var usageQueue = new UsageRecordingQueue(
+            costing,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<UsageRecordingQueue>.Instance);
 
         var svc = new FallbackService(router, registry, optsMon,
-            costing, Microsoft.Extensions.Logging.Abstractions.NullLogger<FallbackService>.Instance);
+            usageQueue, Microsoft.Extensions.Logging.Abstractions.NullLogger<FallbackService>.Instance);
 
         var ctx = new DefaultHttpContext();
         ctx.Request.Method = "POST";

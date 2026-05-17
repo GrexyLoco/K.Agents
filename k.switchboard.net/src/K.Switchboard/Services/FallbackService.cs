@@ -14,7 +14,7 @@ public sealed class FallbackService(
     ModelRouter router,
     ProviderRegistry registry,
     IOptionsMonitor<SwitchboardOptions> options,
-    CostingService costing,
+    UsageRecordingQueue usageQueue,
     ILogger<FallbackService> logger)
 {
     /// <summary>
@@ -142,9 +142,9 @@ public sealed class FallbackService(
         if (lastCapture is { Length: > 0 })
             await originalBody.WriteAsync(lastCapture, cancellationToken);
 
-        // Token-Nutzung fire-and-forget (kein Warten auf Datei-I/O)
+        // Token-Nutzung in Background-Queue schreiben (kein Fire-and-Forget Task mehr)
         if (winnerModel is not null && lastCapture is { Length: > 0 })
-            _ = Task.Run(() => costing.RecordUsageAsync(winnerModel, lastCapture), CancellationToken.None);
+            _ = usageQueue.TryEnqueue(winnerModel, lastCapture);
     }
 
     private static List<string> BuildChain(string requestedModel, SwitchboardOptions opts)

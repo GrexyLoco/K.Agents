@@ -101,6 +101,8 @@ try
 
     // --- Fallback + Costing (Phase 4) ---
     builder.Services.AddSingleton<CostingService>();
+    builder.Services.AddSingleton<UsageRecordingQueue>();
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<UsageRecordingQueue>());
     builder.Services.AddSingleton<FallbackService>();
 
     var app = builder.Build();
