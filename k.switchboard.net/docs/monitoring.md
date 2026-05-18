@@ -1,8 +1,12 @@
 # Monitoring
 
+<!-- markdownlint-disable MD033 -->
+
 K.Switchboard stellt drei Beobachtungsebenen bereit: Health-Checks, strukturierte Logs und OpenTelemetry-Traces/Metriken.
 
 ---
+
+<a id="health-checks"></a>
 
 ## Health-Checks
 
@@ -16,7 +20,7 @@ Invoke-RestMethod http://localhost:3456/health
 **HTTP-Statuscodes:**
 
 | Status | Code | Bedeutung |
-|--------|------|-----------|
+| ------ | ---- | --------- |
 | `Healthy` | 200 | Anwendung läuft normal |
 | `Degraded` | 200 | Anwendung läuft, aber mit Einschränkungen |
 | `Unhealthy` | 503 | Anwendung nicht betriebsbereit |
@@ -24,6 +28,8 @@ Invoke-RestMethod http://localhost:3456/health
 Der Endpoint eignet sich für Monitoring-Tools, Load-Balancer-Probes und Windows-Service-Watchdogs.
 
 ---
+
+<a id="logs"></a>
 
 ## Logs
 
@@ -33,7 +39,7 @@ K.Switchboard verwendet [Serilog](https://serilog.net/) für strukturiertes Logg
 
 Im Vordergrundmodus (direkte EXE-Ausführung) erscheinen Logs im Format:
 
-```
+```text
 [15:02:27 INF] [K.Switchboard.Services.FallbackService] Anfrage an Modell claude-3-5-sonnet
 [15:02:28 INF] [K.Switchboard.Services.CostingService] Nutzung erfasst: Modell=claude-3-5-sonnet-20241022, Input=1024, Output=256, Kosten=0.006960 USD
 ```
@@ -42,7 +48,7 @@ Im Vordergrundmodus (direkte EXE-Ausführung) erscheinen Logs im Format:
 
 Im Windows-Service-Modus werden Logs in tägliche Dateien geschrieben ([Serilog File Sink](https://github.com/serilog/serilog-sinks-file)):
 
-```
+```text
 %APPDATA%\K.Switchboard\logs\k.switchboard-20260517.log
 ```
 
@@ -69,6 +75,8 @@ Das Log-Level lässt sich in `config.json` unter dem `Serilog`-Abschnitt übersc
 Unterstützte Level: `Verbose`, `Debug`, `Information`, `Warning`, `Error`, `Fatal`.
 
 ---
+
+<a id="opentelemetry"></a>
 
 ## OpenTelemetry
 
@@ -101,6 +109,8 @@ $env:OTEL_EXPORTER_OTLP_ENDPOINT = "http://localhost:4317"
 Dashboard öffnen: `http://localhost:18888`
 
 ---
+
+<a id="stats-endpoint"></a>
 
 ## Tagesstatistik (/stats)
 

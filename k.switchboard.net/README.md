@@ -1,5 +1,7 @@
 # K.Switchboard .NET
 
+<!-- markdownlint-disable MD033 -->
+
 K.Switchboard ist ein leichtgewichtiger KI-Proxy für [Anthropic](https://docs.anthropic.com/en/api/messages)- und [Ollama](https://github.com/ollama/ollama/blob/main/docs/api.md)-Backends. Er nimmt Anfragen im Anthropic-API-Format entgegen und leitet sie je nach Modellname an den passenden Provider weiter.
 
 **Stack:** .NET 10 · ASP.NET Core Minimal API · Single-File-EXE · Windows Service
@@ -8,15 +10,18 @@ K.Switchboard ist ein leichtgewichtiger KI-Proxy für [Anthropic](https://docs.a
 
 ## Inhaltsverzeichnis
 
-- [Beziehen](#beziehen)
-- [Installieren](#installieren)
-- [Konfigurieren](#konfigurieren)
-- [Ausführen](#ausfuhren)
-- [Monitoren](#monitoren)
-- [Deinstallieren](#deinstallieren)
+- [Beziehen](#usage-beziehen)
+- [Installieren](#usage-installieren)
+- [Konfigurieren](#usage-konfigurieren)
+- [Ausführen](#usage-ausfuehren)
+- [Monitoren](#usage-monitoren)
+- [Deinstallieren](#usage-deinstallieren)
+- [Python-Befehl → .NET-Befehl](#python-dotnet-commands)
 - [Weiteres](#weiteres)
 
 ---
+
+<a id="usage-beziehen"></a>
 
 ## Beziehen
 
@@ -31,6 +36,8 @@ gh release download --repo GrexyLoco/K.Agents --pattern "K.Switchboard.exe" --di
 ```
 
 ---
+
+<a id="usage-installieren"></a>
 
 ## Installieren
 
@@ -58,6 +65,8 @@ Verwende das mitgelieferte PowerShell-Installer-Skript `scripts\install-windows.
 Der Service heißt `K.Switchboard`, läuft unter `NT AUTHORITY\NetworkService` und startet automatisch verzögert (`Automatic Delayed`). Intern basiert der Service-Host auf [`Microsoft.Extensions.Hosting.WindowsServices`](https://learn.microsoft.com/en-us/dotnet/core/extensions/windows-service).
 
 ---
+
+<a id="usage-konfigurieren"></a>
 
 ## Konfigurieren
 
@@ -90,6 +99,8 @@ Das vollständige Schema mit allen Feldern und Standardwerten ist in [docs/confi
 
 ---
 
+<a id="usage-ausfuehren"></a>
+
 ## Ausführen
 
 ### Portabel / Vordergrund
@@ -115,6 +126,8 @@ Get-Service K.Switchboard
 **Anthropic-Clients eintragen:** Setze die Umgebungsvariable `ANTHROPIC_BASE_URL=http://localhost:3456`. Damit gehen alle Anthropic-API-Aufrufe durch den Proxy. Claude Code, Copilot und andere Clients lesen diese Variable automatisch aus.
 
 ---
+
+<a id="usage-monitoren"></a>
 
 ## Monitoren
 
@@ -145,6 +158,8 @@ Liefert Token-Counts und USD-Kosten pro Modell für den aktuellen UTC-Tag. Konfi
 
 ---
 
+<a id="usage-deinstallieren"></a>
+
 ## Deinstallieren
 
 ### Service entfernen
@@ -167,9 +182,31 @@ Remove-Item -Recurse -Force "$env:ProgramData\K.Switchboard"
 
 ---
 
+<a id="python-dotnet-commands"></a>
+
+## Python-Befehl → .NET-Befehl
+
+Die häufigsten Betriebsbefehle aus der Python-Version und das direkte .NET-Pendant:
+
+| Aktion | Python | .NET |
+| -------- | -------- | ------ |
+| Starten (Vordergrund) | `python -m k_switchboard` | `./K.Switchboard.exe` |
+| Als Service installieren | `./install-windows.ps1 -AsService` | `./scripts/install-windows.ps1 -AsService` |
+| Deinstallieren | `./install-windows.ps1 -Unregister` | `./scripts/install-windows.ps1 -Unregister` |
+| Service starten | `Start-Service KSwitchboard` | `Start-Service K.Switchboard` |
+| Service stoppen | `Stop-Service KSwitchboard` | `Stop-Service K.Switchboard` |
+| Health-Check | `Invoke-RestMethod http://localhost:3456/health` | `Invoke-RestMethod http://localhost:3456/health` |
+
+Die vollständige Migrationstabelle inklusive YAML→JSON-Mapping steht in [docs/migration-from-python.md](docs/migration-from-python.md).
+
+---
+
+<a id="weiteres"></a>
+
 ## Weiteres
 
 - [Konfigurationsreferenz](docs/configuration.md) — vollständiges JSON-Schema
 - [Monitoring](docs/monitoring.md) — Logs, OpenTelemetry, Aspire Dashboard
 - [Troubleshooting](docs/troubleshooting.md) — Symptome, Ursachen, Lösungen
 - [Migration von Python](docs/migration-from-python.md) — Befehlsvergleich und Config-Mapping
+- [RFC-178 Erfüllungsnachweis](docs/rfc-178-fulfillment.md) — checklistenbasierter Nachweisstand
