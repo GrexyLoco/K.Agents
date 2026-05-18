@@ -11,7 +11,9 @@ internal sealed class FakeOptionsMonitor<T>(T value) : IOptionsMonitor<T>
 /// <summary>Mock-<see cref="HttpMessageHandler"/> für Unit-Tests.</summary>
 internal sealed class MockHttpHandler(
     Action<HttpRequestMessage>? onRequest = null,
-    HttpStatusCode statusCode = HttpStatusCode.OK) : HttpMessageHandler
+    HttpStatusCode statusCode = HttpStatusCode.OK,
+    string responseBody = "{}",
+    string responseContentType = "application/json") : HttpMessageHandler
 {
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, CancellationToken cancellationToken)
@@ -21,7 +23,7 @@ internal sealed class MockHttpHandler(
 
         return new HttpResponseMessage(statusCode)
         {
-            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+            Content = new StringContent(responseBody, Encoding.UTF8, responseContentType)
         };
     }
 }

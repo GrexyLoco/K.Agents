@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics.CodeAnalysis;
 
 namespace K.Switchboard;
 
@@ -15,4 +16,5 @@ namespace K.Switchboard;
 [JsonSourceGenerationOptions(
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[ExcludeFromCodeCoverage]
 internal sealed partial class SwitchboardJsonContext : JsonSerializerContext { }

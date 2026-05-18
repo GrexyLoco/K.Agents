@@ -99,7 +99,7 @@ public sealed class ProviderForwardingTests
         var ctx = BuildContext("""{"model":"codellama:13b","messages":[]}""");
         await provider.ForwardAsync(ctx, "codellama:13b", CancellationToken.None);
 
-        await Assert.That(capturedUrl).StartsWith("http://localhost:11434");
+        await Assert.That(capturedUrl).IsEqualTo("http://localhost:11434/api/chat");
     }
 
     [Test]
@@ -119,6 +119,69 @@ public sealed class ProviderForwardingTests
 
         var doc = JsonDocument.Parse(capturedBody);
         await Assert.That(doc.RootElement.GetProperty("model").GetString()).IsEqualTo("codellama:13b");
+    }
+
+    [Test]
+    public async Task OllamaProvider_ConvertsAnthropicMessagesAndMaxTokens()
+    {
+        var capturedBody = string.Empty;
+        var (provider, _) = CreateOllamaProvider(
+            onRequest: async req =>
+            {
+                capturedBody = req.Content is not null
+                    ? await req.Content.ReadAsStringAsync()
+                    : string.Empty;
+            });
+
+        var ctx = BuildContext("""
+            {
+              "model":"local-coder",
+              "max_tokens":42,
+              "messages":[
+                {"role":"user","content":[{"type":"text","text":"Hello"},{"type":"text","text":" World"}]},
+                {"role":"assistant","content":"Done"}
+              ]
+            }
+            """);
+
+        await provider.ForwardAsync(ctx, "codellama:13b", CancellationToken.None);
+
+        var doc = JsonDocument.Parse(capturedBody);
+        await Assert.That(doc.RootElement.GetProperty("messages")[0].GetProperty("content").GetString()).IsEqualTo("Hello World");
+        await Assert.That(doc.RootElement.GetProperty("messages")[1].GetProperty("content").GetString()).IsEqualTo("Done");
+        await Assert.That(doc.RootElement.GetProperty("options").GetProperty("num_predict").GetInt32()).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task OllamaProvider_ConvertsSuccessResponseToAnthropicShape()
+    {
+        const string ollamaResponse = """
+            {
+              "model": "codellama:13b",
+              "created_at": "2026-05-17T19:00:00Z",
+              "message": { "role": "assistant", "content": "Hallo aus Ollama" },
+              "prompt_eval_count": 12,
+              "eval_count": 7,
+              "done": true
+            }
+            """;
+
+        var (provider, _) = CreateOllamaProvider(responseBody: ollamaResponse);
+        var ctx = BuildContext("""{"model":"codellama:13b","messages":[]}""");
+
+        await provider.ForwardAsync(ctx, "codellama:13b", CancellationToken.None);
+
+        ctx.Response.Body.Position = 0;
+        using var reader = new StreamReader(ctx.Response.Body, Encoding.UTF8, leaveOpen: true);
+        var payload = await reader.ReadToEndAsync();
+        var doc = JsonDocument.Parse(payload);
+
+        await Assert.That(ctx.Response.StatusCode).IsEqualTo(200);
+        await Assert.That(doc.RootElement.GetProperty("type").GetString()).IsEqualTo("message");
+        await Assert.That(doc.RootElement.GetProperty("model").GetString()).IsEqualTo("codellama:13b");
+        await Assert.That(doc.RootElement.GetProperty("content")[0].GetProperty("text").GetString()).IsEqualTo("Hallo aus Ollama");
+        await Assert.That(doc.RootElement.GetProperty("usage").GetProperty("input_tokens").GetInt32()).IsEqualTo(12);
+        await Assert.That(doc.RootElement.GetProperty("usage").GetProperty("output_tokens").GetInt32()).IsEqualTo(7);
     }
 
     [Test]
@@ -154,9 +217,10 @@ public sealed class ProviderForwardingTests
     private static (OllamaProvider Provider, MockHttpHandler Handler) CreateOllamaProvider(
         string baseUrl = "http://localhost:11434",
         Action<HttpRequestMessage>? onRequest = null,
-        HttpStatusCode responseCode = HttpStatusCode.OK)
+        HttpStatusCode responseCode = HttpStatusCode.OK,
+        string responseBody = "{}")
     {
-        var handler = new MockHttpHandler(onRequest, responseCode);
+        var handler = new MockHttpHandler(onRequest, responseCode, responseBody);
         var factory = new SingleClientFactory(new HttpClient(handler));
         var opts = new FakeOptionsMonitor<SwitchboardOptions>(new SwitchboardOptions
         {
