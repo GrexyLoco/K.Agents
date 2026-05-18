@@ -1,13 +1,17 @@
 # Migration von Python nach .NET
 
+<!-- markdownlint-disable MD033 -->
+
 Diese Seite zeigt den direkten Vergleich zwischen dem Python-basierten K.Switchboard (`k.switchboard/`) und der .NET-Version (`k.switchboard.net/`).
 
 ---
 
+<a id="commands-comparison"></a>
+
 ## Befehle im Vergleich
 
 | Aktion | Python | .NET |
-|--------|--------|------|
+| ------ | ------ | ---- |
 | **Starten (Vordergrund)** | `python -m k_switchboard` | `.\K.Switchboard.exe` |
 | **Als Service installieren** | `.\install-windows.ps1 -AsService` (pywin32) | `.\scripts\install-windows.ps1 -AsService` (sc.exe) |
 | **Als Task registrieren** | `.\install-windows.ps1 -AsTask` | *(nicht unterstützt — Service-Modus bevorzugt)* |
@@ -21,12 +25,14 @@ Diese Seite zeigt den direkten Vergleich zwischen dem Python-basierten K.Switchb
 
 ---
 
+<a id="yaml-to-json"></a>
+
 ## Konfiguration: YAML → JSON
 
 Die Python-Version verwendet YAML (`config.yaml`), die .NET-Version JSON (`config.json`). Die Struktur ist weitgehend identisch.
 
 | YAML-Feld | JSON-Feld | Hinweis |
-|-----------|-----------|---------|
+| --------- | --------- | ------- |
 | `port` | `Port` | Gleicher Standardwert: 3456 |
 | `anthropic_base_url` | `AnthropicBaseUrl` | Gleicher Standardwert |
 | `ollama_base_url` | `OllamaBaseUrl` | Gleicher Standardwert |
@@ -77,10 +83,12 @@ pricing:
 
 ---
 
+<a id="differences-new-features"></a>
+
 ## Unterschiede und neue Features
 
 | Aspekt | Python | .NET |
-|--------|--------|------|
+| ------ | ------ | ---- |
 | **Service-Name** | `KSwitchboard` | `K.Switchboard` |
 | **Log-Format** | strukturiert (Python logging) | Serilog strukturiert + File-Sink |
 | **OpenTelemetry** | nicht vorhanden | integriert, opt-in via OTLP |
@@ -92,16 +100,20 @@ pricing:
 
 ---
 
+<a id="config-paths"></a>
+
 ## Konfigurationspfade
 
 | Aspekt | Python | .NET |
-|--------|--------|------|
+| ------ | ------ | ---- |
 | **Konfig-Datei** | `%APPDATA%\K.Switchboard\config.yaml` | `%APPDATA%\K.Switchboard\config.json` |
 | **Log-Dateien** | *(in Python konfigurierbar)* | `%APPDATA%\K.Switchboard\logs\k.switchboard-YYYYMMDD.log` |
 | **Statistik-Dateien** | nicht vorhanden | `%APPDATA%\K.Switchboard\costs-yyyy-MM-dd.json` |
 | **EXE-Installationsort** | `%LOCALAPPDATA%\K.Switchboard\` (per Installer) | `%LOCALAPPDATA%\K.Switchboard\` (per Installer) |
 
 ---
+
+<a id="parallelbetrieb"></a>
 
 ## Parallelbetrieb
 
