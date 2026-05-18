@@ -1,8 +1,12 @@
 # Konfigurationsreferenz
 
+<!-- markdownlint-disable MD033 -->
+
 K.Switchboard liest seine Konfiguration aus `%APPDATA%\K.Switchboard\config.json`. Die Datei wird beim ersten Start mit Standardwerten angelegt. Änderungen werden zur Laufzeit erkannt — kein Neustart erforderlich ([IOptionsMonitor](https://learn.microsoft.com/en-us/dotnet/core/extensions/options#use-ioptionsmonitor-to-read-updated-data)).
 
 ---
+
+<a id="port"></a>
 
 ## Port
 
@@ -18,6 +22,8 @@ Der TCP-Port, auf dem K.Switchboard HTTP-Anfragen entgegennimmt.
 
 ---
 
+<a id="anthropic-base-url"></a>
+
 ## AnthropicBaseUrl
 
 ```json
@@ -32,6 +38,8 @@ Basis-URL des Anthropic-API-Endpunkts. Alle Anthropic-Anfragen werden an `{Anthr
 
 ---
 
+<a id="ollama-base-url"></a>
+
 ## OllamaBaseUrl
 
 ```json
@@ -45,6 +53,8 @@ Basis-URL des lokalen Ollama-Endpunkts. Anfragen für Modelle mit `:` im Namen (
 **API-Referenz:** [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
 
 ---
+
+<a id="model-aliases"></a>
 
 ## ModelAliases
 
@@ -64,6 +74,8 @@ Alias-Mapping von beliebigen Kurznamen auf vollständige Modellnamen. Ein Client
 
 ---
 
+<a id="fallback-chains"></a>
+
 ## FallbackChains
 
 ```json
@@ -80,6 +92,8 @@ Definiert Fallback-Ketten pro Modell. Bei einem HTTP-Fehler (4xx/5xx) oder Netzw
 **Response-Header:** Bei erfolgreichem Fallback wird `X-K-Switchboard-Fallback-Used: <primär> -> <verwendet>` gesetzt.
 
 ---
+
+<a id="pricing"></a>
 
 ## Pricing
 
@@ -122,6 +136,8 @@ Kosten pro Modell in USD pro Million Tokens. Wird für den `/stats`-Endpoint ver
 Statistiken werden täglich in `%APPDATA%\K.Switchboard\costs-yyyy-MM-dd.json` gespeichert.
 
 ---
+
+<a id="full-example"></a>
 
 ## Vollständiges Beispiel
 

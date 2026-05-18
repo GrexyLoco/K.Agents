@@ -1,8 +1,12 @@
 # Troubleshooting
 
+<!-- markdownlint-disable MD033 MD036 -->
+
 Häufige Fehlerbilder mit Symptomen, Ursachen und Lösungsschritten.
 
 ---
+
+<a id="service-startet-nicht"></a>
 
 ## Service startet nicht
 
@@ -32,6 +36,8 @@ Get-EventLog -LogName Application -Source "K.Switchboard" -Newest 10
 
 ---
 
+<a id="port-belegt"></a>
+
 ## Port belegt
 
 **Symptom:** K.Switchboard startet nicht mit dem Fehler `Failed to bind to address http://*:3456` oder der Health-Check schlägt fehl.
@@ -52,6 +58,8 @@ Stop-Process -Id 12345 -Force
 Öffne `%APPDATA%\K.Switchboard\config.json` und ändere `Port`. Starte K.Switchboard neu. Aktualisiere anschließend `ANTHROPIC_BASE_URL` auf den neuen Port.
 
 ---
+
+<a id="anthropic-auth-fehler"></a>
 
 ## Anthropic-Auth-Fehler
 
@@ -77,6 +85,8 @@ Invoke-RestMethod -Uri "http://localhost:3456/v1/messages" -Method Post -Headers
 Erscheint der 401 in den K.Switchboard-Logs? Falls nicht, prüfe ob der Client `ANTHROPIC_BASE_URL=http://localhost:3456` wirklich gesetzt hat.
 
 ---
+
+<a id="ollama-nicht-erreichbar"></a>
 
 ## Ollama nicht erreichbar
 
@@ -112,6 +122,8 @@ ollama pull codellama:13b
 
 ---
 
+<a id="fallback-greift-nicht"></a>
+
 ## Fallback greift nicht
 
 **Symptom:** Bei Fehlern des primären Modells wird kein Fallback verwendet. Der Header `X-K-Switchboard-Fallback-Used` fehlt.
@@ -132,6 +144,8 @@ Invoke-RestMethod http://localhost:3456/config
 ```
 
 ---
+
+<a id="stats-keine-daten"></a>
 
 ## /stats gibt keine Daten zurück
 
