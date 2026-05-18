@@ -7,5 +7,6 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <LangVersion>preview</LangVersion>
     <RootNamespace>K.Switchboard</RootNamespace>
+    <VersionPrefix>1.18.0</VersionPrefix>
   </PropertyGroup>
 </Project>
