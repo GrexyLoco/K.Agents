@@ -258,7 +258,7 @@ Der `commit-msg` Hook wird als nativer git Hook installiert — er läuft bei JE
 ./plugins/kagents/tools/Install-Hooks.ps1 -Target All -GitHooks
 ```
 
-**Bestehende Nutzer** (Upgrade von v1.15.1 oder früher): Der `conventional-commit-guard` PreToolUse-Hook wurde entfernt. Falls er noch in `~/.claude/settings.json` registriert ist, muss der Eintrag manuell gelöscht werden:
+**Bestehende Nutzer** (Upgrade von einer früheren Version): Der `conventional-commit-guard` PreToolUse-Hook wurde entfernt. Falls er noch in `~/.claude/settings.json` registriert ist, muss der Eintrag manuell gelöscht werden:
 1. `~/.claude/settings.json` öffnen
 2. Den Block mit `conventional-commit-guard.ps1` aus `hooks.PreToolUse` entfernen
 3. Alternativ: `Install-Hooks.ps1 -Uninstall` + `Install-Hooks.ps1` ausführen (registriert alle aktuellen Hooks neu)
