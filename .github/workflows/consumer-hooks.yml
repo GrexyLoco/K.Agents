@@ -9,11 +9,10 @@ name: Consumer Hooks
 # Aktuelle Hooks:
 #   - releaseflow-stable → update-plugin-metadata
 #
-# Known-Issue (Issue folgt): JSON-Bump läuft NACH dem Stable-Tag — Konsistent
-# mit dem alten Push-on-master-Modell, aber Tag vX.Y.Z zeigt auf einen Commit
-# mit alter Plugin-JSON-Version. Marketplace-Installation per Tag liefert daher
-# plugin.json = (X.Y.Z-1). Fix erfordert Upstream-Änderung in ReleaseFlow
-# (Pre-Release-Hook oder JSON-Bump im Promotion-PR).
+# Known-Issue: JSON-Bump läuft NACH dem Stable-Tag — Tag vX.Y.Z zeigt auf einen
+# Commit mit alter Plugin-JSON-Version. Upstream-Fix via Promotion-PR-Bump-Mechanik
+# geplant in K.Actions.ReleaseFlow#513 (releaseflow-prepare-promotion Hook).
+# Interim-Workaround entfällt sobald #513 umgesetzt ist (K.Agents#222 geschlossen).
 on:
   repository_dispatch:
     types:
@@ -60,7 +59,7 @@ jobs:
           NEW_VERSION: ${{ github.event.client_payload.version }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $newVersion = $env:NEW_VERSION
+          $newVersion = $env:NEW_VERSION -replace '^v', ''
 
           # 1. Source of Truth: plugin.json
           $pluginPath = Join-Path 'plugins' 'kagents' '.github' 'plugin' 'plugin.json'
@@ -83,6 +82,14 @@ jobs:
             $claudeMarketplace | ConvertTo-Json -Depth 10 | Set-Content $claudeMarketplacePath -Encoding utf8
           }
 
+          # 4. Claude Code Plugin Manifest
+          $claudePluginPath = Join-Path 'plugins' 'kagents' '.claude-plugin' 'plugin.json'
+          if (Test-Path $claudePluginPath) {
+            $claudePlugin = Get-Content $claudePluginPath -Raw | ConvertFrom-Json
+            $claudePlugin.version = $newVersion
+            $claudePlugin | ConvertTo-Json -Depth 10 | Set-Content $claudePluginPath -Encoding utf8
+          }
+
           Write-Output "Plugin-Metadata auf $newVersion aktualisiert"
 
       - name: Commit + Push [skip ci]
@@ -99,6 +106,9 @@ jobs:
           git add plugins/kagents/.github/plugin/plugin.json .github/plugin/marketplace.json
           if [ -f ".claude-plugin/marketplace.json" ]; then
             git add .claude-plugin/marketplace.json
+          fi
+          if [ -f "plugins/kagents/.claude-plugin/plugin.json" ]; then
+            git add plugins/kagents/.claude-plugin/plugin.json
           fi
 
           if git diff --staged --quiet; then
