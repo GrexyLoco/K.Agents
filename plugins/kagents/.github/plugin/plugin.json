@@ -34,7 +34,8 @@
     "../agents/security-auditor.agent.md",
     "../agents/tunit-tester.agent.md",
     "../agents/orchestrator.agent.md",
-    "../agents/dotnet-architect.agent.md"
+    "../agents/dotnet-architect.agent.md",
+    "../agents/commit-messenger.agent.md"
   ],
   "skills": [
     "../skills/csharp-patterns",
