@@ -1,6 +1,6 @@
 # K.Agents
 
-**15 AI-Agents (14 spezialisierte + 1 Orchestrator) und 37 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
+**16 AI-Agents (15 spezialisierte + 1 Orchestrator) und 49 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
 
 ## Überblick
 
@@ -47,7 +47,7 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 | Documentation | README, Changelog, API-Docs | Sonnet |
 | Git Forensics | Blame, Bisect, Conventional Commits | Sonnet |
 
-## Skills (37)
+## Skills (49)
 
 | Kategorie | Skills |
 |-----------|--------|
