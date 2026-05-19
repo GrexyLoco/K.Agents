@@ -8,6 +8,13 @@
   },
   "homepage": "https://github.com/GrexyLoco/K.Agents",
   "license": "MIT",
-  "keywords": ["dotnet", "blazor", "maui", "powershell", "azure", "releaseflow"],
+  "keywords": [
+    "dotnet",
+    "blazor",
+    "maui",
+    "powershell",
+    "azure",
+    "releaseflow"
+  ],
   "mcpServers": "./.mcp.json"
 }
