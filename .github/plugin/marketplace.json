@@ -5,13 +5,13 @@
     "email": "noreply@grexyloco.dev"
   },
   "metadata": {
-    "description": "14 spezialisierte AI-Agents und 27 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
+    "description": "16 spezialisierte AI-Agents und 49 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
     "version": "1.18.0"
   },
   "plugins": [
     {
       "name": "kagents",
-      "description": "14 spezialisierte AI-Agents und 27 Skills fuer .NET, PowerShell und Azure",
+      "description": "16 spezialisierte AI-Agents und 49 Skills fuer .NET, PowerShell und Azure",
       "version": "1.18.0",
       "source": "./plugins/kagents"
     }

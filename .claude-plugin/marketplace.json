@@ -10,7 +10,7 @@
     {
       "name": "kagents",
       "version": "1.18.0",
-      "description": "14 spezialisierte AI-Agents und 27 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, Azure und GitHub Actions",
+      "description": "16 spezialisierte AI-Agents und 49 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, Azure und GitHub Actions",
       "source": "./plugins/kagents",
       "category": "development",
       "homepage": "https://github.com/GrexyLoco/K.Agents"
