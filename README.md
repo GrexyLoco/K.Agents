@@ -2,10 +2,10 @@
 
 [![Release](https://img.shields.io/github/v/release/GrexyLoco/K.Agents?include_prereleases&label=version)](https://github.com/GrexyLoco/K.Agents/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Agents](https://img.shields.io/badge/Agents-14-blue)](.github/agents/)
-[![Skills](https://img.shields.io/badge/Skills-32-green)](.github/skills/)
+[![Agents](https://img.shields.io/badge/Agents-16-blue)](.github/agents/)
+[![Skills](https://img.shields.io/badge/Skills-49-green)](.github/skills/)
 
-Kuratierte Sammlung von **14 Custom Agents** (13 spezialisierte + 1 Orchestrator), **32 Skills** und **2 MCP-Server** für VS Code Copilot, Visual Studio 2026 und Claude Code.
+Kuratierte Sammlung von **16 Custom Agents** (15 spezialisierte + 1 Orchestrator), **49 Skills** und **2 MCP-Server** für VS Code Copilot, Visual Studio 2026 und Claude Code.
 Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
 
 ## Inhaltsverzeichnis

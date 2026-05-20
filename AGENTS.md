@@ -15,7 +15,7 @@ Diese Codebase gehört zu einer Software-Entwicklungsabteilung mit folgenden Sch
 
 ## Agent-Routing
 
-Dieses Projekt verfügt über 15 Agents (14 spezialisierte + 1 Orchestrator). Der **Orchestrator** ist der empfohlene Einstiegspunkt — er analysiert die Aufgabe und delegiert automatisch an den passenden Agenten.
+Dieses Projekt verfügt über 16 Agents (15 spezialisierte + 1 Orchestrator). Der **Orchestrator** ist der empfohlene Einstiegspunkt — er analysiert die Aufgabe und delegiert automatisch an den passenden Agenten.
 
 Wähle den Orchestrator im **Agent-Picker** (Copilot Chat, Claude Code).
 
