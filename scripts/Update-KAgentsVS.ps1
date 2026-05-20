@@ -76,6 +76,9 @@ foreach ($dir in @($AgentsPath, $SkillsPath)) {
 $knownAgents = Get-ChildItem -Path $agentsSource -Filter '*.agent.md' | Select-Object -ExpandProperty Name
 $knownSkills = Get-ChildItem -Path $skillsSource -Directory | Select-Object -ExpandProperty Name
 
+$copilotPluginAgentsPath = Join-Path $env:USERPROFILE '.copilot' 'installed-plugins' 'kagents' 'kagents' 'agents'
+$copilotPluginInstalled = Test-Path $copilotPluginAgentsPath
+
 $removedAgents = 0
 foreach ($name in $knownAgents) {
     $target = Join-Path $AgentsPath $name
@@ -100,16 +103,23 @@ foreach ($name in $knownSkills) {
 
 # --- Phase 2: Aktuelle Version kopieren (VS Code-spezifische Tools entfernen) ---
 
-$agentFiles = Get-ChildItem -Path $agentsSource -Filter '*.agent.md'
-foreach ($file in $agentFiles) {
-    $dest = Join-Path $AgentsPath $file.Name
-    if ($PSCmdlet.ShouldProcess($dest, 'Agent kopieren')) {
-        if (-not (Test-Path $AgentsPath)) {
-            New-Item -ItemType Directory -Path $AgentsPath -Force | Out-Null
+$copiedAgents = 0
+if ($copilotPluginInstalled) {
+    Write-Information "K.Agents Copilot-Plugin erkannt ($copilotPluginAgentsPath)." -Tags 'Install'
+    Write-Output "Agents-Kopie uebersprungen: Copilot-Plugin bereits installiert (Duplikat-Schutz aktiv)."
+} else {
+    $agentFiles = Get-ChildItem -Path $agentsSource -Filter '*.agent.md'
+    foreach ($file in $agentFiles) {
+        $dest = Join-Path $AgentsPath $file.Name
+        if ($PSCmdlet.ShouldProcess($dest, 'Agent kopieren')) {
+            if (-not (Test-Path $AgentsPath)) {
+                New-Item -ItemType Directory -Path $AgentsPath -Force | Out-Null
+            }
+            $content = Get-Content -Path $file.FullName -Raw
+            $transformed = ConvertTo-VS2026AgentContent -Content $content
+            Set-Content -Path $dest -Value $transformed -NoNewline
+            $copiedAgents++
         }
-        $content = Get-Content -Path $file.FullName -Raw
-        $transformed = ConvertTo-VS2026AgentContent -Content $content
-        Set-Content -Path $dest -Value $transformed -NoNewline
     }
 }
 
@@ -135,7 +145,11 @@ if (-not $SkipInstructions) {
 }
 
 Write-Output "Update abgeschlossen:"
-Write-Output "  $($agentFiles.Count) Agents ($removedAgents ersetzt, $($agentFiles.Count - $removedAgents) neu)"
+if ($copilotPluginInstalled) {
+    Write-Output "  Agents: Kopie uebersprungen (Plugin aktiv), $removedAgents Legacy-Dateien bereinigt"
+} else {
+    Write-Output "  $copiedAgents Agents ($removedAgents ersetzt, $($copiedAgents - $removedAgents) neu)"
+}
 Write-Output "  $($skillDirs.Count) Skills ($removedSkills ersetzt, $($skillDirs.Count - $removedSkills) neu)"
 Write-Output ''
 Write-Output 'Visual Studio 2026 neu starten, damit die Aenderungen wirksam werden.'
