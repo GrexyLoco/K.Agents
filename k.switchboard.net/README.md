@@ -25,14 +25,22 @@ K.Switchboard ist ein leichtgewichtiger KI-Proxy für [Anthropic](https://docs.a
 
 ## Beziehen
 
-K.Switchboard wird als Single-File-EXE über [GitHub Releases](https://github.com/GrexyLoco/K.Agents/releases/latest) bereitgestellt. Es ist keine .NET-Runtime-Installation erforderlich — die EXE enthält alles ([Self-contained deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/#publish-self-contained)).
+K.Switchboard wird als Release-Bundle über [GitHub Releases](https://github.com/GrexyLoco/K.Agents/releases/latest) bereitgestellt. Das ZIP enthält `K.Switchboard.exe`, `install-windows.ps1` und `K.Switchboard-README.md`. Es ist keine .NET-Runtime-Installation erforderlich — die EXE ist self-contained ([Self-contained deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/#publish-self-contained)).
 
-**Browser-Download:** Öffne `https://github.com/GrexyLoco/K.Agents/releases/latest`, lade das Asset `K.Switchboard.exe` herunter.
+**Browser-Download:** Öffne `https://github.com/GrexyLoco/K.Agents/releases/latest`, lade das Asset `K.Switchboard-win-x64.zip` herunter (optional zusätzlich `K.Switchboard-README.md` als separates Asset).
 
 **CLI-Download** mit [GitHub CLI](https://cli.github.com/manual/gh_release_download):
 
 ```pwsh
-gh release download --repo GrexyLoco/K.Agents --pattern "K.Switchboard.exe" --dir "$env:LOCALAPPDATA\K.Switchboard"
+gh release download --repo GrexyLoco/K.Agents --pattern "K.Switchboard-win-x64.zip" --pattern "K.Switchboard-README.md" --dir "$env:LOCALAPPDATA\K.Switchboard"
+```
+
+**Entpacken:**
+
+```pwsh
+$dest = "$env:LOCALAPPDATA\K.Switchboard"
+New-Item -ItemType Directory -Path $dest -Force | Out-Null
+Expand-Archive -Path (Join-Path $dest 'K.Switchboard-win-x64.zip') -DestinationPath $dest -Force
 ```
 
 ---
@@ -45,21 +53,19 @@ Es gibt zwei Modi: **portabel** (EXE liegt in einem Ordner) und **Windows-Servic
 
 ### Portabel
 
-Verschiebe die EXE in ein Verzeichnis deiner Wahl, z. B. `%LOCALAPPDATA%\K.Switchboard\`:
+Nach dem Entpacken kann die EXE direkt gestartet werden, z. B. aus `%LOCALAPPDATA%\K.Switchboard\`:
 
 ```pwsh
-$dest = "$env:LOCALAPPDATA\K.Switchboard"
-New-Item -ItemType Directory -Path $dest -Force | Out-Null
-Move-Item .\K.Switchboard.exe $dest -Force
+& "$env:LOCALAPPDATA\K.Switchboard\K.Switchboard.exe"
 ```
 
 ### Windows-Service
 
-Verwende das mitgelieferte PowerShell-Installer-Skript `scripts\install-windows.ps1`. Es nutzt [`sc.exe`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create) und benötigt **Administratorrechte**.
+Verwende das mitgelieferte PowerShell-Installer-Skript `install-windows.ps1` aus dem Bundle. Es nutzt [`sc.exe`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create) und benötigt **Administratorrechte**.
 
 ```pwsh
-# Skript aus dem Repo-Verzeichnis ausführen (oder EXE-Pfad explizit angeben):
-.\scripts\install-windows.ps1 -AsService -ExePath "$env:LOCALAPPDATA\K.Switchboard\K.Switchboard.exe"
+# Skript im entpackten Bundle-Verzeichnis ausführen:
+.\install-windows.ps1 -AsService -ExePath "$env:LOCALAPPDATA\K.Switchboard\K.Switchboard.exe"
 ```
 
 Der Service heißt `K.Switchboard`, läuft unter `NT AUTHORITY\NetworkService` und startet automatisch verzögert (`Automatic Delayed`). Intern basiert der Service-Host auf [`Microsoft.Extensions.Hosting.WindowsServices`](https://learn.microsoft.com/en-us/dotnet/core/extensions/windows-service).
@@ -165,7 +171,7 @@ Liefert Token-Counts und USD-Kosten pro Modell für den aktuellen UTC-Tag. Konfi
 ### Service entfernen
 
 ```pwsh
-.\scripts\install-windows.ps1 -Unregister
+.\install-windows.ps1 -Unregister
 ```
 
 Das Skript stoppt den Service und ruft [`sc.exe delete`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-delete) auf.
@@ -191,8 +197,8 @@ Die häufigsten Betriebsbefehle aus der Python-Version und das direkte .NET-Pend
 | Aktion | Python | .NET |
 | -------- | -------- | ------ |
 | Starten (Vordergrund) | `python -m k_switchboard` | `./K.Switchboard.exe` |
-| Als Service installieren | `./install-windows.ps1 -AsService` | `./scripts/install-windows.ps1 -AsService` |
-| Deinstallieren | `./install-windows.ps1 -Unregister` | `./scripts/install-windows.ps1 -Unregister` |
+| Als Service installieren | `./install-windows.ps1 -AsService` | `./install-windows.ps1 -AsService` |
+| Deinstallieren | `./install-windows.ps1 -Unregister` | `./install-windows.ps1 -Unregister` |
 | Service starten | `Start-Service KSwitchboard` | `Start-Service K.Switchboard` |
 | Service stoppen | `Stop-Service KSwitchboard` | `Stop-Service K.Switchboard` |
 | Health-Check | `Invoke-RestMethod http://localhost:3456/health` | `Invoke-RestMethod http://localhost:3456/health` |
