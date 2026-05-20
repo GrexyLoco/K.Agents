@@ -3,9 +3,9 @@ name: api-design-patterns
 description: "API-Design-Muster — Minimal APIs vs. Controller, TypedResults, Versioning, DTOs, Validation. USE FOR: designing REST API structure, implementing request/response patterns, versioning strategies. DO NOT USE FOR: Minimal API syntax details (use minimal-api-patterns) or authentication (use authentication-patterns)."
 ---
 
-# API-Design-Muster
+# 1. API-Design-Muster
 
-## Minimal APIs vs. Controller-Based
+## 1.1 Minimal APIs vs. Controller-Based
 
 | Aspekt | Minimal API | Controller |
 |---|---|---|
@@ -17,7 +17,7 @@ description: "API-Design-Muster — Minimal APIs vs. Controller, TypedResults, V
 
 **Regel:** Minimal APIs für <50 Endpoints oder Microservices; Controller für Enterprise APIs mit vielen Cross-Cutting Concerns.
 
-## TypedResults Pattern
+## 1.2 TypedResults Pattern
 
 Ersetze `Results.*` mit `TypedResults.*` für bessere OpenAPI-Dokumentation:
 
@@ -40,7 +40,7 @@ static async Task<Results<Ok<UserDto>, NotFound>> GetUserAsync(
 
 **Vorteil:** Compiler validates Rückgabetypen; OpenAPI generiert korrekte Statuscode-Schemata.
 
-## API Versioning
+## 1.3 API Versioning
 
 **1. Query-Parameter (einfach, deprecated)**
 ```
@@ -68,7 +68,7 @@ v1.MapGet("/users", GetUsersV1);
 v2.MapGet("/users", GetUsersV2);
 ```
 
-## DTOs und Validation
+## 1.4 DTOs und Validation
 
 **Request DTO:**
 ```csharp
@@ -97,7 +97,7 @@ users.MapPost("/", async (CreateUserRequest req, IValidator<CreateUserRequest> v
 });
 ```
 
-## REST Best Practices
+## 1.5 REST Best Practices
 
 - **Naming:** Plural nouns (`/users`, `/orders`), nicht Verben (`/getUsers`)
 - **Status Codes:** 200 OK, 201 Created, 400 Bad Request, 404 Not Found, 409 Conflict, 500 Internal Server Error

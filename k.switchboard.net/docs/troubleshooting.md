@@ -1,4 +1,4 @@
-# Troubleshooting
+# 1. Troubleshooting
 
 <!-- markdownlint-disable MD033 MD036 -->
 
@@ -8,7 +8,7 @@ Häufige Fehlerbilder mit Symptomen, Ursachen und Lösungsschritten.
 
 <a id="service-startet-nicht"></a>
 
-## Service startet nicht
+## 1.1 Service startet nicht
 
 **Symptom:** `Start-Service K.Switchboard` schlägt fehl oder der Service wechselt sofort in den Zustand `Stopped`.
 
@@ -38,7 +38,7 @@ Get-EventLog -LogName Application -Source "K.Switchboard" -Newest 10
 
 <a id="port-belegt"></a>
 
-## Port belegt
+## 1.2 Port belegt
 
 **Symptom:** K.Switchboard startet nicht mit dem Fehler `Failed to bind to address http://*:3456` oder der Health-Check schlägt fehl.
 
@@ -61,7 +61,7 @@ Stop-Process -Id 12345 -Force
 
 <a id="anthropic-auth-fehler"></a>
 
-## Anthropic-Auth-Fehler
+## 1.3 Anthropic-Auth-Fehler
 
 **Symptom:** Anfragen schlagen fehl mit HTTP 401 oder der Anthropic-Client meldet `authentication_error`.
 
@@ -88,7 +88,7 @@ Erscheint der 401 in den K.Switchboard-Logs? Falls nicht, prüfe ob der Client `
 
 <a id="ollama-nicht-erreichbar"></a>
 
-## Ollama nicht erreichbar
+## 1.4 Ollama nicht erreichbar
 
 **Symptom:** Anfragen an Ollama-Modelle (Modellname mit `:`) schlagen fehl mit Verbindungsfehlern.
 
@@ -124,7 +124,7 @@ ollama pull codellama:13b
 
 <a id="fallback-greift-nicht"></a>
 
-## Fallback greift nicht
+## 1.5 Fallback greift nicht
 
 **Symptom:** Bei Fehlern des primären Modells wird kein Fallback verwendet. Der Header `X-K-Switchboard-Fallback-Used` fehlt.
 
@@ -147,7 +147,7 @@ Invoke-RestMethod http://localhost:3456/config
 
 <a id="stats-keine-daten"></a>
 
-## /stats gibt keine Daten zurück
+## 1.6 /stats gibt keine Daten zurück
 
 **Symptom:** `Invoke-RestMethod http://localhost:3456/stats` liefert `totalCostUsd: 0` obwohl Anfragen gestellt wurden.
 

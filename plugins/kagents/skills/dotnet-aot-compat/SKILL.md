@@ -3,11 +3,11 @@ name: dotnet-aot-compat
 description: "Native AOT and trimming compatibility for .NET — IL analyzer warnings (IL2026, IL2070, IL2067, IL2072, IL3050), IsAotCompatible, DynamicallyAccessedMembers, source-generated serialization, reflection-free DI. USE FOR: resolving IL warnings, enabling AOT compilation, making libraries trim-safe. DO NOT USE FOR: general build errors (use dotnet-build-diagnosis) or runtime performance tuning (use database-performance or maui-performance)."
 ---
 
-# Native AOT & Trimming Kompatibilität
+# 1. Native AOT & Trimming Kompatibilität
 
 Basiert auf: [dotnet/skills](https://github.com/dotnet/skills) (MIT, Microsoft .NET Team)
 
-## AOT aktivieren
+## 1.1 AOT aktivieren
 ```xml
 <PropertyGroup>
   <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
@@ -15,12 +15,12 @@ Basiert auf: [dotnet/skills](https://github.com/dotnet/skills) (MIT, Microsoft .
 ```
 Aktiviert automatisch `EnableTrimAnalyzer=true` und `EnableAotAnalyzer=true`.
 
-## Warnings analysieren
+## 1.2 Warnings analysieren
 ```bash
 dotnet build MyProject.csproj --no-incremental 2>&1 | grep 'IL[0-9]\{4\}'
 ```
 
-## Häufige IL-Warnings
+## 1.3 Häufige IL-Warnings
 
 | Warning | Ursache | Fix |
 |---------|---------|-----|
@@ -31,7 +31,7 @@ dotnet build MyProject.csproj --no-incremental 2>&1 | grep 'IL[0-9]\{4\}'
 | IL2057 | `Type.GetType(string)` mit nicht-konstanter Variable | Konstante verwenden oder Pattern ändern |
 | IL3050 | `[RequiresDynamicCode]` Aufruf | Source Generator oder Compile-Time Alternative |
 
-## Source-Generated Serialization (statt Reflection)
+## 1.4 Source-Generated Serialization (statt Reflection)
 ```csharp
 [JsonSerializable(typeof(UserResponse))]
 [JsonSerializable(typeof(List<UserResponse>))]
@@ -41,14 +41,14 @@ internal partial class AppJsonContext : JsonSerializerContext { }
 var json = JsonSerializer.Serialize(user, AppJsonContext.Default.UserResponse);
 ```
 
-## DI ohne Reflection
+## 1.5 DI ohne Reflection
 ```csharp
 // Statt Assembly-Scanning:
 builder.Services.AddSingleton<IUserService, UserService>();
 // Oder Source-Generated DI (ab .NET 10)
 ```
 
-## Regeln
+## 1.6 Regeln
 - Nicht für .NET Framework (net4x) Projekte verwenden
 - Bei Multi-Targeting (netstandard2.0;net10.0): Condition auf TFM
 - Immer zuerst Warnings auflösen, dann AOT publishen testen

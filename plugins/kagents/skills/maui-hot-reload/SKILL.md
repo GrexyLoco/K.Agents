@@ -3,11 +3,11 @@ name: maui-hot-reload
 description: ".NET MAUI Hot Reload — C# hot reload, XAML hot reload, Blazor Hybrid hot reload, dotnet watch, MetadataUpdateHandler, hot reload limitations and workarounds. USE FOR: troubleshooting hot reload failures, configuring dotnet watch for MAUI, understanding C# Hot Reload limitations. DO NOT USE FOR: general MAUI development (use maui-patterns) or build errors (use dotnet-build-diagnosis)."
 ---
 
-# MAUI Hot Reload
+# 1. MAUI Hot Reload
 
 Basiert auf: [davidortinau/maui-skills](https://github.com/davidortinau/maui-skills) (MIT, David Ortinau, Microsoft)
 
-## Hot Reload Typen
+## 1.1 Hot Reload Typen
 
 | Typ | Was | Funktioniert bei |
 |-----|-----|-----------------|
@@ -15,15 +15,15 @@ Basiert auf: [davidortinau/maui-skills](https://github.com/davidortinau/maui-ski
 | C# Hot Reload | Code-Änderungen | Methoden-Bodies, Lambdas, lokale Variablen |
 | Blazor Hybrid | Razor/CSS | Blazor-Komponenten in MAUI |
 
-## Häufige Probleme
+## 1.2 Häufige Probleme
 
-### XAML Hot Reload geht nicht
+### 1.2.1 XAML Hot Reload geht nicht
 1. **Visual Studio:** Tools → Optionen → Debugging → Hot Reload → XAML aktiviert?
 2. **VS Code:** `dotnet watch` statt `dotnet run` verwenden
 3. **Encoding:** XAML-Dateien müssen UTF-8 (BOM) sein
 4. **MetadataUpdateHandler:** Registriert?
 
-### C# Hot Reload Einschränkungen
+### 1.2.2 C# Hot Reload Einschränkungen
 Funktioniert **nicht** bei:
 - Neuen Typen / Interfaces / Enums hinzufügen
 - Generische Methoden-Signaturen ändern
@@ -35,13 +35,13 @@ Funktioniert bei:
 - Lambda-Expressions ändern
 - Lokale Variablen hinzufügen
 
-### VS Code Setup
+### 1.2.3 VS Code Setup
 ```bash
 # Mit Hot Reload starten
 dotnet watch --project MyMauiApp
 ```
 
-### Environment Variables
+### 1.2.4 Environment Variables
 ```bash
 # Hot Reload Debug-Ausgabe aktivieren
 DOTNET_WATCH_DEBUG=1
@@ -50,7 +50,7 @@ DOTNET_WATCH_DEBUG=1
 DOTNET_MODIFIABLE_ASSEMBLIES=debug
 ```
 
-## MetadataUpdateHandler
+## 1.3 MetadataUpdateHandler
 ```csharp
 [assembly: MetadataUpdateHandler(typeof(HotReloadHandler))]
 

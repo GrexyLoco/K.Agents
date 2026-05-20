@@ -67,15 +67,40 @@ jobs:
             --self-contained true `
             -o publish/
 
-      - name: EXE als Artefakt hochladen
+      - name: Release-Bundle vorbereiten
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $distRoot = Join-Path 'k.switchboard.net' 'dist'
+          $bundleRoot = Join-Path $distRoot 'bundle'
+
+          New-Item -ItemType Directory -Path $bundleRoot -Force | Out-Null
+
+          Copy-Item -Path (Join-Path 'k.switchboard.net/publish' 'K.Switchboard.exe') -Destination (Join-Path $bundleRoot 'K.Switchboard.exe') -Force
+          Copy-Item -Path (Join-Path 'k.switchboard.net/scripts' 'install-windows.ps1') -Destination (Join-Path $bundleRoot 'install-windows.ps1') -Force
+          Copy-Item -Path (Join-Path 'k.switchboard.net' 'README.md') -Destination (Join-Path $bundleRoot 'K.Switchboard-README.md') -Force
+
+          Compress-Archive -Path (Join-Path $bundleRoot '*') -DestinationPath (Join-Path $distRoot 'K.Switchboard-win-x64.zip') -Force
+          Copy-Item -Path (Join-Path $bundleRoot 'K.Switchboard-README.md') -Destination (Join-Path $distRoot 'K.Switchboard-README.md') -Force
+
+          $expected = @('K.Switchboard-README.md', 'K.Switchboard.exe', 'install-windows.ps1')
+          $actual = Get-ChildItem -Path $bundleRoot -File | Select-Object -ExpandProperty Name | Sort-Object
+          if (Compare-Object -ReferenceObject $expected -DifferenceObject $actual) {
+            throw 'Release-Bundle enthält nicht exakt EXE + Installer + README.'
+          }
+
+      - name: Bundle + README als Artefakt hochladen
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: K.Switchboard-win-x64
-          path: k.switchboard.net/publish/K.Switchboard.exe
+          name: K.Switchboard-release-bundle
+          path: |
+            k.switchboard.net/dist/K.Switchboard-win-x64.zip
+            k.switchboard.net/dist/K.Switchboard-README.md
           retention-days: 30
 
   upload-release-asset:
-    name: EXE an GitHub Release anhängen
+    name: Bundle + README an GitHub Release anhängen
     needs: build-test-publish
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
@@ -87,10 +112,10 @@ jobs:
       - name: Artefakt herunterladen
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: K.Switchboard-win-x64
+          name: K.Switchboard-release-bundle
           path: dist/
 
-      - name: EXE an Release hängen
+      - name: Bundle + README an Release hängen
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -98,4 +123,4 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $tag = $env:GITHUB_REF_NAME
-          gh release upload "$tag" "dist/K.Switchboard.exe" --clobber --repo "$env:GITHUB_REPOSITORY"
+          gh release upload "$tag" "dist/K.Switchboard-win-x64.zip" "dist/K.Switchboard-README.md" --clobber --repo "$env:GITHUB_REPOSITORY"

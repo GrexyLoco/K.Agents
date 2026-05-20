@@ -3,11 +3,11 @@ name: csharp-patterns
 description: "C# 14 / .NET 10 patterns — primary constructors, collection expressions, pattern matching, records, required members, nullable reference types, file-scoped namespaces, sealed classes, naming conventions. USE FOR: writing modern C# code, applying .NET 10 language features, enforcing naming and style conventions. DO NOT USE FOR: concurrency (use csharp-concurrency-patterns) or EF Core entities (use efcore-patterns)."
 ---
 
-# C# 14 / .NET 10 Patterns
+# 1. C# 14 / .NET 10 Patterns
 
-## Sprachfeatures (immer verwenden)
+## 1.1 Sprachfeatures (immer verwenden)
 
-### Primary Constructors
+### 1.1.1 Primary Constructors
 ```csharp
 // ✅ Gut
 public class UserService(IUserRepository repository, ILogger<UserService> logger);
@@ -20,14 +20,14 @@ public class UserService
 }
 ```
 
-### Collection Expressions
+### 1.1.2 Collection Expressions
 ```csharp
 int[] numbers = [1, 2, 3];
 List<string> names = ["Alice", "Bob"];
 ReadOnlySpan<byte> bytes = [0x00, 0xFF];
 ```
 
-### Pattern Matching
+### 1.1.3 Pattern Matching
 ```csharp
 var result = status switch
 {
@@ -38,13 +38,13 @@ var result = status switch
 };
 ```
 
-### Records für DTOs
+### 1.1.4 Records für DTOs
 ```csharp
 public record CreateUserRequest(string Email, string DisplayName);
 public record UserResponse(Guid Id, string Email, string DisplayName, DateTime CreatedAt);
 ```
 
-### Required Members
+### 1.1.5 Required Members
 ```csharp
 public class Configuration
 {
@@ -53,7 +53,7 @@ public class Configuration
 }
 ```
 
-## Naming Conventions
+## 1.2 Naming Conventions
 
 | Element | Convention | Beispiel |
 |---------|-----------|---------|
@@ -67,7 +67,7 @@ public class Configuration
 | Konstante | PascalCase | `MaxRetryCount` |
 | Async Methode | Suffix `Async` | `CreateUserAsync` |
 
-## Pflicht-Patterns
+## 1.3 Pflicht-Patterns
 
 - **File-scoped Namespaces** immer
 - **Nullable Reference Types** immer aktiviert

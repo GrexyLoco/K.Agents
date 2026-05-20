@@ -3,9 +3,9 @@ name: tunit-patterns
 description: "TUnit testing framework \u2014 [Test], [Arguments], [MatrixDataSource], ClassDataSource<T> (DI fixtures), async assertions (Assert.That), lifecycle hooks (Before/After), parallel-by-default. USE FOR: writing .NET unit and integration tests with TUnit, structuring test projects, using DI in test fixtures. DO NOT USE FOR: PowerShell tests (use pester-patterns), Blazor E2E tests (use playwright-blazor-testing), or Aspire integration tests (use aspire-integration-testing)."
 ---
 
-# TUnit Patterns 
+# 1. TUnit Patterns
 
-## Grundstruktur
+## 1.1 Grundstruktur
 ```csharp
 [Test]
 public async Task MethodName_Scenario_ExpectedResult()
@@ -22,7 +22,7 @@ public async Task MethodName_Scenario_ExpectedResult()
 }
 ```
 
-## Parametrisierte Tests
+## 1.2 Parametrisierte Tests
 ```csharp
 [Test]
 [Arguments("valid@email.com", true)]
@@ -35,7 +35,7 @@ public async Task ValidateEmail_WithInput_ReturnsExpected(string email, bool exp
 }
 ```
 
-## Matrix Tests
+## 1.3 Matrix Tests
 ```csharp
 [Test]
 [MatrixDataSource]
@@ -48,7 +48,7 @@ public async Task Api_Responds_Correctly(
 }
 ```
 
-## DI-basierte Fixtures
+## 1.4 DI-basierte Fixtures
 ```csharp
 [Test]
 [ClassDataSource<WebAppFixture>(Shared = SharedType.PerTestSession)]
@@ -60,12 +60,12 @@ public async Task Endpoint_Returns_Ok(WebAppFixture app)
 }
 ```
 
-## Lifecycle
+## 1.5 Lifecycle
 - `[Before(Class)]` / `[After(Class)]` — statisch, einmal pro Klasse
 - `[Before(Test)]` / `[After(Test)]` — pro Test-Instanz
 - `TestContext` in `[After(Test)]` für Fehler-Handling (Screenshots etc.)
 
-## Wichtig
+## 1.6 Wichtig
 - **Alle Tests laufen parallel** — State isolieren!
 - **Assertions sind async** — `await Assert.That(...)` immer
 - **Microsoft.Testing.Platform** — nicht VSTest

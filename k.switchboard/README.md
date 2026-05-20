@@ -1,8 +1,8 @@
-# K.Switchboard
+# 1. K.Switchboard
 
 Transparenter HTTP-Proxy, der zwischen **Claude Max Subscription** und lokalen **Ollama**-Modellen routet — ohne Änderungen am Client.
 
-## Was ist K.Switchboard?
+## 1.1 Was ist K.Switchboard?
 
 K.Switchboard läuft lokal auf Port `3456` und verhält sich wie die Anthropic API. **Clients** zeigen einfach ihre API-URL auf `http://localhost:3456`:
 
@@ -16,9 +16,9 @@ Ein **Client** ist jede Anwendung, die Anfragen im Anthropic-API-Format sendet �
 
 Der eigene `ANTHROPIC_API_KEY` bleibt im Client und wird bitidentisch weitergeleitet — K.Switchboard liest ihn nicht aus.
 
-## Installation
+## 1.2 Installation
 
-### Windows
+### 1.2.1 Windows
 
 ```powershell
 # Python 3.11+ vorausgesetzt
@@ -60,7 +60,7 @@ Ein **Scheduled Task** (`-AsTask`) läuft im Kontext des angemeldeten Benutzers 
 .\scripts\install-windows.ps1 -AsTask    # oder -AsService
 ```
 
-### Linux / macOS
+### 1.2.2 Linux / macOS
 
 ```bash
 pip install .
@@ -70,7 +70,7 @@ mkdir -p ~/.config/k-switchboard
 cp config.example.yaml ~/.config/k-switchboard/config.yaml
 ```
 
-## Konfiguration
+## 1.3 Konfiguration
 
 Die Konfigurationsdatei liegt unter:
 
@@ -85,7 +85,7 @@ anthropic_base_url: https://api.anthropic.com
 ollama_base_url: http://localhost:11434
 ```
 
-### Modell-Aliase konfigurieren
+### 1.3.1 Modell-Aliase konfigurieren
 
 Kurzname → echter Ollama-Modellname. Modelle mit `:` werden automatisch als Ollama-Modelle erkannt.
 
@@ -95,7 +95,7 @@ model_aliases:
   local-fast:  llama3.2:3b     # Anfragen mit "local-fast"  → Ollama
 ```
 
-### Direkter Ollama-Zugriff ohne Alias
+### 1.3.2 Direkter Ollama-Zugriff ohne Alias
 
 **Hauptpfad für VS-Code-Agents** — direkt im `.agent.md`-Frontmatter:
 
@@ -110,11 +110,11 @@ Eigene API-Clients (Python-SDK, CLI, etc.) übergeben `mistral:7b` einfach als M
 
 Vollständige Konfigurationsdokumentation: [`config.example.yaml`](config.example.yaml)
 
-## Client konfigurieren
+## 1.4 Client konfigurieren
 
 K.Switchboard unterstützt jeden **Anthropic-API-kompatiblen Client**. Setze `ANTHROPIC_BASE_URL` auf `http://localhost:3456` — der `ANTHROPIC_API_KEY` bleibt unverändert im Client.
 
-### Claude CLI
+### 1.4.1 Claude CLI
 
 ```bash
 # Linux / macOS — Session
@@ -132,7 +132,7 @@ $env:ANTHROPIC_BASE_URL = "http://localhost:3456"
 [System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "http://localhost:3456", "User")
 ```
 
-### Claude Code Extension (VS Code)
+### 1.4.2 Claude Code Extension (VS Code)
 
 In der VS-Code-`settings.json` (User oder Workspace):
 
@@ -142,19 +142,19 @@ In der VS-Code-`settings.json` (User oder Workspace):
 }
 ```
 
-### Andere Anthropic-API-kompatible Clients
+### 1.4.3 Andere Anthropic-API-kompatible Clients
 
 Jeder Client, der `ANTHROPIC_BASE_URL` oder einen konfigurierbaren Basis-URL-Parameter unterstützt (Continue.dev, Cline, etc.), kann auf `http://localhost:3456` zeigen.
 
-### Copilot Chat (VS Code) — nicht unterstützt
+### 1.4.4 Copilot Chat (VS Code) — nicht unterstützt
 
 VS Code Copilot Chat ist **kein Anthropic-API-Client** und lässt sich nicht über K.Switchboard routen. Copilot Chat kommuniziert direkt mit `api.githubcopilot.com` via GitHub-Token und ignoriert `ANTHROPIC_BASE_URL`. Verifikation via [Spike #162](https://github.com/GrexyLoco/K.Agents/issues/162) (ausstehend).
 
-## Agent-Modelle und Aliase
+## 1.5 Agent-Modelle und Aliase
 
 K.Switchboard routet anhand des `model`-Felds im Anthropic-Request-Body. Ein Alias wie `local-coder` funktioniert daher nur, wenn der Client diesen Modellnamen tatsächlich an `POST /v1/messages` sendet.
 
-### VS-Code-Agents (`.agent.md`)
+### 1.5.1 VS-Code-Agents (`.agent.md`)
 
 Das `model`-Feld im `.agent.md`-Frontmatter ist laut [VS-Code-Dokumentation](https://code.visualstudio.com/docs/copilot/customization/custom-agents) ein einzelner Modellname oder eine priorisierte Liste. VS Code versucht das erste verfügbare Modell. Lokale Switchboard-Aliase sollten daher immer mit einem offiziell verfügbaren Fallback kombiniert werden:
 
@@ -169,17 +169,17 @@ model:
 
 > **Hinweis:** Nur `.agent.md`-Dateien und Handoff-Definitionen unterstützen das `model`-Feld. `.instructions.md`-Dateien, Skills und Tools haben **kein** `model`-Feld — sie erben das Modell vom aufrufenden Agent. Quelle: [VS-Code Custom Instructions Doku](https://code.visualstudio.com/docs/copilot/customization/custom-instructions).
 
-### Aliase in anderen Clients
+### 1.5.2 Aliase in anderen Clients
 
 Clients, die freie Modellnamen an die Anthropic-kompatible API senden (Claude CLI, Claude Code, eigene Skripte), werden direkt über `model_aliases` in der `config.yaml` geroutet.
 
 Aliase sind **case-sensitiv**: `local-coder` und `local-Coder` sind unterschiedliche Modellnamen.
 
-## Fallback-Verhalten
+## 1.6 Fallback-Verhalten
 
 Es gibt zwei unabhängige Fallback-Ebenen:
 
-### Ebene 1 — VS-Code-Modell-Picker-Fallback (vor der Request)
+### 1.6.1 Ebene 1 — VS-Code-Modell-Picker-Fallback (vor der Request)
 
 Wenn in `.agent.md` eine Modellliste angegeben ist, wählt VS Code **vor dem Senden der Anfrage** das erste verfügbare Modell aus dem Picker. Das ist ein Client-seitiger Mechanismus — K.Switchboard ist dabei nicht beteiligt.
 
@@ -189,7 +189,7 @@ model:
   - claude-sonnet-latest  # Falls nicht: nächstes in der Liste
 ```
 
-### Ebene 2 — Switchboard-Fallback-Kette (nach gescheiterter Request)
+### 1.6.2 Ebene 2 — Switchboard-Fallback-Kette (nach gescheiterter Request)
 
 Wenn K.Switchboard beim Weiterleiten einen Fehler erhält (Netzwerkfehler oder HTTP 4xx/5xx vom Provider), greift die konfigurierte `fallback_chains` in der `config.yaml`:
 
@@ -213,9 +213,9 @@ Der Client erhält den Response-Header `X-K-Switchboard-Fallback-Used: original 
 
 **Warum beide Ebenen nötig?** Ebene 1 (VS Code) fängt ab, wenn ein Modellname dem Client gänzlich unbekannt ist. Ebene 2 (Switchboard) fängt ab, wenn das Modell bekannt ist, aber der Provider zur Laufzeit nicht antwortet.
 
-## Deinstallation
+## 1.7 Deinstallation
 
-### Windows
+### 1.7.1 Windows
 
 ```powershell
 # 1. Autostart entfernen (Task und/oder Dienst — idempotent, kein Fehler wenn nichts registriert)
@@ -228,14 +228,14 @@ pip uninstall k-switchboard
 Remove-Item -Recurse -Force "$env:APPDATA\K.Switchboard"
 ```
 
-### Linux / macOS
+### 1.7.2 Linux / macOS
 
 ```bash
 pip uninstall k-switchboard
 rm -rf ~/.config/k-switchboard
 ```
 
-## Server starten
+## 1.8 Server starten
 
 ```bash
 k-switchboard
@@ -243,7 +243,7 @@ k-switchboard
 python -m k_switchboard
 ```
 
-## Endpoints
+## 1.9 Endpoints
 
 | Endpoint | Methode | Beschreibung |
 |----------|---------|--------------|
@@ -252,7 +252,7 @@ python -m k_switchboard
 | `/health` | GET | Health-Check (`{"status": "ok"}`) |
 | `/docs` | GET | OpenAPI-Dokumentation |
 
-## Stats-Endpoint
+## 1.10 Stats-Endpoint
 
 ```bash
 curl http://localhost:3456/stats
@@ -279,7 +279,7 @@ curl http://localhost:3456/stats
 
 Kostendaten werden täglich in `costs-YYYY-MM-DD.json` im Konfigurationsverzeichnis gespeichert.
 
-## Preise
+## 1.11 Preise
 
 > **Stand Mai 2026 — bitte vor Verwendung auf [anthropic.com/pricing](https://www.anthropic.com/pricing) prüfen.**
 
@@ -292,7 +292,7 @@ Kostendaten werden täglich in `costs-YYYY-MM-DD.json` im Konfigurationsverzeich
 
 Die `pricing:`-Sektion in der `config.yaml` überschreibt diese Standardwerte — bei Preisänderungen einfach dort anpassen.
 
-## Setup verifizieren
+## 1.12 Setup verifizieren
 
 **Wann ausführen:** nach der Installation oder bei Verbindungsproblemen.
 
@@ -311,7 +311,7 @@ Beispiel-Output bei korrektem Setup:
   local-fast                      In:     8200  Out:     3100  Kosten: 0.000000 USD
 ```
 
-### Troubleshooting
+### 1.12.1 Troubleshooting
 
 | Symptom | Lösung |
 |---------|--------|
@@ -319,7 +319,7 @@ Beispiel-Output bei korrektem Setup:
 | `[FEHLER] Ollama Health` | Ollama starten: `ollama serve` |
 | Stats leer / `Noch keine Nutzung heute erfasst` | Noch keine Requests über Switchboard gelaufen — normaler Zustand nach Erststart |
 
-## Logs
+## 1.13 Logs
 
 | Plattform | Pfad |
 |-----------|------|
@@ -328,7 +328,7 @@ Beispiel-Output bei korrektem Setup:
 
 Log-Format: JSON (Datei), Human-readable via rich (Konsole).
 
-## IDE-Kompatibilität
+## 1.14 IDE-Kompatibilität
 
 K.Switchboard ist **IDE-agnostisch** — es ist ein reiner HTTP-Proxy ohne IDE-Plugin. Es funktioniert mit jedem Client, der `ANTHROPIC_BASE_URL` berücksichtigt.
 
@@ -342,6 +342,6 @@ K.Switchboard ist **IDE-agnostisch** — es ist ein reiner HTTP-Proxy ohne IDE-P
 | VS Code Copilot Chat | ❌ | Kein Anthropic-API-Client — nutzt `api.githubcopilot.com` |
 | JetBrains AI Assistant | ❌ | Proprietärer Cloud-Service, kein Anthropic-API-Client |
 
-### JetBrains / Rider
+### 1.14.1 JetBrains / Rider
 
 K.Switchboard lässt sich im JetBrains-Terminal mit der Claude CLI wie gewohnt nutzen. Die `plugins/kagents/`-Agents und Skills in diesem Repository sind jedoch **VS-Code-spezifisch** und funktionieren nicht in Rider — JetBrains verwendet ein eigenes, inkompatibles Agent-Customization-Modell.

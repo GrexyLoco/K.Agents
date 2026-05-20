@@ -3,9 +3,9 @@ name: efcore-patterns
 description: "Entity Framework Core for .NET 10 \u2014 DbContext design, IEntityTypeConfiguration, Fluent API, migrations, seed data, query patterns (AsNoTracking, Include, projection). USE FOR: designing EF Core entities, creating migrations, writing optimized queries with Fluent API. DO NOT USE FOR: advanced query performance tuning or index strategy (use database-performance)."
 ---
 
-# EF Core Patterns
+# 1. EF Core Patterns
 
-## Entity-Konfiguration (Fluent API)
+## 1.1 Entity-Konfiguration (Fluent API)
 ```csharp
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
@@ -20,7 +20,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 }
 ```
 
-## Query-Patterns
+## 1.2 Query-Patterns
 ```csharp
 // Read-Only (immer AsNoTracking)
 var users = await context.Users.AsNoTracking().TagWith("GetAllUsers").ToListAsync();
@@ -37,7 +37,7 @@ var dtos = await context.Users
     .ToListAsync();
 ```
 
-## Migration-Regeln
+## 1.3 Migration-Regeln
 - Sprechende Namen: `AddUserEmailUniqueIndex`, nicht `Migration_001`
 - `Down()` immer implementieren
 - Seed Data über `HasData()` oder dedizierte Migration

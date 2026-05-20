@@ -3,9 +3,9 @@ name: github-actions-architecture
 description: GitHub Actions Architecture — Reusable Workflows, Composite Actions, Matrix-Builds, Caching-Strategien, Concurrency-Gruppen. USE FOR: architecting scalable CI/CD pipelines, optimizing build performance, managing secrets securely. DO NOT USE FOR: debugging failing workflows (use github-actions-debugging) or security scanning (use github-actions-security).
 ---
 
-# GitHub Actions Architecture
+# 1. GitHub Actions Architecture
 
-## Reusable Workflows vs. Composite Actions
+## 1.1 Reusable Workflows vs. Composite Actions
 
 | Aspekt | Reusable Workflow | Composite Action |
 |--------|------------------|-----------------|
@@ -19,7 +19,7 @@ description: GitHub Actions Architecture — Reusable Workflows, Composite Actio
 **Use Reusable Workflows for:** Multi-job release/deployment pipelines, matrix-based testing across platforms.  
 **Use Composite Actions for:** Utility steps (setup, build, report), reducing duplication in single jobs.
 
-## Matrix-Builds
+## 1.2 Matrix-Builds
 
 ```yaml
 strategy:
@@ -38,7 +38,7 @@ steps:
 **Include:** OS (ubuntu, windows, macos), .NET versions, architecture targets (x64, arm64).  
 **Exclude:** Windows + macOS-only targets via `exclude` or conditional `if: runner.os == 'Linux'`.
 
-## Caching Strategies
+## 1.3 Caching Strategies
 
 ```yaml
 - name: Cache NuGet packages
@@ -60,7 +60,7 @@ steps:
 **Restore keys:** Enable fallback to recent caches if exact match fails.  
 **Limits:** 5GB per repo; oldest entries evicted first.
 
-## Workflow-Trigger Design
+## 1.4 Workflow-Trigger Design
 
 - **push:** On every commit to tracked branches (feature/*, hotfix/*).
 - **pull_request:** On PR creation/update; avoid secrets in untrusted forks.
@@ -79,7 +79,7 @@ on:
     types: [published]
 ```
 
-## Secret Management
+## 1.5 Secret Management
 
 **Use GitHub App Token** (via `GITHUB_TOKEN`) for actions; auto-rotated per run.  
 **Use OIDC** for cloud credentials (AWS, Azure); eliminates long-lived tokens.  
@@ -96,7 +96,7 @@ on:
 
 Secrets are redacted in logs; use `run: echo ${{ secrets.MY_SECRET }}` only for verification.
 
-## Workflow Concurrency
+## 1.6 Workflow Concurrency
 
 ```yaml
 concurrency:

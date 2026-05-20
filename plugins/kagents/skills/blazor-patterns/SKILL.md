@@ -3,9 +3,9 @@ name: blazor-patterns
 description: "Blazor Server, WASM, Hybrid, Static SSR patterns for .NET 10 — render mode decisions, component architecture, code-behind, state management, EventCallback, cascading values, @key, IDisposable. USE FOR: building Blazor components, choosing render modes, implementing state management. DO NOT USE FOR: Blazor inside MAUI (use maui-blazor-hybrid) or Blazor UI E2E tests (use playwright-blazor-testing)."
 ---
 
-# Blazor Patterns (.NET 10)
+# 1. Blazor Patterns (.NET 10)
 
-## Render Modes
+## 1.1 Render Modes
 
 | Mode | Wann verwenden |
 |------|---------------|
@@ -20,9 +20,9 @@ description: "Blazor Server, WASM, Hybrid, Static SSR patterns for .NET 10 — r
 @rendermode InteractiveAuto
 ```
 
-## Komponenten-Architektur
+## 1.2 Komponenten-Architektur
 
-### Code-Behind bei Komplexität
+### 1.2.1 Code-Behind bei Komplexität
 ```csharp
 // UserList.razor.cs
 public partial class UserList : ComponentBase
@@ -34,14 +34,14 @@ public partial class UserList : ComponentBase
 }
 ```
 
-### State Management
+### 1.2.2 State Management
 - **Komponenten-State:** `private` Felder in der Komponente
 - **Parent→Child:** `[Parameter]`
 - **Child→Parent:** `EventCallback<T>`
 - **Feature-State:** Scoped Service mit `INotifyPropertyChanged` oder Fluxor
 - **App-weiter State:** `CascadingValue` oder Singleton Service
 
-### Anti-Patterns vermeiden
+### 1.2.3 Anti-Patterns vermeiden
 - Kein `StateHasChanged()` ohne Notwendigkeit
 - Keine `[Parameter]` die intern mutiert werden
 - Kein `OnParametersSet` für teure Operationen ohne Guard

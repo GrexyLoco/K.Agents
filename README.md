@@ -1,4 +1,4 @@
-# K.Agents — Spezialisierte AI-Agents fuer .NET, PowerShell & Azure
+# 1. K.Agents — Spezialisierte AI-Agents fuer .NET, PowerShell & Azure
 
 [![Release](https://img.shields.io/github/v/release/GrexyLoco/K.Agents?include_prereleases&label=version)](https://github.com/GrexyLoco/K.Agents/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -8,7 +8,7 @@
 Kuratierte Sammlung von **16 Custom Agents** (15 spezialisierte + 1 Orchestrator), **49 Skills** und **2 MCP-Server** für VS Code Copilot, Visual Studio 2026 und Claude Code.
 Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
 
-## Inhaltsverzeichnis
+## 1.1 Inhaltsverzeichnis
 
 - [Besonderheiten](#besonderheiten)
 - [Installation](#installation)
@@ -21,7 +21,7 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 - [Danksagung](#danksagung)
 - [Lizenz](#lizenz)
 
-## Besonderheiten
+## 1.2 Besonderheiten
 
 - **TUnit** als .NET-Testframework (nicht xUnit/NUnit)
 - **Pester 5.6.x** für PowerShell-Tests
@@ -30,7 +30,7 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 - **Write-Host überall verboten** (auch CI-Scripts)
 - **Deutsch** als Arbeitssprache für Doku, Issues, Commits
 
-## Installation
+## 1.3 Installation
 
 > **[→ Ausführliche Installationsanleitung](INSTALLATION.md)** — Alle Methoden, Multi-Repo-Setup, Token-FAQ und offizielle Quellen.
 
@@ -48,9 +48,9 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 }
 ```
 
-## Agents
+## 1.4 Agents
 
-### Einstieg (Orchestrator)
+### 1.4.1 Einstieg (Orchestrator)
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
 | [Orchestrator](plugins/kagents/agents/orchestrator.agent.md) | Automatisches Routing — analysiert Aufgabe und delegiert sofort | Haiku |
@@ -65,7 +65,7 @@ Optimiert für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und
 
 #### Warum Orchestrator?
 
-K.Agents enthält 13 spezialisierte Agents — für neue User ist es nicht immer offensichtlich, welcher Agent für welche Aufgabe zuständig ist. Der Orchestrator nimmt diese kognitive Last ab: Einfach beschreiben, was gemacht werden soll, und der Orchestrator leitet automatisch an den richtigen Spezialisten weiter. Das kostet genau einen zusätzlichen Haiku-LLM-Call — schnell und günstig. Er ist der empfohlene Einstiegspunkt für alle K.Agents-Workflows.
+K.Agents enthält 15 spezialisierte Agents — für neue User ist es nicht immer offensichtlich, welcher Agent für welche Aufgabe zuständig ist. Der Orchestrator nimmt diese kognitive Last ab: Einfach beschreiben, was gemacht werden soll, und der Orchestrator leitet automatisch an den richtigen Spezialisten weiter. Das kostet genau einen zusätzlichen Haiku-LLM-Call — schnell und günstig. Er ist der empfohlene Einstiegspunkt für alle K.Agents-Workflows.
 
 #### Was der Orchestrator NICHT tut
 
@@ -96,14 +96,14 @@ K.Agents enthält 13 spezialisierte Agents — für neue User ist es nicht immer
 
 Der Orchestrator ist der empfohlene Einstieg für alle Flows (Feature-Flow, CI/CD-Flow, TDD-Zyklus etc.). Folgeschritte innerhalb eines Flows — z.B. vom Planning Agent weiter zum App Architect — laufen über die eingebauten Handoff-Buttons direkt zwischen den Spezialisten, ohne erneuten Orchestrator-Umweg.
 
-### Strategie & Planung
+### 1.4.2 Strategie & Planung
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
 | [Planning Agent](plugins/kagents/agents/planning.agent.md) | Feature-Planung → GitHub Issues/Milestones | Opus |
 | [App Architect](plugins/kagents/agents/app-architect.agent.md) | .NET/Blazor/MAUI Architektur, Modular Monolith | Opus |
 | [Automation Architect](plugins/kagents/agents/automation-architect.agent.md) | CI/CD, Workflows, Release-Strategie | Opus |
 
-### Implementierung
+### 1.4.3 Implementierung
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
 | [.NET Developer](plugins/kagents/agents/dotnet-developer.agent.md) | C# 14, Blazor, MAUI, APIs | Sonnet |
@@ -111,7 +111,7 @@ Der Orchestrator ist der empfohlene Einstieg für alle Flows (Feature-Flow, CI/C
 | [Azure Specialist](plugins/kagents/agents/azure-specialist.agent.md) | Aspire, Monitoring + EU-Alternativen | Sonnet |
 | [Database Engineer](plugins/kagents/agents/database-engineer.agent.md) | EF Core, Migrations, Performance | Sonnet |
 
-### Qualitätssicherung
+### 1.4.4 Qualitätssicherung
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
 | [TUnit Tester](plugins/kagents/agents/tunit-tester.agent.md) | .NET Tests mit TUnit | Sonnet |
@@ -119,15 +119,15 @@ Der Orchestrator ist der empfohlene Einstieg für alle Flows (Feature-Flow, CI/C
 | [Security Auditor](plugins/kagents/agents/security-auditor.agent.md) | OWASP, Dependency Scanning | Sonnet |
 | [Code Reviewer](plugins/kagents/agents/code-reviewer.agent.md) | Patterns, Performance, Architektur | Opus |
 
-### Querschnitt
+### 1.4.5 Querschnitt
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
 | [Documentation](plugins/kagents/agents/documentation.agent.md) | README, Changelog, API-Docs | Sonnet |
 | [Git Forensics](plugins/kagents/agents/git-forensics.agent.md) | Blame, Bisect, Conventional Commits | Sonnet |
 
-## Skills
+## 1.5 Skills
 
-### Eigene Skills (17)
+### 1.5.1 Eigene Skills (17)
 | Kategorie | Skills |
 |-----------|--------|
 | C# / .NET | `csharp-patterns`, `minimal-api-patterns` |
@@ -143,7 +143,7 @@ Der Orchestrator ist der empfohlene Einstieg für alle Flows (Feature-Flow, CI/C
 | Release | `release-management`, `conventional-commits` |
 | ReleaseFlow | `releaseflow-domain`, `releaseflow-coding-patterns` |
 
-### OSS-adaptierte Skills (10)
+### 1.5.2 OSS-adaptierte Skills (10)
 | Skill | Quelle | Lizenz |
 |-------|--------|--------|
 | `dotnet-build-diagnosis` | [dotnet/skills](https://github.com/dotnet/skills) | MIT |
@@ -157,7 +157,7 @@ Der Orchestrator ist der empfohlene Einstieg für alle Flows (Feature-Flow, CI/C
 | `database-performance` | [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) | MIT |
 | `csharp-concurrency-patterns` | [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) | MIT |
 
-## MCP-Server
+## 1.6 MCP-Server
 
 Das Plugin liefert zwei MCP-Server mit, die automatisch im Plugin-System (VS Code, Claude Code, Copilot CLI) gestartet werden:
 
@@ -170,7 +170,7 @@ Das Plugin liefert zwei MCP-Server mit, die automatisch im Plugin-System (VS Cod
 
 > **Hinweis:** MCP-Server werden von Visual Studio 2026 nicht unterstützt. Siehe [INSTALLATION.md](INSTALLATION.md#was-das-plugin-mitliefert) für Details.
 
-## Kompatibilität
+## 1.7 Kompatibilität
 
 | Umgebung | Status | Installation | Hooks & MCPs |
 |----------|--------|-------------|--------------|
@@ -179,13 +179,13 @@ Das Plugin liefert zwei MCP-Server mit, die automatisch im Plugin-System (VS Cod
 | Claude Code | ✅ | Plugin Marketplace | ✅ via Plugin |
 | Copilot CLI | ✅ | Plugin Marketplace | ✅ via Plugin |
 
-> **Hinweis:** Jede IDE hat ein eigenes Discovery-System. Plugins aus Copilot CLI werden weder in VS Code noch in VS 2026 erkannt. [Details → INSTALLATION.md](INSTALLATION.md#visual-studio-2026)
+> **Hinweis:** VS Code und Copilot CLI teilen Plugin-Discovery. Visual Studio 2026 nutzt dagegen ein eigenes Discovery-System und erkennt diese Plugins nicht. [Details → INSTALLATION.md](INSTALLATION.md#visual-studio-2026)
 
-## Agent-Workflow & Handoff-Flows
+## 1.8 Agent-Workflow & Handoff-Flows
 
 Die Agents sind über **Handoff-Buttons** miteinander verknüpft. Nach jeder Agent-Antwort erscheinen Buttons, die zum nächsten passenden Agent weiterleiten — inklusive Kontext aus der bisherigen Konversation.
 
-### Übersichtsgraph
+### 1.8.1 Übersichtsgraph
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -252,7 +252,7 @@ Die Agents sind über **Handoff-Buttons** miteinander verknüpft. Nach jeder Age
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-### Typische Flows
+### 1.8.2 Typische Flows
 
 #### Flow 1: Neues Feature (Vision → MVP)
 
@@ -349,7 +349,7 @@ Die Agents sind über **Handoff-Buttons** miteinander verknüpft. Nach jeder Age
 7. Code Reviewer          │ Finales Review
 ```
 
-### Handoff-Matrix
+### 1.8.3 Handoff-Matrix
 
 Vollständige Übersicht aller Handoff-Verbindungen:
 
@@ -371,11 +371,11 @@ Vollständige Übersicht aller Handoff-Verbindungen:
 
 _* Automation Architect delegiert an powershell-engineer für Script-Implementierung_
 
-## Mitwirken
+## 1.9 Mitwirken
 
 Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Richtlinien.
 
-### Kritische Repo-Dateien
+### 1.9.1 Kritische Repo-Dateien
 
 #### `.claude-plugin/marketplace.json`
 
@@ -387,14 +387,14 @@ Plugin "kagents" not found in marketplace "kagents"
 
 Das Verzeichnis `.claude-plugin/` darf **nicht entfernt** werden — auch nicht bei Strukturbereinigungen. Hintergrund: [Issue #149](https://github.com/GrexyLoco/K.Agents/issues/149), [Claude Code Docs](https://code.claude.com/docs/en/discover-plugins).
 
-## Danksagung
+## 1.10 Danksagung
 
 OSS-Skills adaptiert von:
 - [dotnet/skills](https://github.com/dotnet/skills) — Microsoft .NET Team
 - [davidortinau/maui-skills](https://github.com/davidortinau/maui-skills) — David Ortinau (Microsoft PM)
 - [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) — Aaron Stannard
 
-## Lizenz
+## 1.11 Lizenz
 
 [MIT](LICENSE) © GrexyLoco
 

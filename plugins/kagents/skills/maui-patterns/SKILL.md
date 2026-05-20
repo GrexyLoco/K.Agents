@@ -3,9 +3,9 @@ name: maui-patterns
 description: ".NET MAUI cross-platform patterns — MVVM (CommunityToolkit.Mvvm, ObservableProperty, RelayCommand), Shell navigation, ContentPage, CollectionView, platform-specific partial classes, state management. USE FOR: building MAUI views, implementing MVVM, configuring Shell navigation. DO NOT USE FOR: performance tuning (use maui-performance), accessibility (use maui-accessibility), or Blazor in MAUI (use maui-blazor-hybrid)."
 ---
 
-# .NET MAUI Patterns
+# 1. .NET MAUI Patterns
 
-## MVVM mit CommunityToolkit.Mvvm
+## 1.1 MVVM mit CommunityToolkit.Mvvm
 
 ```csharp
 public partial class UserViewModel(IUserService userService) : ObservableObject
@@ -25,7 +25,7 @@ public partial class UserViewModel(IUserService userService) : ObservableObject
 }
 ```
 
-## Shell-Navigation
+## 1.2 Shell-Navigation
 ```csharp
 // Registrierung
 Routing.RegisterRoute(nameof(UserDetailPage), typeof(UserDetailPage));
@@ -41,7 +41,7 @@ public partial class UserDetailViewModel : ObservableObject
 }
 ```
 
-## Platform-spezifischer Code
+## 1.3 Platform-spezifischer Code
 ```csharp
 // Partial Classes
 public partial class DeviceService
@@ -56,7 +56,7 @@ public partial class DeviceService
 }
 ```
 
-## Regeln
+## 1.4 Regeln
 - UI-Updates immer auf Main Thread (`MainThread.BeginInvokeOnMainThread`)
 - Lifecycle korrekt: `OnAppearing`/`OnDisappearing` für Subscriptions
 - Keine Business-Logik in Code-Behind — alles im ViewModel

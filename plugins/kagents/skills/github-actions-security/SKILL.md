@@ -3,11 +3,11 @@ name: github-actions-security
 description: "GitHub Actions Security — secret masking, OIDC, minimal permissions, SHA pinning, environment protection. USE FOR: securing secrets, OIDC, permissions, pinning. DO NOT USE FOR: debugging (github-actions-debugging) or patterns (github-actions-patterns)."
 ---
 
-# GitHub Actions Security
+# 1. GitHub Actions Security
 
-## Secrets: Masking & Environments
+## 1.1 Secrets: Masking & Environments
 
-### Auto-Masking
+### 1.1.1 Auto-Masking
 ```yaml
 jobs:
   deploy:
@@ -18,7 +18,7 @@ jobs:
 # Any secret value automatically masked as ***
 ```
 
-### Manual Masking & Production Secrets
+### 1.1.2 Manual Masking & Production Secrets
 ```yaml
 - run: echo "::add-mask::custom-secret"
 
@@ -28,7 +28,7 @@ deploy-prod:
     - run: echo ${{ secrets.PROD_API_KEY }}
 ```
 
-## Actions: SHA Pinning
+## 1.2 Actions: SHA Pinning
 
 ```yaml
 # ❌ BAD: Tag can be re-pointed
@@ -40,9 +40,9 @@ deploy-prod:
 # Find SHAs: gh api repos/owner/action/git/refs/tags/v4.0.0 --jq '.object.sha'
 ```
 
-## Permissions: Least-Privilege
+## 1.3 Permissions: Least-Privilege
 
-### Workflow Level
+### 1.3.1 Workflow Level
 ```yaml
 permissions:
   contents: read
@@ -50,7 +50,7 @@ permissions:
   checks: write
 ```
 
-### Job Level Override
+### 1.3.2 Job Level Override
 ```yaml
 jobs:
   write-pr:
@@ -60,14 +60,14 @@ jobs:
 
 Avoid: `contents: write` + `pull-requests: write` = modify + approve
 
-## OIDC Authentication
+## 1.4 OIDC Authentication
 
-### Why OIDC Over PATs
+### 1.4.1 Why OIDC Over PATs
 - Expiration: 15 min (vs. PAT: unbounded)
 - Scope: Per repo (vs. PAT: global)
 - Audit: GitHub Action identity
 
-### AWS & Azure
+### 1.4.2 AWS & Azure
 ```yaml
 permissions:
   id-token: write
@@ -83,7 +83,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
 ```
 
-## Environment Protection Rules
+## 1.5 Environment Protection Rules
 
 Settings → Environments → [name]:
 - **Branches:** `main`, `release/*` only
@@ -99,7 +99,7 @@ deploy-prod:
     - run: ./deploy.sh
 ```
 
-## Checklist
+## 1.6 Checklist
 
 - Secrets auto-masked
 - Actions pinned to SHA
