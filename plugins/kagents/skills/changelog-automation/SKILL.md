@@ -3,9 +3,9 @@ name: changelog-automation
 description: "Changelog-Automatisierung — Changelog aus Commits generieren, Keep-a-Changelog Format, Commit-Kategorisierung (feat → Added, fix → Fixed, perf → Improved, refactor → Changed). Breaking Changes mit `!` oder BREAKING CHANGE-Footer. USE FOR: generating changelogs from Conventional Commits, extracting issue references, structuring release notes. DO NOT USE FOR: commit format validation (use conventional-commits) or release process management (use release-management)."
 ---
 
-# Changelog Automation
+# 1. Changelog Automation
 
-## Generate from Conventional Commits
+## 1.1 Generate from Conventional Commits
 
 Filter commits by type to populate changelog sections:
 
@@ -20,7 +20,7 @@ git log v1.12.0..HEAD --grep='^fix\|^perf' --oneline
 git log v1.12.0..HEAD --grep='^refactor\|^chore' --oneline
 ```
 
-## Keep-a-Changelog Format
+## 1.2 Keep-a-Changelog Format
 
 Standard sections per version:
 
@@ -41,7 +41,7 @@ Standard sections per version:
 - Simplified Keep-a-Changelog structure
 ```
 
-## Commit Categorization
+## 1.3 Commit Categorization
 
 Map conventional commit types to changelog sections:
 
@@ -54,7 +54,7 @@ Map conventional commit types to changelog sections:
 | `docs` | — | Skip (or optional **Documentation**) |
 | `chore` | — | Skip |
 
-## Breaking Changes
+## 1.4 Breaking Changes
 
 Extract from commit messages with `!` or `BREAKING CHANGE` footer:
 
@@ -66,7 +66,7 @@ BREAKING CHANGE: The 'status' field is now 'state'. Migration: update client cod
 
 Place breaking changes at the top of the version section.
 
-## Link Issue References
+## 1.5 Link Issue References
 
 Extract issue numbers from commit bodies and link to pull requests:
 

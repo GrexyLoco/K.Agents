@@ -3,13 +3,13 @@ name: dotnet-build-diagnosis
 description: ".NET build error diagnosis — MSBuild (MSB*), NuGet (NU*), SDK (NETSDK*), compiler (CS*) errors, dependency conflicts, restore failures, Central Package Management, Directory.Build.props. USE FOR: diagnosing build failures, resolving NuGet version conflicts, fixing SDK version mismatches. DO NOT USE FOR: IL/AOT warnings (use dotnet-aot-compat) or runtime exceptions (use dotnet-developer agent)."
 ---
 
-# .NET Build-Fehler-Diagnose
+# 1. .NET Build-Fehler-Diagnose
 
 Basiert auf: [dotnet/skills](https://github.com/dotnet/skills) (MIT, Microsoft .NET Team)
 
-## Systematische Diagnose
+## 1.1 Systematische Diagnose
 
-### Schritt 1: Fehler klassifizieren
+### 1.1.1 Schritt 1: Fehler klassifizieren
 | Fehlertyp | Erkennung | Erste Aktion |
 |-----------|-----------|-------------|
 | CS-Fehler (CS0246, CS1061...) | Compiler-Fehler | Code oder Using prüfen |
@@ -17,7 +17,7 @@ Basiert auf: [dotnet/skills](https://github.com/dotnet/skills) (MIT, Microsoft .
 | NU-Fehler (NU1101, NU1605...) | NuGet-Fehler | Package References prüfen |
 | NETSDK-Fehler | SDK-Konfiguration | global.json, TargetFramework prüfen |
 
-### Schritt 2: Diagnostik-Befehle
+### 1.1.2 Schritt 2: Diagnostik-Befehle
 ```bash
 # Vollständiges Clean + Rebuild (erster Versuch)
 dotnet clean && dotnet restore --force && dotnet build --no-incremental
@@ -35,7 +35,7 @@ dotnet list package --outdated
 dotnet list package --vulnerable --include-transitive
 ```
 
-### Schritt 3: Häufige Probleme
+### 1.1.3 Schritt 3: Häufige Probleme
 
 **NU1605 (Downgrade detected):**
 ```xml
@@ -65,7 +65,7 @@ dotnet list package --vulnerable --include-transitive
 </ItemGroup>
 ```
 
-## Build-Performance
+## 1.2 Build-Performance
 - `dotnet build --no-restore` wenn Restore nicht nötig
 - `Directory.Build.props` für gemeinsame Properties
 - `Directory.Packages.props` für Central Package Management

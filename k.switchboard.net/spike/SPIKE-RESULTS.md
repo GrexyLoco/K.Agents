@@ -1,4 +1,4 @@
-# Spike-Ergebnisse — Phase 0
+# 1. Spike-Ergebnisse — Phase 0
 
 **Datum:** 2026-05-17
 **Branch:** `feature/184-k-switchboard-net-spike`
@@ -6,7 +6,7 @@
 
 ---
 
-## Spike-Aufgabe 1: Single-File + Trimming Build
+## 1.1 Spike-Aufgabe 1: Single-File + Trimming Build
 
 **Ergebnis: ✅ Erfolgreich**
 
@@ -28,7 +28,7 @@ dotnet publish -c Release -p:PublishSingleFile=true -p:PublishTrimmed=true -r wi
 
 ---
 
-## Spike-Aufgabe 2: Serilog + OpenTelemetry Pipeline
+## 1.2 Spike-Aufgabe 2: Serilog + OpenTelemetry Pipeline
 
 **Ergebnis: ✅ Erfolgreich**
 
@@ -48,7 +48,7 @@ Beide Sinks aktiv beim Start (bestätigt durch Console-Output der publishten EXE
 
 ---
 
-## Spike-Aufgabe 3: JSON-Config + IOptionsMonitor
+## 1.3 Spike-Aufgabe 3: JSON-Config + IOptionsMonitor
 
 **Ergebnis: ✅ Erfolgreich**
 
@@ -70,7 +70,7 @@ Anonyme Return-Typen in `MapGet`-Endpoints brechen mit Trimming. Lösung für Ph
 
 ---
 
-## Spike-Aufgabe 4: Windows-Service-Registrierung
+## 1.4 Spike-Aufgabe 4: Windows-Service-Registrierung
 
 **Ergebnis: ✅ Technisch bestätigt (Elevation expected)**
 
@@ -83,7 +83,7 @@ Anonyme Return-Typen in `MapGet`-Endpoints brechen mit Trimming. Lösung für Ph
 
 ---
 
-## Abbruchkriterien — Bewertung
+## 1.5 Abbruchkriterien — Bewertung
 
 | Kriterium | Status |
 |-----------|--------|
@@ -95,7 +95,7 @@ Anonyme Return-Typen in `MapGet`-Endpoints brechen mit Trimming. Lösung für Ph
 
 ---
 
-## Erkenntnisse für Phasen 1–6
+## 1.6 Erkenntnisse für Phasen 1–6
 
 1. **JSON Source Generation ist Pflicht:** Alle API-Response-Typen brauchen `[JsonSerializable]` im `JsonSerializerContext`.
 2. **Serilog Trim-Warnings:** `IL2104` bleibt bestehen — in Produktion mit `<TrimmerRootDescriptor>` oder Suppressor behandeln.

@@ -3,9 +3,9 @@ name: powershell-module-publishing
 description: PowerShell-Modul Publishing — Manifest Design, GitHub Packages, PowerShell Gallery, Versioning. USE FOR: designing publishable modules, configuring module feeds, automating version bumps. DO NOT USE FOR: module testing (use pester-patterns) or module design patterns (use powershell-module-design).
 ---
 
-# PowerShell Module Publishing
+# 1. PowerShell Module Publishing
 
-## Manifest-Struktur (.psd1)
+## 1.1 Manifest-Struktur (.psd1)
 
 ```powershell
 @{
@@ -42,7 +42,7 @@ description: PowerShell-Modul Publishing — Manifest Design, GitHub Packages, P
 - **GUID:** Unique module identifier; regenerate for module renames only.  
 - **FunctionsToExport:** Public API; rest become private.
 
-## Public/Private Function Separation
+## 1.2 Public/Private Function Separation
 
 ```powershell
 # public/Get-Item.ps1
@@ -69,7 +69,7 @@ Export-ModuleMember -Function $PublicFuncs.BaseName
 **Pattern:** Organize into `public/` and `private/` subdirectories; dot-source in .psm1.  
 **Benefits:** Clear API boundary, easier testing, reduced namespace pollution.
 
-## Dependency Management
+## 1.3 Dependency Management
 
 ```powershell
 # Manifest: RequiredModules
@@ -87,7 +87,7 @@ if (-not (Get-Module -Name 'Az.Accounts' -ListAvailable)) {
 **Specify versions** in manifest for reproducible installs.  
 **Use ModuleVersion (minimum)** for flexibility; pin exact versions only if required.
 
-## Module Publishing: GitHub Packages vs. PowerShell Gallery
+## 1.4 Module Publishing: GitHub Packages vs. PowerShell Gallery
 
 | Aspect | GitHub Packages | PowerShell Gallery |
 |--------|-----------------|-------------------|
@@ -111,7 +111,7 @@ Publish-Module -Path . -Repository 'GitHubModules' `
 Publish-Module -Path . -NuGetApiKey $env:PS_GALLERY_KEY
 ```
 
-## Feed Authentication (CI/CD)
+## 1.5 Feed Authentication (CI/CD)
 
 ```yaml
 # GitHub Actions

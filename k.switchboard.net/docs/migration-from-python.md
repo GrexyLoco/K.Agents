@@ -1,4 +1,4 @@
-# Migration von Python nach .NET
+# 1. Migration von Python nach .NET
 
 <!-- markdownlint-disable MD033 -->
 
@@ -8,7 +8,7 @@ Diese Seite zeigt den direkten Vergleich zwischen dem Python-basierten K.Switchb
 
 <a id="commands-comparison"></a>
 
-## Befehle im Vergleich
+## 1.1 Befehle im Vergleich
 
 | Aktion | Python | .NET |
 | ------ | ------ | ---- |
@@ -27,7 +27,7 @@ Diese Seite zeigt den direkten Vergleich zwischen dem Python-basierten K.Switchb
 
 <a id="yaml-to-json"></a>
 
-## Konfiguration: YAML → JSON
+## 1.2 Konfiguration: YAML → JSON
 
 Die Python-Version verwendet YAML (`config.yaml`), die .NET-Version JSON (`config.json`). Die Struktur ist weitgehend identisch.
 
@@ -40,7 +40,7 @@ Die Python-Version verwendet YAML (`config.yaml`), die .NET-Version JSON (`confi
 | `fallback_chains` | `FallbackChains` | YAML: Liste von `{from, to}` → JSON: Dictionary `{primary: [fallbacks]}` |
 | `pricing` | `Pricing` | YAML: `input_per_million` → JSON: `InputPerMillion` |
 
-### Beispiel
+### 1.2.1 Beispiel
 
 **Python (YAML):**
 
@@ -85,7 +85,7 @@ pricing:
 
 <a id="differences-new-features"></a>
 
-## Unterschiede und neue Features
+## 1.3 Unterschiede und neue Features
 
 | Aspekt | Python | .NET |
 | ------ | ------ | ---- |
@@ -102,7 +102,7 @@ pricing:
 
 <a id="config-paths"></a>
 
-## Konfigurationspfade
+## 1.4 Konfigurationspfade
 
 | Aspekt | Python | .NET |
 | ------ | ------ | ---- |
@@ -115,6 +115,6 @@ pricing:
 
 <a id="parallelbetrieb"></a>
 
-## Parallelbetrieb
+## 1.5 Parallelbetrieb
 
 Beide Versionen (`k.switchboard/` und `k.switchboard.net/`) können parallel betrieben werden, sofern sie auf unterschiedlichen Ports laufen. Die .NET-Version liest ihre eigene `config.json` — die Python-`config.yaml` bleibt davon unberührt.

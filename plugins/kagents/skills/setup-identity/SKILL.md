@@ -3,17 +3,17 @@ name: setup-identity
 description: "Interaktives Setup der persönlichen Claude-Identität (~/.claude/). Führt ein Interview durch und schreibt CLAUDE.md, about-me.md und writing-style.md. Einmalig ausführen oder bei grundlegender Änderung der Arbeitsweise."
 ---
 
-# Setup Identity Skill
+# 1. Setup Identity Skill
 
 Du führst ein strukturiertes Interview und legst danach drei Dateien im User-Scope an.
 
-## Zieldateien
+## 1.1 Zieldateien
 
 - `~/.claude/CLAUDE.md` — Haupt-Einstiegsdatei (importiert die anderen, max. 80 Zeilen)
 - `~/.claude/about-me.md` — Wer der Nutzer ist (max. 150 Zeilen)
 - `~/.claude/writing-style.md` — Anti-AI Writing Style Guide (max. 150 Zeilen)
 
-## Regeln für die Dateierstellung
+## 1.2 Regeln für die Dateierstellung
 
 - Zeige jeden Dateiinhalt zuerst im Codeblock zur Freigabe. Schreibe erst nach expliziter Zustimmung.
 - Keine Füllwörter, keine Erklärungen für Claude, was eine Regel bedeutet — nur die Regel selbst.
@@ -21,11 +21,11 @@ Du führst ein strukturiertes Interview und legst danach drei Dateien im User-Sc
 - Dateien auf Deutsch, Code-Kommentare auf Englisch.
 - Nach dem Schreiben: Bestätige Dateinamen und Zeilenanzahl.
 
-## Interview-Ablauf
+## 1.3 Interview-Ablauf
 
 Stelle eine Frage auf einmal mit dem AskUserQuestion-Tool. Warte auf die Antwort. Hak nach wenn die Antwort vage ist. Sag explizit wenn du genug weißt.
 
-### Block A — Identität (für about-me.md)
+### 1.3.1 Block A — Identität (für about-me.md)
 
 1. Was machst du beruflich — in 2–3 Sätzen, wie du es einem Kollegen auf einer Konferenz erklären würdest? Keine LinkedIn-Formulierungen.
 2. Wie lang bist du schon Entwickler? Was ist dein Kerngebiet — Sprachen, Plattformen, Domains?
@@ -35,7 +35,7 @@ Stelle eine Frage auf einmal mit dem AskUserQuestion-Tool. Warte auf die Antwort
 6. Was willst du von Claude Code hauptsächlich — Code generieren, reviewen, refactoren, planen, oder anderes?
 7. Gibt es Bereiche, in denen du Claude nicht vertraust und lieber selbst entscheidest?
 
-### Block B — Arbeitsweise (für CLAUDE.md)
+### 1.3.2 Block B — Arbeitsweise (für CLAUDE.md)
 
 8. Welche Sprachen und Frameworks sind für dich relevant? Priorität?
 9. Welche "never do"-Regeln musst du immer wieder erklären?
@@ -43,7 +43,7 @@ Stelle eine Frage auf einmal mit dem AskUserQuestion-Tool. Warte auf die Antwort
 11. Größere Änderungen: soll Claude erst fragen oder einfach machen?
 12. Offensichtliche Dinge — kommentieren oder schweigen und machen?
 
-### Block C — Schreibstil (für writing-style.md)
+### 1.3.3 Block C — Schreibstil (für writing-style.md)
 
 13. Wenn du an andere schreibst — wie würdest du deinen Stil beschreiben? Konkret, kein Marketing.
 14. Was nervt dich am meisten an KI-generiertem Text? Phrasen, Muster, Formulierungen.
@@ -53,13 +53,13 @@ Stelle eine Frage auf einmal mit dem AskUserQuestion-Tool. Warte auf die Antwort
 18. Code-Kommentare — wie ausführlich? Was muss rein, was ist überflüssig?
 19. Hast du Texte von dir — README, Commits, Kommentare — die ich als Stilvorlage analysieren soll?
 
-### Block D — Abschluss
+### 1.3.4 Block D — Abschluss
 
 20. Gibt es Besonderheiten, Fallstricke oder Wünsche an einen AI-Kollegen, die du noch nie hattest?
 
-## Dateien nach dem Interview
+## 1.4 Dateien nach dem Interview
 
-### ~/.claude/CLAUDE.md
+### 1.4.1 ~/.claude/CLAUDE.md
 
 ```
 # Kontext
@@ -81,7 +81,7 @@ Stelle eine Frage auf einmal mit dem AskUserQuestion-Tool. Warte auf die Antwort
 [Wann fragen, wann machen]
 ```
 
-### ~/.claude/about-me.md
+### 1.4.2 ~/.claude/about-me.md
 
 ```
 # Über den Nutzer
@@ -105,7 +105,7 @@ Stelle eine Frage auf einmal mit dem AskUserQuestion-Tool. Warte auf die Antwort
 [Wo Claude besonders vorsichtig sein soll]
 ```
 
-### ~/.claude/writing-style.md
+### 1.4.3 ~/.claude/writing-style.md
 
 ```
 # Writing Style Guide

@@ -3,9 +3,9 @@ name: api-documentation
 description: API-Dokumentation — XML-Doc Comments (C#), Comment-Based Help (PowerShell), Parameter-Dokumentation. USE FOR: writing XML-Doc for public APIs, adding PowerShell Comment-Based Help, documenting method signatures. DO NOT USE FOR: inline code comments (use inline-documentation) or user-facing docs (use readme-patterns).
 ---
 
-# API-Dokumentation
+# 1. API-Dokumentation
 
-## XML-Doc Comments (C#)
+## 1.1 XML-Doc Comments (C#)
 
 **Struktur für public APIs:**
 
@@ -39,7 +39,7 @@ public async Task<Entity> CreateAsync(string name, string email)
 - `<remarks>` – Zusätzliche Details, Edge Cases
 - `<example>` – Runnable Code-Beispiel
 
-## Comment-Based Help (PowerShell)
+## 1.2 Comment-Based Help (PowerShell)
 
 ```powershell
 function Invoke-DataSync {
@@ -86,7 +86,7 @@ function Invoke-DataSync {
 - `.EXAMPLE` – 2+ konkrete Beispiele mit Outputs
 - `.NOTES` – Voraussetzungen, Performanz, Hinweise
 
-## Parameter-Dokumentation
+## 1.3 Parameter-Dokumentation
 
 **Typen + Constraints explizit machen:**
 
@@ -103,7 +103,7 @@ public async Task WaitAsync(int timeout = 5000)
 public void SetMode(string mode)
 ```
 
-## Example Code in Comments
+## 1.4 Example Code in Comments
 
 **Regeln für Beispiele:**
 - **Muss kompilieren/laufen** – Kein konzeptioneller Pseudocode
@@ -124,7 +124,7 @@ public void SetMode(string mode)
 /// </example>
 ```
 
-## Tool Integration
+## 1.5 Tool Integration
 
 **IntelliSense + Hover in VS:**
 - XML-Doc in Summary Tags wird in IntelliSense angezeigt
@@ -138,7 +138,7 @@ Get-Help Invoke-DataSync -Full
 Get-Help Invoke-DataSync -Example
 ```
 
-## Checkliste
+## 1.6 Checkliste
 
 - [ ] Jede public Klasse, Methode, Property dokumentiert
 - [ ] Summary startet mit Verb (Erstellt, Gibt, Prüft)

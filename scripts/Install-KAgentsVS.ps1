@@ -68,6 +68,8 @@ if (-not (Test-Path $skillsSource)) {
     Write-Error "Skills-Quelle nicht gefunden: $skillsSource. Bitte aus dem K.Agents-Repo ausfuehren."
 }
 
+$knownAgents = Get-ChildItem -Path $agentsSource -Filter '*.agent.md' | Select-Object -ExpandProperty Name
+
 # Zielverzeichnisse erstellen
 foreach ($dir in @($AgentsPath, $SkillsPath)) {
     if (-not (Test-Path $dir)) {
@@ -87,8 +89,19 @@ $copilotPluginInstalled = Test-Path $copilotPluginAgentsPath
 
 if ($copilotPluginInstalled) {
     Write-Information "K.Agents Copilot-Plugin erkannt ($copilotPluginAgentsPath)." -Tags 'Install'
+    $removedLegacyAgents = 0
+    foreach ($name in $knownAgents) {
+        $target = Join-Path $AgentsPath $name
+        if (Test-Path $target) {
+            if ($PSCmdlet.ShouldProcess($target, 'Legacy-K.Agents-Agent entfernen (Plugin uebernimmt)')) {
+                Remove-Item -Path $target -Force
+                $removedLegacyAgents++
+            }
+        }
+    }
     Write-Information "Agents werden NICHT nach $AgentsPath kopiert, um Duplikate im Agent Picker zu vermeiden." -Tags 'Install'
-    Write-Output "Agents-Kopie übersprungen: Copilot-Plugin bereits installiert (Duplikat-Schutz aktiv)."
+    Write-Output "Agents-Kopie uebersprungen: Copilot-Plugin bereits installiert (Duplikat-Schutz aktiv)."
+    Write-Output "$removedLegacyAgents Legacy-K.Agents-Agents in $AgentsPath bereinigt."
     $agentFiles = @()
 } else {
     $agentFiles = Get-ChildItem -Path $agentsSource -Filter '*.agent.md'

@@ -3,11 +3,11 @@ name: code-security-review
 description: "Code Security Review — hardcoded secrets, IDOR, SQL injection, command injection, path traversal, CSRF, authorization flaws. USE FOR: reviewing code for security vulnerabilities, auditing endpoint authorization, validating input handling. DO NOT USE FOR: dependency vulnerabilities (dotnet-dependency-scanning) or OWASP checklist (owasp-dotnet)."
 ---
 
-# Code Security Review
+# 1. Code Security Review
 
-## .NET Patterns
+## 1.1 .NET Patterns
 
-### Secrets & Authorization
+### 1.1.1 Secrets & Authorization
 ```csharp
 // ❌ BAD: Hardcoded secrets + missing [Authorize]
 var apiKey = "sk-1234567890";
@@ -21,7 +21,7 @@ var apiKey = configuration["ApiKeys:External"];
 public async Task<IActionResult> UpdateUser(int id, UserDto dto) { }
 ```
 
-### IDOR & Resource Access
+### 1.1.2 IDOR & Resource Access
 ```csharp
 // ❌ BAD: No ownership check
 [Authorize]
@@ -37,7 +37,7 @@ var order = await db.Orders.FirstOrDefaultAsync(
 return order == null ? NotFound() : Ok(order);
 ```
 
-### Path Traversal Prevention
+### 1.1.3 Path Traversal Prevention
 ```csharp
 // ❌ BAD: Direct user input in path
 public IActionResult DownloadFile(string filename) =>
@@ -49,7 +49,7 @@ var filePath = Path.GetFullPath(Path.Combine(basePath, file.StoragePath));
 if (!filePath.StartsWith(basePath)) return Forbid();
 ```
 
-### CSRF & Certificates
+### 1.1.4 CSRF & Certificates
 ```csharp
 // CSRF: Use [ValidateAntiForgeryToken] on POST
 [HttpPost]
@@ -60,9 +60,9 @@ public async Task<IActionResult> DeleteUser(int id) { }
 var client = new HttpClient(new HttpClientHandler());
 ```
 
-## PowerShell Patterns
+## 1.2 PowerShell Patterns
 
-### Command Injection & URLs
+### 1.2.1 Command Injection & URLs
 ```powershell
 # ❌ BAD: Invoke-Expression (code injection risk)
 Invoke-Expression $userInput
@@ -77,7 +77,7 @@ Invoke-RestMethod -Uri $userProvidedUrl
 if ($url -notmatch '^https://trusted-domain\.com/') { throw }
 ```
 
-### Credentials & TLS
+### 1.2.2 Credentials & TLS
 ```powershell
 # ❌ BAD: Plaintext passwords
 $cred = New-Object PSCredential ("user", "MyPassword123")
@@ -90,7 +90,7 @@ $password = $env:DB_PASSWORD | ConvertTo-SecureString -AsPlainText -Force
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 ```
 
-## Security Checklist
+## 1.3 Security Checklist
 
 - `[Authorize]` on all non-public endpoints
 - Resource-level checks (user owns resource)

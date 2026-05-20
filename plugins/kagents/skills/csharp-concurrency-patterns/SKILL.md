@@ -3,11 +3,11 @@ name: csharp-concurrency-patterns
 description: "C# concurrency patterns \u2014 async/await, Channel<T>, SemaphoreSlim, CancellationToken, Task.WhenAll, parallel execution, producer/consumer, rate limiting. USE FOR: implementing async workflows, choosing concurrency primitives, fixing deadlocks or async anti-patterns. DO NOT USE FOR: general C# syntax (use csharp-patterns) or EF Core query parallelism (use database-performance)."
 ---
 
-# C# Concurrency Patterns
+# 1. C# Concurrency Patterns
 
 Adaptiert von: [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) (MIT)
 
-## Pattern-Auswahl
+## 1.1 Pattern-Auswahl
 
 | Situation | Pattern |
 |-----------|---------|
@@ -18,7 +18,7 @@ Adaptiert von: [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/do
 | Background Work | `IHostedService` / `BackgroundService` |
 | Fire-and-Forget (mit Fehlerhandling) | `Task.Run` + Error-Handler |
 
-## async/await (Grundregeln)
+## 1.2 async/await (Grundregeln)
 ```csharp
 // ✅ Korrekt
 public async Task<User> GetUserAsync(Guid id, CancellationToken ct = default)
@@ -31,7 +31,7 @@ public async Task<User> GetUserAsync(Guid id, CancellationToken ct = default)
 // ❌ Verboten: Task.Run um async zu wrappen
 ```
 
-## CancellationToken (Pflicht)
+## 1.3 CancellationToken (Pflicht)
 ```csharp
 // Immer als letzten Parameter durchreichen
 public async Task<List<User>> SearchAsync(string query, CancellationToken ct = default)
@@ -43,7 +43,7 @@ public async Task<List<User>> SearchAsync(string query, CancellationToken ct = d
 }
 ```
 
-## Parallel mit Task.WhenAll
+## 1.4 Parallel mit Task.WhenAll
 ```csharp
 // ✅ Parallel statt sequentiell
 var (users, orders, stats) = await (
@@ -64,7 +64,7 @@ public static class TaskExtensions
 }
 ```
 
-## Channel<T> (Producer/Consumer)
+## 1.5 Channel<T> (Producer/Consumer)
 ```csharp
 var channel = Channel.CreateBounded<WorkItem>(100);
 
@@ -88,7 +88,7 @@ async Task ConsumeAsync(ChannelReader<WorkItem> reader, CancellationToken ct)
 }
 ```
 
-## SemaphoreSlim (Rate Limiting)
+## 1.6 SemaphoreSlim (Rate Limiting)
 ```csharp
 private static readonly SemaphoreSlim _semaphore = new(maxConcurrency: 10);
 
@@ -106,7 +106,7 @@ public async Task<Result> ProcessWithLimitAsync(CancellationToken ct)
 }
 ```
 
-## Thread-Safety
+## 1.7 Thread-Safety
 - `ConcurrentDictionary<K,V>` statt `Dictionary` + Lock
 - `Interlocked.Increment` statt `lock { counter++ }`
 - `ImmutableList<T>` / `FrozenDictionary<K,V>` für Read-Heavy Szenarien

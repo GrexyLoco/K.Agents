@@ -3,18 +3,18 @@ name: aspire-integration-testing
 description: ".NET Aspire integration testing — DistributedApplicationTestingBuilder, AppHost test fixtures, service mocking, health check validation, TUnit with ClassDataSource. USE FOR: writing and debugging integration tests against Aspire-orchestrated services. DO NOT USE FOR: Aspire app configuration (use aspire-architecture) or unit tests without Aspire (use tunit-patterns)."
 ---
 
-# Aspire Integration Testing (TUnit-Adaption)
+# 1. Aspire Integration Testing (TUnit-Adaption)
 
 Adaptiert von: [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) (MIT)
 **Angepasst für TUnit** (nicht xUnit wie im Original).
 
-## Setup
+## 1.1 Setup
 ```xml
 <PackageReference Include="Aspire.Hosting.Testing" Version="*" />
 <PackageReference Include="TUnit" Version="*" />
 ```
 
-## AppHost als Test-Fixture
+## 1.2 AppHost als Test-Fixture
 ```csharp
 public class AspireAppFixture : IAsyncDisposable
 {
@@ -44,7 +44,7 @@ public class AspireAppFixture : IAsyncDisposable
 }
 ```
 
-## Tests mit TUnit
+## 1.3 Tests mit TUnit
 ```csharp
 [Test]
 [ClassDataSource<AspireAppFixture>(Shared = SharedType.PerTestSession)]
@@ -67,14 +67,14 @@ public async Task Api_GetUsers_ReturnsData(AspireAppFixture app)
 }
 ```
 
-## Aspire-Dashboard in Tests
+## 1.4 Aspire-Dashboard in Tests
 ```csharp
 // Dashboard-URL für Debugging
 var dashboardUrl = App.GetEndpoint("aspire-dashboard");
 // Logs und Traces live beobachten während Tests laufen
 ```
 
-## Regeln
+## 1.5 Regeln
 - `PerTestSession` Shared Scope um AppHost nur einmal zu starten
 - Health Checks als erstes testen (Smoke Test)
 - `CreateHttpClient("service-name")` nutzt Service Discovery
