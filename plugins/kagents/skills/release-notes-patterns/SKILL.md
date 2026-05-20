@@ -3,9 +3,9 @@ name: release-notes-patterns
 description: Release-Notes-Muster — User-fokussierte Notizen, Format, Audience-Perspektive. USE FOR: writing release notes, planning user communication, understanding user-centric documentation. DO NOT USE FOR: technical changelogs (use CHANGELOG.md with Keep a Changelog) or API docs.
 ---
 
-# Release-Notes-Muster
+# 1. Release-Notes-Muster
 
-## User-facing Release Notes
+## 1.1 User-facing Release Notes
 
 **Kern-Prinzip:** Was hat sich für Benutzer geändert? Nicht: "Refactored DbContext factory"
 
@@ -19,7 +19,7 @@ description: Release-Notes-Muster — User-fokussierte Notizen, Format, Audience
 - "Reduced allocations in query parser"
 - "Refactored authentication service"
 
-## Format & Template
+## 1.2 Format & Template
 
 ```markdown
 # Release 1.5.0 – 2026-04-29
@@ -64,7 +64,7 @@ description: Release-Notes-Muster — User-fokussierte Notizen, Format, Audience
 - [Linux](https://github.com/example/releases/download/v1.5.0/app-1.5.0-linux.tar.gz)
 ```
 
-## Audience Perspective
+## 1.3 Audience Perspective
 
 **Für verschiedene Rollen unterschiedlich schreiben:**
 
@@ -75,7 +75,7 @@ description: Release-Notes-Muster — User-fokussierte Notizen, Format, Audience
 | **Developer** | Welche APIs haben sich geändert? | "UserService.GetAsync() signature changed, see migration guide" |
 | **Operator** | Was für Deployment/Upgrade? | "Requires .NET 10, Database migration 202604_v1.5 needed" |
 
-## Breaking Changes Communication
+## 1.4 Breaking Changes Communication
 
 **Immer:**
 1. **Was ändert sich** – Kurz und klar
@@ -101,7 +101,7 @@ description: Release-Notes-Muster — User-fokussierte Notizen, Format, Audience
 - **Update Script:** `Update-Module MyModule`
 ```
 
-## Link to Technical Changelog
+## 1.5 Link to Technical Changelog
 
 Verweis auf GitHub Release-Notes oder CHANGELOG.md:
 
@@ -113,7 +113,7 @@ Verweis auf GitHub Release-Notes oder CHANGELOG.md:
 **Technische Details zu dieser Release:** [Release v1.5.0](https://github.com/example/K.Agents/releases/tag/v1.5.0)
 ```
 
-## Checkliste
+## 1.6 Checkliste
 
 - [ ] Mindestens 1 Feature/Improvement pro Section
 - [ ] Keine Buzz-Words ("Enhanced", "Improved") ohne Details

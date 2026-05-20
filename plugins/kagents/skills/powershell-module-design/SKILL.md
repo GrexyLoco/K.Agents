@@ -3,20 +3,20 @@ name: powershell-module-design
 description: "PowerShell Core module design — .psd1/.psm1 manifests, Public/Private/Handlers folder structure, dot-sourcing order, CmdletBinding, Set-StrictMode, cross-platform rules (no Write-Host, Join-Path), PSScriptAnalyzer. USE FOR: structuring new PowerShell modules, implementing cross-platform functions, writing CI scripts. DO NOT USE FOR: PowerShell tests (use pester-patterns) or GitHub Actions workflows (use github-actions-patterns)."
 ---
 
-# PowerShell Module Design
+# 1. PowerShell Module Design
 
-## Datei-Header (Pflicht an jeder .ps1)
+## 1.1 Datei-Header (Pflicht an jeder .ps1)
 ```powershell
 #Requires -Version 7.4
 ```
 
-## Script-Initialisierung (Pflicht)
+## 1.2 Script-Initialisierung (Pflicht)
 ```powershell
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 ```
 
-## Verzeichnisstruktur
+## 1.3 Verzeichnisstruktur
 ```
 ModuleName/
 ├── ModuleName.psd1              # Manifest
@@ -35,7 +35,7 @@ ModuleName/
 └── action.yml                   # GitHub Action Interface (optional)
 ```
 
-## Root Module: Dot-Sourcing-Reihenfolge
+## 1.4 Root Module: Dot-Sourcing-Reihenfolge
 Handlers → Private → Public (Abhängigkeitsrichtung):
 ```powershell
 $script:ModuleRoot = $PSScriptRoot
@@ -47,7 +47,7 @@ foreach ($file in $handlerFunctions) {
 # dann Private, dann Public analog
 ```
 
-## ⛔ Cross-Platform Hard Rules (überall, auch CI)
+## 1.5 ⛔ Cross-Platform Hard Rules (überall, auch CI)
 - `Write-Host` → `Write-Output`, `Write-Verbose`, `Write-Information`
 - `"$root\sub"` → `Join-Path $root 'sub'`
 - `$env:USERPROFILE` → `$env:HOME`
@@ -56,14 +56,14 @@ foreach ($file in $handlerFunctions) {
 - Encoding: immer `-Encoding utf8`
 - Null-Check: `$null -eq $variable` (nicht umgekehrt)
 
-## GitHub Actions Output-Pattern
+## 1.6 GitHub Actions Output-Pattern
 ```powershell
 if ($env:GITHUB_OUTPUT) {
     "output-name=$value" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 }
 ```
 
-## Function-Design
+## 1.7 Function-Design
 - Approved Verbs, `[CmdletBinding()]`, Parameter-Validation
 - Comment-Based Help: `.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.EXAMPLE`
 - `ShouldProcess` bei destruktiven Operationen
@@ -72,7 +72,7 @@ if ($env:GITHUB_OUTPUT) {
 [PSCustomObject]@{ Passed = $true; Skipped = $false; Message = '...' }
 ```
 
-## PSScriptAnalyzer-Review-Policy
+## 1.8 PSScriptAnalyzer-Review-Policy
 Nur **Error** und **Warning** Severity prüfen — Information-Findings ignorieren.
 Keine `ExcludeRules` erlaubt (Regeln dürfen nicht unterdrückt werden).
 

@@ -3,11 +3,11 @@ name: maui-performance
 description: ".NET MAUI performance — profiling (dotnet trace, dotnet counters), compiled bindings, CollectionView vs ListView, layout optimization, startup time, AOT for Release, PublishTrimmed, image optimization. USE FOR: profiling slow MAUI apps, optimizing layout rendering, reducing startup time, enabling trimming. DO NOT USE FOR: general MAUI patterns (use maui-patterns) or .NET-wide AOT warnings (use dotnet-aot-compat)."
 ---
 
-# MAUI Performance
+# 1. MAUI Performance
 
 Basiert auf: [davidortinau/maui-skills](https://github.com/davidortinau/maui-skills) (MIT, David Ortinau, Microsoft)
 
-## Profiling
+## 1.1 Profiling
 ```bash
 # dotnet-trace für CPU-Profiling
 dotnet trace collect --process-id <PID> --providers Microsoft-DotNETCore-SampleProfiler
@@ -16,7 +16,7 @@ dotnet trace collect --process-id <PID> --providers Microsoft-DotNETCore-SampleP
 dotnet counters monitor --process-id <PID> --counters System.Runtime
 ```
 
-## Compiled Bindings (Pflicht)
+## 1.2 Compiled Bindings (Pflicht)
 ```xml
 <!-- IMMER Compiled Bindings verwenden -->
 <Label Text="{Binding UserName, Mode=OneWay}" />
@@ -27,21 +27,21 @@ dotnet counters monitor --process-id <PID> --counters System.Runtime
 </PropertyGroup>
 ```
 
-## Layout-Optimierung
+## 1.3 Layout-Optimierung
 - `CollectionView` statt `ListView` (immer)
 - Flache Visual Trees: max 3-4 Nesting-Ebenen
 - `Grid` statt verschachtelte `StackLayout`
 - `AbsoluteLayout` / `FlexLayout` für komplexe Layouts
 - `BindableLayout` nur für kleine Listen (< 20 Items)
 
-## Image-Optimierung
+## 1.4 Image-Optimierung
 - Bilder auf Display-Auflösung skalieren (nicht 4000x3000 für 200x200)
 - `Aspect="AspectFill"` oder `AspectFit` mit expliziten Dimensionen
 - `CachingEnabled="True"` auf `UriImageSource`
 - WebP (Android), HEIF/PNG (iOS) für plattformoptimale Formate
 - SVG/Font Icons statt Bitmaps für Icons
 
-## Startup-Zeit
+## 1.5 Startup-Zeit
 ```xml
 <PropertyGroup>
   <!-- Interpreter für schnelleren Debug-Start -->
@@ -55,7 +55,7 @@ dotnet counters monitor --process-id <PID> --counters System.Runtime
 - `CreateMauiApp()` schlank halten
 - Splash Screen nutzen für wahrgenommene Performance
 
-## Trimming & NativeAOT
+## 1.6 Trimming & NativeAOT
 ```xml
 <PropertyGroup Condition="'$(Configuration)' == 'Release'">
   <PublishTrimmed>true</PublishTrimmed>

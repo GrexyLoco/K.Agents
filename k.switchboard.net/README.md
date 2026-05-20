@@ -1,4 +1,4 @@
-# K.Switchboard .NET
+# 1. K.Switchboard .NET
 
 <!-- markdownlint-disable MD033 -->
 
@@ -8,7 +8,7 @@ K.Switchboard ist ein leichtgewichtiger KI-Proxy für [Anthropic](https://docs.a
 
 ---
 
-## Inhaltsverzeichnis
+## 1.1 Inhaltsverzeichnis
 
 - [Beziehen](#usage-beziehen)
 - [Installieren](#usage-installieren)
@@ -23,7 +23,7 @@ K.Switchboard ist ein leichtgewichtiger KI-Proxy für [Anthropic](https://docs.a
 
 <a id="usage-beziehen"></a>
 
-## Beziehen
+## 1.2 Beziehen
 
 K.Switchboard wird als Release-Bundle über [GitHub Releases](https://github.com/GrexyLoco/K.Agents/releases/latest) bereitgestellt. Das ZIP enthält `K.Switchboard.exe`, `install-windows.ps1` und `K.Switchboard-README.md`. Es ist keine .NET-Runtime-Installation erforderlich — die EXE ist self-contained ([Self-contained deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/#publish-self-contained)).
 
@@ -47,11 +47,11 @@ Expand-Archive -Path (Join-Path $dest 'K.Switchboard-win-x64.zip') -DestinationP
 
 <a id="usage-installieren"></a>
 
-## Installieren
+## 1.3 Installieren
 
 Es gibt zwei Modi: **portabel** (EXE liegt in einem Ordner) und **Windows-Service** (automatischer Start, kein Login nötig).
 
-### Portabel
+### 1.3.1 Portabel
 
 Nach dem Entpacken kann die EXE direkt gestartet werden, z. B. aus `%LOCALAPPDATA%\K.Switchboard\`:
 
@@ -59,7 +59,7 @@ Nach dem Entpacken kann die EXE direkt gestartet werden, z. B. aus `%LOCALAPPDAT
 & "$env:LOCALAPPDATA\K.Switchboard\K.Switchboard.exe"
 ```
 
-### Windows-Service
+### 1.3.2 Windows-Service
 
 Verwende das mitgelieferte PowerShell-Installer-Skript `install-windows.ps1` aus dem Bundle. Es nutzt [`sc.exe`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-create) und benötigt **Administratorrechte**.
 
@@ -74,7 +74,7 @@ Der Service heißt `K.Switchboard`, läuft unter `NT AUTHORITY\NetworkService` u
 
 <a id="usage-konfigurieren"></a>
 
-## Konfigurieren
+## 1.4 Konfigurieren
 
 Beim ersten Start legt K.Switchboard eine Default-Konfiguration unter `%APPDATA%\K.Switchboard\config.json` an. Diese Datei kann mit jedem Texteditor bearbeitet werden. Änderungen werden zur Laufzeit automatisch erkannt ([IOptionsMonitor Hot-Reload](https://learn.microsoft.com/en-us/dotnet/core/extensions/options#use-ioptionsmonitor-to-read-updated-data)) — kein Neustart nötig.
 
@@ -107,9 +107,9 @@ Das vollständige Schema mit allen Feldern und Standardwerten ist in [docs/confi
 
 <a id="usage-ausfuehren"></a>
 
-## Ausführen
+## 1.5 Ausführen
 
-### Portabel / Vordergrund
+### 1.5.1 Portabel / Vordergrund
 
 ```pwsh
 & "$env:LOCALAPPDATA\K.Switchboard\K.Switchboard.exe"
@@ -117,7 +117,7 @@ Das vollständige Schema mit allen Feldern und Standardwerten ist in [docs/confi
 
 Die EXE bindet sich auf den konfigurierten Port (Standard: 3456) und gibt Logs auf stdout aus.
 
-### Als Windows-Service
+### 1.5.2 Als Windows-Service
 
 ```pwsh
 Start-Service K.Switchboard
@@ -135,11 +135,11 @@ Get-Service K.Switchboard
 
 <a id="usage-monitoren"></a>
 
-## Monitoren
+## 1.6 Monitoren
 
 K.Switchboard stellt mehrere Beobachtungsflächen bereit. Details stehen in [docs/monitoring.md](docs/monitoring.md).
 
-### Health-Check
+### 1.6.1 Health-Check
 
 ```pwsh
 Invoke-RestMethod http://localhost:3456/health
@@ -148,7 +148,7 @@ Invoke-RestMethod http://localhost:3456/health
 
 Implementiert über [`Microsoft.Extensions.Diagnostics.HealthChecks`](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks).
 
-### Tagesstatistik (Token-Kosten)
+### 1.6.2 Tagesstatistik (Token-Kosten)
 
 ```pwsh
 Invoke-RestMethod http://localhost:3456/stats
@@ -156,7 +156,7 @@ Invoke-RestMethod http://localhost:3456/stats
 
 Liefert Token-Counts und USD-Kosten pro Modell für den aktuellen UTC-Tag. Konfiguration der Preise in `config.json` unter `Pricing` — Schema in [docs/configuration.md](docs/configuration.md).
 
-### Logs
+### 1.6.3 Logs
 
 - **Konsole** im Vordergrundmodus: strukturiertes Serilog-Format.
 - **Datei** im Service-Modus: `%APPDATA%\K.Switchboard\logs\k.switchboard-YYYYMMDD.log` ([Serilog File Sink](https://github.com/serilog/serilog-sinks-file)).
@@ -166,9 +166,9 @@ Liefert Token-Counts und USD-Kosten pro Modell für den aktuellen UTC-Tag. Konfi
 
 <a id="usage-deinstallieren"></a>
 
-## Deinstallieren
+## 1.7 Deinstallieren
 
-### Service entfernen
+### 1.7.1 Service entfernen
 
 ```pwsh
 .\install-windows.ps1 -Unregister
@@ -176,7 +176,7 @@ Liefert Token-Counts und USD-Kosten pro Modell für den aktuellen UTC-Tag. Konfi
 
 Das Skript stoppt den Service und ruft [`sc.exe delete`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-delete) auf.
 
-### Dateien und Konfiguration entfernen
+### 1.7.2 Dateien und Konfiguration entfernen
 
 ```pwsh
 Remove-Item -Recurse -Force "$env:LOCALAPPDATA\K.Switchboard"
@@ -190,7 +190,7 @@ Remove-Item -Recurse -Force "$env:ProgramData\K.Switchboard"
 
 <a id="python-dotnet-commands"></a>
 
-## Python-Befehl → .NET-Befehl
+## 1.8 Python-Befehl → .NET-Befehl
 
 Die häufigsten Betriebsbefehle aus der Python-Version und das direkte .NET-Pendant:
 
@@ -209,7 +209,7 @@ Die vollständige Migrationstabelle inklusive YAML→JSON-Mapping steht in [docs
 
 <a id="weiteres"></a>
 
-## Weiteres
+## 1.9 Weiteres
 
 - [Konfigurationsreferenz](docs/configuration.md) — vollständiges JSON-Schema
 - [Monitoring](docs/monitoring.md) — Logs, OpenTelemetry, Aspire Dashboard

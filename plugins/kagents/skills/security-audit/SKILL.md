@@ -3,15 +3,15 @@ name: security-audit
 description: Sicherheitsanalyse — Dependency Scanning, OWASP Top 10, NuGet Vulnerabilities, Code Security Review, Severity-Klassifizierung
 ---
 
-# Security-Audit Skill
+# 1. Security-Audit Skill
 
-## Übersicht
+## 1.1 Übersicht
 
 Dieses Skill behandelt systematische Sicherheitsanalyse für .NET und PowerShell Projekte. Es deckt Dependency Scanning, OWASP-Konformität, Code-Review und Severity-Klassifizierung ab.
 
-## Dependency Scanning
+## 1.2 Dependency Scanning
 
-### .NET NuGet Vulnerabilities
+### 1.2.1 .NET NuGet Vulnerabilities
 
 ```bash
 # Vulnerabilities including transitive
@@ -28,71 +28,71 @@ Für jede gefundene Schwachstelle dokumentiere:
 - **Workaround** (wenn kein Fix verfügbar)
 - **Exploitability:** Ist die Sicherheitslücke praktisch ausnutzbar?
 
-### GitHub Advisory Database
+### 1.2.2 GitHub Advisory Database
 - NuGet MCP: Package-Kontext und bekannte CVEs
 - Suche nach Sicherheitslücken in Abhängigkeiten
 - Verlinke auf offizielle CVE-Datenbank
 
-## OWASP Top 10 für .NET
+## 1.3 OWASP Top 10 für .NET
 
-### A01: Broken Access Control
+### 1.3.1 A01: Broken Access Control
 - Authorization-Attribute müssen alle Protected Resources haben
 - Policy-basierte Authorization statt hardcodierter Roles
 - Resource-Level Checks für Object-based Access Control
 - JWT/Cookie-Claims korrekt validieren
 
-### A02: Cryptographic Failures
+### 1.3.2 A02: Cryptographic Failures
 - Hardcoded Secrets scannen (Passwörter, API-Keys, Connection Strings)
 - Nur moderne Kryptographie (AES, SHA-256+, nicht MD5/SHA1)
 - HTTPS überall erzwingen
 - Sichere Schlüssel-Speicherung (Azure Key Vault, nicht appsettings.json)
 
-### A03: Injection
+### 1.3.3 A03: Injection
 - **SQL Injection:** Raw SQL + User-Input = Risiko; Entity Framework safe
 - **XSS (Blazor):** Markup in Components sanitizen
 - **Command Injection:** Process.Start mit User-Input prüfen
 
-### A04: Insecure Design
+### 1.3.4 A04: Insecure Design
 - Missing Rate Limiting (DDoS-Schutz)
 - Fehlende Input-Validation auf API-Ebene
 - IDOR (Insecure Direct Object Reference): `/users/123` sollte User-ID prüfen
 - Fehlende Business-Logic Validation
 
-### A05: Security Misconfiguration
+### 1.3.5 A05: Security Misconfiguration
 - Debug-Endpoints nicht in Production
 - Default-Credentials entfernen
 - CORS nicht zu offen (`Access-Control-Allow-Origin: *`)
 - Security Headers prüfen (HSTS, X-Frame-Options, etc.)
 
-### A06: Vulnerable Components
+### 1.3.6 A06: Vulnerable Components
 - Veraltete NuGet-Pakete (`dotnet list package --outdated`)
 - Bekannte CVEs in Dependencies
 - Regelmäßige Audit-Runs in CI
 
-### A07: Authentication Failures
+### 1.3.7 A07: Authentication Failures
 - Schwache Passwort-Policy (keine Complexity?)
 - Fehlende MFA (Multi-Factor Authentication)
 - Session-Management (Timeout, Invalidation)
 - Password Spraying / Brute-Force Schutz (Rate Limiting)
 
-### A08: Data Integrity Failures
+### 1.3.8 A08: Data Integrity Failures
 - Unsichere Deserialisierung (JSON.parse mit Type-Safety prüfen)
 - Fehlende Signaturprüfung für wichtige Daten
 - Tamper-Detection bei sensiblen Objekten
 
-### A09: Logging & Monitoring Failures
+### 1.3.9 A09: Logging & Monitoring Failures
 - Keine Sensitive Daten in Logs (Passwords, Tokens, PII)
 - Audit-Trails für kritische Operationen
 - Error-Handling ohne Information Disclosure
 
-### A10: SSRF (Server-Side Request Forgery)
+### 1.3.10 A10: SSRF (Server-Side Request Forgery)
 - Unkontrollierte URL-Parameter (Validation!)
 - Server-seitige Redirects nur zu Whitelist
 - DNS Rebinding Schutz
 
-## Code Security Review
+## 1.4 Code Security Review
 
-### Automatische .NET Checks
+### 1.4.1 Automatische .NET Checks
 
 ```csharp
 // ❌ RISIKO: Secrets im Code
@@ -122,7 +122,7 @@ public IActionResult Create(Model m) { }
 TrustServerCertificate=true
 ```
 
-### PowerShell-spezifisch
+### 1.4.2 PowerShell-spezifisch
 
 ```powershell
 # ❌ RISIKO: Unkontrollierte Code-Ausführung
@@ -141,19 +141,19 @@ function Do-Something { param($Credential) ... }
 ConvertTo-SecureString -AsPlainText "secret"
 ```
 
-## GitHub Actions Security
+## 1.5 GitHub Actions Security
 
-### Secret-Handling
+### 1.5.1 Secret-Handling
 - Secrets korrekt verwenden (nicht in Logs)
 - Secrets-Context nur wo nötig exponieren
 - Mask in Output: `::add-mask::$SECRET`
 
-### Third-Party Actions
+### 1.5.2 Third-Party Actions
 - Immer auf SHA pinnen, nicht auf Tags
 - `uses: owner/repo@commit-sha`
 - Reduziert Supply-Chain-Risiken
 
-### Permissions (Least Privilege)
+### 1.5.3 Permissions (Least Privilege)
 ```yaml
 permissions:
   contents: read
@@ -162,11 +162,11 @@ permissions:
 
 Nicht `write-all` oder `admin`, sondern nur nötige Permissions.
 
-### Pull Request Security
+### 1.5.4 Pull Request Security
 - Nie `pull_request_target` mit checkout des PR-Branches
 - `pull_request` ist sicher (read-only für Secrets)
 
-## Severity-Klassifizierung
+## 1.6 Severity-Klassifizierung
 
 | Severity | Beschreibung | SLA | Beispiel |
 |----------|-------------|-----|---------|
@@ -175,7 +175,7 @@ Nicht `write-all` oder `admin`, sondern nur nötige Permissions.
 | 🟡 Medium | Theoretisches Risiko, Hardening-Maßnahme | Nächstes Epic | Veraltetes Package ohne Exploit bekannt |
 | 🔵 Low | Best Practice Verletzung, kein direktes Risiko | Backlog | Fehlender Security Header |
 
-## Report-Format
+## 1.7 Report-Format
 
 ```markdown
 ## Security Audit Report – [Datum]
@@ -196,11 +196,11 @@ Nicht `write-all` oder `admin`, sondern nur nötige Permissions.
 - **Referenz:** [OWASP-A03](https://owasp.org/...) oder CVE-Link
 ```
 
-## Related Skills
+## 1.8 Related Skills
 
 - owasp-dotnet (für detaillierte OWASP-Patterns)
 
-## Workflow
+## 1.9 Workflow
 
 1. **Codebase scannen:** Dependencies, Secrets, Access Control
 2. **Prüfungen durchführen:** dotnet audit, GitLeaks, Code Review
@@ -208,7 +208,7 @@ Nicht `write-all` oder `admin`, sondern nur nötige Permissions.
 4. **Report erstellen:** Strukturiert und priorisiert
 5. **Delegation:** Handoff an Developer für Fixes (nie selbst implementieren)
 
-## Regeln
+## 1.10 Regeln
 
 - Keine False Positives — nur echte Risiken
 - Severity **ehrlich** einschätzen — nicht alles ist Critical

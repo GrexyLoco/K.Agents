@@ -3,11 +3,11 @@ name: init-project
 description: "Bootstrappt ein neues Repo mit CLAUDE.md, path-scoped Rules und .gitignore-Eintrag für CLAUDE.local.md. Analysiert den Stack automatisch und fragt nach Lücken."
 ---
 
-# Init Project Skill
+# 1. Init Project Skill
 
 Du richtest ein neues Projekt für Claude Code ein.
 
-## Ablauf
+## 1.1 Ablauf
 
 1. Erkenne den Stack: dotnet sln, csproj, Test-Framework, CI-Config.
 2. Erstelle `CLAUDE.md` im Projekt-Root mit:

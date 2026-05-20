@@ -3,9 +3,9 @@ name: aspire-architecture
 description: ".NET Aspire AppHost, Service Defaults, integrations (Postgres, Redis), service discovery, health checks, Polly resilience, telemetry pipeline. USE FOR: configuring Aspire orchestration, adding service references, setting up cloud-native distributed applications. DO NOT USE FOR: Aspire integration tests (use aspire-integration-testing) or Azure Monitor alerts (use azure-monitoring)."
 ---
 
-# .NET Aspire Architecture
+# 1. .NET Aspire Architecture
 
-## AppHost-Konfiguration
+## 1.1 AppHost-Konfiguration
 ```csharp
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -27,7 +27,7 @@ builder.AddProject<Projects.MyApp_Web>("web")
 builder.Build().Run();
 ```
 
-## Service Defaults
+## 1.2 Service Defaults
 ```csharp
 public static IHostApplicationBuilder AddServiceDefaults(this IHostApplicationBuilder builder)
 {
@@ -43,12 +43,12 @@ public static IHostApplicationBuilder AddServiceDefaults(this IHostApplicationBu
 }
 ```
 
-## Telemetry-Pipeline
+## 1.3 Telemetry-Pipeline
 - **Lokal:** OTLP → Aspire Dashboard (localhost:18888)
 - **Produktion:** OTLP → Azure Monitor / Application Insights
 - **EU-Alternative:** OTLP → Grafana Cloud (EU) / Self-hosted Collector
 
-## Regeln
+## 1.4 Regeln
 - Service Discovery über Aspire, nicht hardcoded URLs
 - Health Checks für jeden Service registrieren
 - Resilience mit Polly (über `AddStandardResilienceHandler`)

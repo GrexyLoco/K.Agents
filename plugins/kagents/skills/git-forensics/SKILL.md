@@ -3,17 +3,17 @@ name: git-forensics
 description: Git-Historia-Analyse — blame, bisect, pickaxe, Conventional Commits Validierung, Changelog-Generierung, Change Tracking
 ---
 
-# Git-Forensics Skill
+# 1. Git-Forensics Skill
 
-## Übersicht
+## 1.1 Übersicht
 
 Dieses Skill behandelt systematische Git-Analyse um herauszufinden, wann Änderungen eingeführt wurden, welche Issues sie betreffen und wie sie zusammenhängen. Es umfasst Conventional Commits Enforcement und automatische Changelog-Generierung.
 
-## ReleaseFlow-Branching-Kontext
+## 1.2 ReleaseFlow-Branching-Kontext
 
 K.Actions.ReleaseFlow nutzt ein standardisiertes Branching-Modell:
 
-### Branch-Struktur
+### 1.2.1 Branch-Struktur
 ```
 feature/* → dev/vX.Y.Z (Alpha-Phase)
 fix/*     → dev/vX.Y.Z oder release/vX.Y.Z (Alpha/Beta)
@@ -21,14 +21,14 @@ dev/vX.Y.Z → release/vX.Y.Z (Feature-Freeze Promotion)
 release/vX.Y.Z → main (Stable-Release)
 ```
 
-### Tag-Typen
+### 1.2.2 Tag-Typen
 - **Alpha:** `vX.Y.Z-alphaN` (instabil, Development)
 - **Beta:** `vX.Y.Z-betaN` (pre-release Testing)
 - **Freeze:** `vX.Y.Z-freeze` (Feature-Freeze Markierung)
 - **Stable:** `vX.Y.Z` (Release-Tag)
 - **Smart Tags:** `vX`, `vX.Y`, `latest` (automatisch verschoben bei Stable-Release)
 
-### Release-Train Analyse
+### 1.2.3 Release-Train Analyse
 ```bash
 # Commits im Release-Train finden
 git log --all --grep="dev/v" --oneline
@@ -39,9 +39,9 @@ git log vX.Y.Z-freeze..release/vX.Y.Z
 
 Freeze-Tags markieren den Feature-Freeze-Punkt. Backflow PRs (`main` → offene `dev/*`) nach Stable-Release prüfen.
 
-## Analysemethoden
+## 1.3 Analysemethoden
 
-### „Wann kam diese Änderung rein?"
+### 1.3.1 „Wann kam diese Änderung rein?"
 
 **Pickaxe (Suche nach Code-Änderung):**
 ```bash
@@ -71,7 +71,7 @@ git log --follow -p path/to/file.cs
 
 Trackt Datei auch wenn sie umbenannt wurde.
 
-### „Seit wann existiert dieser Bug?"
+### 1.3.2 „Seit wann existiert dieser Bug?"
 
 **Automatischer Bisect:**
 ```bash
@@ -93,14 +93,14 @@ git bisect good  # oder git bisect bad
 # ... bis Commit gefunden
 ```
 
-### „Welches Issue/PR hat das eingeführt?"
+### 1.3.3 „Welches Issue/PR hat das eingeführt?"
 
 1. Commit via `git blame` oder `git log -S` finden
 2. Commit-Message auf Issue-Referenzen prüfen (`#42`, `fixes #42`)
 3. GitHub MCP: PR suchen der diesen Commit enthält
 4. Issue aus PR-Beschreibung oder Linked Issues extrahieren
 
-### „Was hat sich zwischen Releases geändert?"
+### 1.3.4 „Was hat sich zwischen Releases geändert?"
 
 ```bash
 # Commits zwischen Tags
@@ -117,7 +117,7 @@ git log --oneline v1.0.0..v1.1.0 --grep="^feat"
 git log --oneline v1.0.0..v1.1.0 --grep="^fix"
 ```
 
-### „Wer hat zuletzt an dieser Datei gearbeitet?"
+### 1.3.5 „Wer hat zuletzt an dieser Datei gearbeitet?"
 
 ```bash
 # Letzte 10 Änderungen an einer Datei
@@ -127,9 +127,9 @@ git log --follow --oneline -10 path/to/file.cs
 git shortlog -sn --all -- path/to/file.cs
 ```
 
-## Conventional Commits
+## 1.4 Conventional Commits
 
-### Format (Pflicht)
+### 1.4.1 Format (Pflicht)
 ```
 <type>(<scope>): <description>
 
@@ -148,7 +148,7 @@ mit limit und offset Parametern.
 Fixes #42
 ```
 
-### Types und SemVer
+### 1.4.2 Types und SemVer
 
 | Type | Beschreibung | SemVer | Changelog |
 |------|-------------|--------|-----------|
@@ -162,7 +162,7 @@ Fixes #42
 | `chore` | Build, Dependencies | — | (skip) |
 | `ci` | CI/CD Konfiguration | — | (skip) |
 
-### Scopes (projektspezifisch)
+### 1.4.3 Scopes (projektspezifisch)
 
 - **Modules:** `blazor`, `maui`, `api`, `efcore`, `aspire`
 - **Automation:** `ci`, `cd`, `actions`, `github`
@@ -170,7 +170,7 @@ Fixes #42
 - **Infrastructure:** `infra`, `azure`, `docker`
 - **Documentation:** `docs`
 
-### Breaking Changes
+### 1.4.4 Breaking Changes
 
 ```
 feat(api)!: Ändere Rückgabeformat auf RFC 7807
@@ -183,7 +183,7 @@ Migration: Passe Client-Code an das neue Format an.
 
 Nutze `!` vor dem Doppelpunkt oder `BREAKING CHANGE:` Footer für MAJOR-Version.
 
-### Commit-Message-Qualität Validierung
+### 1.4.5 Commit-Message-Qualität Validierung
 
 **Verboten:**
 - „fix", „update", „changes", „stuff", „wip" als alleinige Message
@@ -198,7 +198,7 @@ fix(api): Null-Reference bei leerem Query-Parameter behoben (#43)
 chore(ci): Build-Cache für NuGet-Pakete aktiviert
 ```
 
-## Changelog-Generierung
+## 1.5 Changelog-Generierung
 
 Sammle Commits seit dem letzten Release-Tag und kategorisiere nach Conventional Commits:
 
@@ -232,7 +232,7 @@ Sammle Commits seit dem letzten Release-Tag und kategorisiere nach Conventional 
 5. `refactor` → Geändert
 6. Issue-Referenzen verlinken
 
-## Workflow
+## 1.6 Workflow
 
 1. **Frage verstehen:** Wann? Wer? Warum? Welches Issue?
 2. **Passende Methode:** blame, log, bisect, diff wählen
@@ -240,13 +240,13 @@ Sammle Commits seit dem letzten Release-Tag und kategorisiere nach Conventional 
 4. **Ergebnis:** Commit, Autor, Datum, Issue-Referenz dokumentieren
 5. **Bei Bedarf:** Handoff an Developer für Fix
 
-## Related Skills
+## 1.7 Related Skills
 
 - conventional-commits
 - releaseflow-domain
 - release-management
 
-## Regeln
+## 1.8 Regeln
 
 - Ergebnisse immer mit **konkreten Commits** belegen (SHA, Datum, Autor)
 - Keine Vermutungen — nur Git-Historie zeigen

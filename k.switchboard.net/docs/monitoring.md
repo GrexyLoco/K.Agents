@@ -1,4 +1,4 @@
-# Monitoring
+# 1. Monitoring
 
 <!-- markdownlint-disable MD033 -->
 
@@ -8,7 +8,7 @@ K.Switchboard stellt drei Beobachtungsebenen bereit: Health-Checks, strukturiert
 
 <a id="health-checks"></a>
 
-## Health-Checks
+## 1.1 Health-Checks
 
 Der Health-Check-Endpoint gibt den Betriebszustand der Anwendung zurück. Implementiert über [`Microsoft.Extensions.Diagnostics.HealthChecks`](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks).
 
@@ -31,11 +31,11 @@ Der Endpoint eignet sich für Monitoring-Tools, Load-Balancer-Probes und Windows
 
 <a id="logs"></a>
 
-## Logs
+## 1.2 Logs
 
 K.Switchboard verwendet [Serilog](https://serilog.net/) für strukturiertes Logging.
 
-### Konsolenmodus
+### 1.2.1 Konsolenmodus
 
 Im Vordergrundmodus (direkte EXE-Ausführung) erscheinen Logs im Format:
 
@@ -44,7 +44,7 @@ Im Vordergrundmodus (direkte EXE-Ausführung) erscheinen Logs im Format:
 [15:02:28 INF] [K.Switchboard.Services.CostingService] Nutzung erfasst: Modell=claude-3-5-sonnet-20241022, Input=1024, Output=256, Kosten=0.006960 USD
 ```
 
-### Datei-Sink (Service-Modus)
+### 1.2.2 Datei-Sink (Service-Modus)
 
 Im Windows-Service-Modus werden Logs in tägliche Dateien geschrieben ([Serilog File Sink](https://github.com/serilog/serilog-sinks-file)):
 
@@ -54,7 +54,7 @@ Im Windows-Service-Modus werden Logs in tägliche Dateien geschrieben ([Serilog 
 
 Log-Dateien werden 7 Tage aufbewahrt (`retainedFileCountLimit: 7`). Ältere Dateien werden automatisch gelöscht.
 
-### Log-Level konfigurieren
+### 1.2.3 Log-Level konfigurieren
 
 Das Log-Level lässt sich in `config.json` unter dem `Serilog`-Abschnitt überschreiben:
 
@@ -78,11 +78,11 @@ Unterstützte Level: `Verbose`, `Debug`, `Information`, `Warning`, `Error`, `Fat
 
 <a id="opentelemetry"></a>
 
-## OpenTelemetry
+## 1.3 OpenTelemetry
 
 K.Switchboard ist mit dem [OpenTelemetry .NET SDK](https://opentelemetry.io/docs/languages/net/) instrumentiert. Im Standardbetrieb ist der OTLP-Exporter deaktiviert.
 
-### Aktivierung
+### 1.3.1 Aktivierung
 
 Setze die Umgebungsvariable `OTEL_EXPORTER_OTLP_ENDPOINT` auf den OTLP-Endpunkt deines Collectors:
 
@@ -93,7 +93,7 @@ $env:OTEL_EXPORTER_OTLP_ENDPOINT = "http://localhost:4317"
 
 **Spezifikation:** [OpenTelemetry Environment Variable Specification](https://opentelemetry.io/docs/specs/otel/protocol/exporter/)
 
-### Aspire Dashboard (lokal)
+### 1.3.2 Aspire Dashboard (lokal)
 
 Das [.NET Aspire Dashboard](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/dashboard/overview) kann im Standalone-Modus ohne AppHost betrieben werden:
 
@@ -112,7 +112,7 @@ Dashboard öffnen: `http://localhost:18888`
 
 <a id="stats-endpoint"></a>
 
-## Tagesstatistik (/stats)
+## 1.4 Tagesstatistik (/stats)
 
 Der `/stats`-Endpoint liefert Token-Verbrauch und USD-Kosten für den aktuellen UTC-Tag:
 

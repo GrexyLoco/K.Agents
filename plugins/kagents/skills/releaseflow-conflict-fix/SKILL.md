@@ -5,11 +5,11 @@ description: "ReleaseFlow-spezifischen Merge-Konflikt-Workflow ausführen — fi
   'not mergeable', Merge-Konflikte zwischen release/* und master."
 ---
 
-# ReleaseFlow Merge-Konflikt-Fix
+# 1. ReleaseFlow Merge-Konflikt-Fix
 
 Zweistufiger Workflow — NIEMALS direkt auf `release/*` pushen.
 
-## Phase 1: Konflikte identifizieren
+## 1.1 Phase 1: Konflikte identifizieren
 
 ```powershell
 & "${env:CLAUDE_PLUGIN_ROOT}/tools/releaseflow/Invoke-ReleaseConflictFix.ps1" `
@@ -19,7 +19,7 @@ Zweistufiger Workflow — NIEMALS direkt auf `release/*` pushen.
 
 Das Script erstellt einen `fix/conflict-*`-Branch und zeigt die Konflikt-Dateien.
 
-## Phase 2: Konflikte beheben und PR erstellen
+## 1.2 Phase 2: Konflikte beheben und PR erstellen
 
 1. Konflikt-Dateien mit Edit-Tool lösen
 2. Dann:
@@ -31,6 +31,6 @@ Das Script erstellt einen `fix/conflict-*`-Branch und zeigt die Konflikt-Dateien
 
 Das Script committet, pusht und erstellt einen PR mit Auto-Merge.
 
-## Anti-Pattern ⚠️
+## 1.3 Anti-Pattern ⚠️
 
 **NIEMALS:** `git push origin release/*` — release-Branches sind OFF-LIMITS für direkte Pushes.

@@ -3,9 +3,9 @@ name: pester-patterns
 description: "Pester 5.6.x patterns — Describe/Context/It structure, BeforeAll/AfterAll, Mock, InModuleScope, Should assertions, test helpers, GitHub CLI mocking, exit code testing. USE FOR: writing PowerShell tests, mocking commands, testing private module functions with InModuleScope. DO NOT USE FOR: .NET tests (use tunit-patterns) or PowerShell module structure (use powershell-module-design)."
 ---
 
-# Pester 5.6.x Patterns
+# 1. Pester 5.6.x Patterns
 
-## Grundstruktur
+## 1.1 Grundstruktur
 ```powershell
 #Requires -Version 7.4
 #Requires -Modules Pester
@@ -31,7 +31,7 @@ Describe 'FunctionName' {
 }
 ```
 
-## Test-Helper-Pattern (Script Scope)
+## 1.2 Test-Helper-Pattern (Script Scope)
 Erstelle wiederverwendbare Factory-Functions für Test-Daten:
 ```powershell
 #region Helper Functions
@@ -54,7 +54,7 @@ function script:New-TestContext {
 #endregion
 ```
 
-## InModuleScope für Private Functions
+## 1.3 InModuleScope für Private Functions
 Private Functions sind nicht direkt testbar — nutze `InModuleScope`:
 ```powershell
 It 'Should pass with valid context' {
@@ -68,9 +68,9 @@ It 'Should pass with valid context' {
 }
 ```
 
-## Mock-Patterns
+## 1.4 Mock-Patterns
 
-### GitHub CLI (gh) mocken
+### 1.4.1 GitHub CLI (gh) mocken
 ```powershell
 # Einfacher Mock
 Mock gh {
@@ -97,7 +97,7 @@ Mock gh {
 }
 ```
 
-### Git-Befehle mocken
+### 1.4.2 Git-Befehle mocken
 ```powershell
 Mock git { return 'v1.0.0-freeze' } -ParameterFilter {
     $args[0] -eq 'tag' -and $args[1] -eq '-l'
@@ -108,13 +108,13 @@ Mock git { return $null } -ParameterFilter {
 }
 ```
 
-### Verify: Mock wurde aufgerufen
+### 1.4.3 Verify: Mock wurde aufgerufen
 ```powershell
 Should -Invoke Invoke-RestMethod -Times 1 -Exactly
 Should -Invoke gh -Times 0  # Nicht aufgerufen
 ```
 
-## Assertions
+## 1.5 Assertions
 ```powershell
 $result | Should -Be 'value'
 $result | Should -BeExactly 'Value'       # Case-sensitive
@@ -132,7 +132,7 @@ $path | Should -Exist
 { code } | Should -Throw -ExceptionType ([System.IO.FileNotFoundException])
 ```
 
-## Tag-basierte selektive Ausführung
+## 1.6 Tag-basierte selektive Ausführung
 Tags an `It`-Blöcken vergeben und bei `Invoke-Pester` filtern:
 
 ```powershell
@@ -156,7 +156,7 @@ Invoke-Pester -ExcludeTag 'Slow', 'Integration'
 Invoke-Pester -Tag 'Unit' -ExcludeTag 'WIP'
 ```
 
-## TestDrive: — temporäres Dateisystem
+## 1.7 TestDrive: — temporäres Dateisystem
 `TestDrive:` ist ein pro-Test-Session bereinigtes virtuelles Laufwerk für Datei-System-Tests:
 
 ```powershell
@@ -178,7 +178,7 @@ It 'legt Verzeichnisstruktur an' {
 > `TestDrive:` wird nur innerhalb von Pester-Contexts aufgelöst.
 > Verwende `$TestDrive` (Variable) wenn du den absoluten Pfad brauchst.
 
-## Environment Variables in Tests
+## 1.8 Environment Variables in Tests
 ```powershell
 BeforeEach {
     $env:ISFEATUREFREEZE_OVERRIDE = $null
@@ -194,7 +194,7 @@ It 'Respects override' {
 }
 ```
 
-## CI-Konfiguration
+## 1.9 CI-Konfiguration
 ```powershell
 $config = New-PesterConfiguration
 $config.Run.Path = './Tests'
@@ -210,7 +210,7 @@ $config.TestResult.OutputPath = './TestResults.xml'
 Invoke-Pester -Configuration $config
 ```
 
-## Wichtige Regeln
+## 1.10 Wichtige Regeln
 - **Discovery Phase:** Code außerhalb von `BeforeAll`/`It` läuft in Discovery
 - **Mocks in `BeforeAll`** oder `BeforeEach`, nie auf Top-Level
 - **`InModuleScope`** für Private Functions — sonst nicht erreichbar

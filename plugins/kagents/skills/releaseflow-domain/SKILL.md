@@ -3,9 +3,9 @@ name: releaseflow-domain
 description: "K.Actions.ReleaseFlow process \u2014 branching model (feature \u2192 dev \u2192 release \u2192 main), phases (Alpha, Freeze, Beta, Stable), guardrails G1\u2013G5, KI-Verhaltensbeschr\u00e4nkungen (was KI darf/nicht darf), release-train planning, feature-freeze enforcement, pre-release tagging, smart tags. USE FOR: understanding ReleaseFlow branching, planning releases, checking phase rules, guardrails and AI behavior constraints. ALWAYS LOAD WHEN: prompts mention releaseflow, release train, plan-release, train status, phase detection, alpha, freeze, beta, stable, guardrail, auto-pr, promotion PR, tag strategy, or K.Actions.ReleaseFlow workflow activity. DO NOT USE FOR: changelog/tag creation (use release-management) or modifying ReleaseFlow code (use releaseflow-coding-patterns)."
 ---
 
-# ReleaseFlow – Domänenwissen
+# 1. ReleaseFlow – Domänenwissen
 
-## Überblick
+## 1.1 Überblick
 
 K.Actions.ReleaseFlow ist eine GitHub App + Composite Action + PowerShell-Modul für automatisierte Release-Orchestrierung. Phase-Detection erfolgt automatisch aus dem Branch-Kontext, verteilt auf separate Workflow-YMLs (Option A / getrennte Workflows, empfohlen).
 
@@ -13,7 +13,7 @@ K.Actions.ReleaseFlow ist eine GitHub App + Composite Action + PowerShell-Modul 
 
 **App-Version-Referenz:** Das Action-Repo ist privat (`GrexyLoco/K.Actions.ReleaseFlow@v1`). Consumer beziehen die Action per Cross-Repo-Checkout mit App-Token (siehe `releaseflow-coding-patterns`).
 
-## Branching-Modell
+## 1.2 Branching-Modell
 
 ```
 feature/* ──→ dev/vX.Y.Z ──→ release/vX.Y.Z ──→ master/main
@@ -22,7 +22,7 @@ fix/*     ──→ dev/vX.Y.Z     fix/* ──→ release/vX.Y.Z
                                          Backflow PRs ──→ offene dev/* + release/* Branches
 ```
 
-## Workflow-Architektur (getrennte YMLs pro Phase)
+## 1.3 Workflow-Architektur (getrennte YMLs pro Phase)
 
 | Workflow | Trigger | Zweck |
 |----------|---------|-------|
@@ -34,7 +34,7 @@ fix/*     ──→ dev/vX.Y.Z     fix/* ──→ release/vX.Y.Z
 | `branch-prefix-guard.yml` | PR-Events auf `dev/v*`, `release/v*`, `master`, `main` | Policy-Enforcement (erlaubte Prefixes) |
 | `push-sentinel.yml` | Push auf `dev/v*`, `release/v*`, `master`, `main` | Detective-Control (unerwartete Pushes → Audit-Issue) |
 
-## Phase Detection (automatisch aus PR-Kontext)
+## 1.4 Phase Detection (automatisch aus PR-Kontext)
 
 | Source Branch | Target Branch | Phase | Aktion |
 |---------------|---------------|-------|--------|
@@ -44,7 +44,7 @@ fix/*     ──→ dev/vX.Y.Z     fix/* ──→ release/vX.Y.Z
 | `fix/*` | `release/vX.Y.Z` | Beta | Beta-Tag (`vX.Y.Z-betaN`) + Pre-Release |
 | `release/vX.Y.Z` | `master`/`main` | Stable | Draft veröffentlichen + Smart Tags + Backflow PRs |
 
-### Phase-Detection durch `auto-pr.yml`
+### 1.4.1 Phase-Detection durch `auto-pr.yml`
 
 `auto-pr.yml` wählt den Target-Branch basierend auf:
 - **Draft-Intent** (`gh api releases` → Draft mit `vX.Y.Z` Tag)
@@ -56,7 +56,7 @@ fix/*     ──→ dev/vX.Y.Z     fix/* ──→ release/vX.Y.Z
 
 ⚠️ **Stale release/v\*-Branches täuschen Beta-Phase vor.** Wenn `release/vX.Y.Z` vor dem Freeze existiert, routet `auto-pr.yml` alle `fix/*`-PRs fälschlich dorthin.
 
-## Guardrails (G1–G5)
+## 1.5 Guardrails (G1–G5)
 
 | ID | Name | Prüft | Blockiert |
 |----|------|-------|-----------|
@@ -68,7 +68,7 @@ fix/*     ──→ dev/vX.Y.Z     fix/* ──→ release/vX.Y.Z
 
 **Fail-Fast:** Orchestrator bricht beim ersten fehlgeschlagenen Guardrail ab.
 
-## Release-Train-Planung (PO Dispatch)
+## 1.6 Release-Train-Planung (PO Dispatch)
 
 `New-ReleaseTrain -TargetVersion "2.0.0"` erstellt atomar:
 1. Draft-Release (Intent) mit Tag `v2.0.0`
@@ -76,7 +76,7 @@ fix/*     ──→ dev/vX.Y.Z     fix/* ──→ release/vX.Y.Z
 
 **PO-Guardrails:** PD-1 (Duplikat-Intent), PD-2 (Tag existiert), PD-3 (Branch existiert), PD-4 (Base existiert), PD-5 (Downgrade-Schutz)
 
-## Tagging-Strategie
+## 1.7 Tagging-Strategie
 
 | Tag-Typ | Format | Beispiel | Erstellt von |
 |---------|--------|----------|-------------|
@@ -88,7 +88,7 @@ fix/*     ──→ dev/vX.Y.Z     fix/* ──→ release/vX.Y.Z
 | Smart (Minor) | `vX.Y` | `v1.2` | K.PSGallery.Smartagr |
 | Latest | `latest` | `latest` | K.PSGallery.Smartagr |
 
-## Single-Freeze-Policy
+## 1.8 Single-Freeze-Policy
 
 Nur ein Release-Train darf gleichzeitig eingefroren sein.
 
@@ -97,7 +97,7 @@ Nur ein Release-Train darf gleichzeitig eingefroren sein.
 2. G5 blockiert `feature/*`, G3 erlaubt nur `fix/*`
 3. Stable Release → Freeze-Tag gelöscht, Draft veröffentlicht, Smart Tags, Backflow PRs
 
-## Token-Strategie
+## 1.9 Token-Strategie
 
 **Immer GitHub App Token** (nie PATs):
 - Scoped Permissions pro Repo
@@ -118,7 +118,7 @@ Nur ein Release-Train darf gleichzeitig eingefroren sein.
 
 Der zweite Repo (`K.Actions.ReleaseFlow`) im `repositories`-Scope ist für den Cross-Repo-Checkout der privaten Action nötig (#390).
 
-## Consumer-Onboarding
+## 1.10 Consumer-Onboarding
 
 1. GitHub App installieren → **4 Rulesets** werden automatisch deployed: `dev`, `release`, `main`, `tags`
 2. Config wird unter **`.github/releaseflow.json`** auto-seeded (`statusCheck.enabled`, `statusCheck.context`, `push_sentinel.allowed_bots`)
@@ -126,7 +126,7 @@ Der zweite Repo (`K.Actions.ReleaseFlow`) im `repositories`-Scope ist für den C
 4. Consumer setzt eigene `repository_dispatch`-Handler für Plugin-Metadata/Deployments (siehe Consumer-Hook-Pattern unten)
 5. Ersten Train via `Plan Release (PO Dispatch)` Workflow anlegen
 
-## Consumer-Hook-Pattern
+## 1.11 Consumer-Hook-Pattern
 
 Die Phasen-Workflows dispatchen nach jedem Release ein `repository_dispatch` Event mit `client_payload`. Consumer-Workflows reagieren darauf — typisch für:
 - Plugin-Metadata-Updates (JSON-Bump)
@@ -154,7 +154,7 @@ jobs:
       - run: echo "Deploying ${{ github.event.client_payload.tag }}"
 ```
 
-## Phase-Labels
+## 1.12 Phase-Labels
 
 `alpha-release.yml` und `beta-release.yml` parsen Closing-Keywords (`closes #N`, `fixes #N`, etc.) aus PR-Bodies und labeln die Issues:
 - `phase:in-alpha` nach Alpha-Merge
@@ -162,11 +162,11 @@ jobs:
 
 Issues bleiben **open** bis zum Stable-Merge — dann Bulk-Close via GitHub-Closing-Keywords im Stable-Promo-PR.
 
-## Milestone-Binding
+## 1.13 Milestone-Binding
 
 `auto-pr.yml` erkennt Issue-Nummern aus Branch-Namen-Pattern `fix/N-slug` bzw. `feature/N-slug` und ruft `action: resolve-milestone` auf → Issue wird automatisch an den aktiven Train-Milestone gebunden (#200).
 
-## Branch-Prefix-Policy (enforced durch `branch-prefix-guard.yml`)
+## 1.14 Branch-Prefix-Policy (enforced durch `branch-prefix-guard.yml`)
 
 | Head | Base | Erlaubt? |
 |------|------|----------|
@@ -178,7 +178,7 @@ Issues bleiben **open** bis zum Stable-Merge — dann Bulk-Close via GitHub-Clos
 
 Der **PR-Titel-Typ** (`FEAT:`, `FIX:`, `DOC:`, `REFACTOR:`) ist unabhängig vom Branch-Prefix.
 
-## Push-Sentinel (Defense-in-Depth)
+## 1.15 Push-Sentinel (Defense-in-Depth)
 
 `push-sentinel.yml` klassifiziert jeden Push auf geschützte Branches:
 - `pr-merge` — erkannte PR-Merge-Commits (silent)
@@ -195,7 +195,7 @@ Allowlist konfigurierbar in `.github/releaseflow.json`:
 }
 ```
 
-## Action-Interface
+## 1.16 Action-Interface
 
 `./.releaseflow` Composite Action akzeptiert:
 - `action`: `release` (Default, Phase-Detection) | `plan-release` | `resolve-milestone`
@@ -204,7 +204,7 @@ Allowlist konfigurierbar in `.github/releaseflow.json`:
 - `base` (nur für `plan-release`, default `latest-stable`)
 - `issue-number` + `branch-name` (nur für `resolve-milestone`)
 
-## Outputs der Action
+## 1.17 Outputs der Action
 
 | Output | Beschreibung | Verfügbar bei |
 |--------|-------------|---------------|
@@ -222,9 +222,9 @@ Allowlist konfigurierbar in `.github/releaseflow.json`:
 | `milestone-title` | Milestone-Titel | plan-release |
 | `error-message` | Fehlermeldung bei Guardrail-Fehler | Bei Fehler |
 
-## KI-Verhalten im ReleaseFlow-Kontext
+## 1.18 KI-Verhalten im ReleaseFlow-Kontext
 
-### Was ReleaseFlow AUTOMATISCH erledigt (KI nicht eingreifen!)
+### 1.18.1 Was ReleaseFlow AUTOMATISCH erledigt (KI nicht eingreifen!)
 
 | Aktion | Trigger | Wer |
 |--------|---------|-----|
@@ -238,7 +238,7 @@ Allowlist konfigurierbar in `.github/releaseflow.json`:
 | Dev-Branch + Milestone | `plan-release.yml` Dispatch | `k-releaseflow[bot]` |
 | Auto-PR auf aktiven Train | Push auf `feature/**` oder `fix/**` | `auto-pr.yml` |
 
-### Train-Status prüfen (konkrete Befehle)
+### 1.18.2 Train-Status prüfen (konkrete Befehle)
 
 ```powershell
 # Aktive Releases / Phase bestimmen
@@ -266,7 +266,7 @@ gh run list --repo OWNER/REPO --limit 5
 | `-betaN` | Beta läuft |
 | (clean, z.B. `v1.2.0`) | Stable — kein aktiver Train |
 
-### Was die KI TUN DARF
+### 1.18.3 Was die KI TUN DARF
 
 | Aktion | Befehl |
 |--------|--------|
@@ -282,7 +282,7 @@ gh run list --repo OWNER/REPO --limit 5
 - CI-Status nach Commit: Warten ~2 Minuten, dann prüfen — Intervall ≥ 5 Minuten
 - Phase-Progression nach Merge: Warten ~1 Minute, dann prüfen — Intervall ≥ 3 Minuten
 
-### Was die KI NIEMALS tun darf
+### 1.18.4 Was die KI NIEMALS tun darf
 
 | Verbotene Aktion | Konsequenz |
 |------------------|------------|

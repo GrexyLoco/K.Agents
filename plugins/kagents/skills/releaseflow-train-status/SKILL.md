@@ -5,7 +5,7 @@ description: "Aktuellen ReleaseFlow-Train-Status abfragen — Phase, erlaubte Br
   welche Phase aktiv ist, ob ein Push erlaubt ist, Freeze-Readiness."
 ---
 
-# ReleaseFlow Train-Status
+# 1. ReleaseFlow Train-Status
 
 Führe aus:
 ```powershell

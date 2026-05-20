@@ -3,13 +3,13 @@ name: inline-documentation
 description: Inline-Dokumentation — Workarounds, Business Rules, Wann/Wann-nicht kommentieren. USE FOR: deciding when to add code comments, explaining workarounds and business rules, enforcing comment discipline. DO NOT USE FOR: method-level docs (use api-documentation) or README content (use readme-patterns).
 ---
 
-# Inline-Dokumentation
+# 1. Inline-Dokumentation
 
-## When to Comment
+## 1.1 When to Comment
 
 **Kommentare schreiben für:**
 
-### 1. Workarounds mit Bug-Referenz
+### 1.1.1 Workarounds mit Bug-Referenz
 ```csharp
 // Workaround: DateOnly.FromDateTime() throws for dates before 1900
 // See: https://github.com/dotnet/runtime/issues/50476
@@ -17,7 +17,7 @@ description: Inline-Dokumentation — Workarounds, Business Rules, Wann/Wann-nic
 var dateOnly = new DateTime(year, month, day).Date.TryConvert();
 ```
 
-### 2. Non-obvious Business Rules
+### 1.1.2 Non-obvious Business Rules
 ```csharp
 // Invoices for government agencies must use VAT ID format,
 // not tax number. User discovered this during audit – keep explicit.
@@ -25,7 +25,7 @@ if (customer.IsGovernmentAgency)
     line.VatIdFormat = VatIdFormat.FullFormat;
 ```
 
-### 3. Subtle Invariants (Ordering, State)
+### 1.1.3 Subtle Invariants (Ordering, State)
 ```csharp
 // MUST cache user roles AFTER permission sync completes.
 // If cached before, stale permissions cause authorization failures.
@@ -34,7 +34,7 @@ await service.SyncPermissionsAsync();
 _roleCache = FetchRoles();
 ```
 
-### 4. Performance Trade-off Justifications
+### 1.1.4 Performance Trade-off Justifications
 ```csharp
 // Loading all items into memory (slow for huge lists) because
 // we need to sort by computed field (TotalRevenue).
@@ -43,11 +43,11 @@ var items = await service.GetAllAsync();
 var sorted = items.OrderByDescending(x => x.Orders.Sum(o => o.Amount)).ToList();
 ```
 
-## When NOT to Comment
+## 1.2 When NOT to Comment
 
 **Nicht kommentieren:**
 
-### Self-documenting Code
+### 1.2.1 Self-documenting Code
 ```csharp
 // ❌ DON'T:
 // Calculate the sum
@@ -57,7 +57,7 @@ var total = items.Sum(x => x.Price);
 var totalPrice = items.Sum(x => x.Price);
 ```
 
-### Obvious Implementations
+### 1.2.2 Obvious Implementations
 ```csharp
 // ❌ DON'T:
 // Increment counter
@@ -67,7 +67,7 @@ count++;
 successCount++;
 ```
 
-### Commented-out Code
+### 1.2.3 Commented-out Code
 ```csharp
 // ❌ DON'T:
 // var oldWay = DateTime.Now.AddDays(1);
@@ -77,7 +77,7 @@ successCount++;
 var expiresAt = DateTime.UtcNow.AddHours(24);
 ```
 
-### TODO ohne Issue-Referenz
+### 1.2.4 TODO ohne Issue-Referenz
 ```csharp
 // ❌ DON'T:
 // TODO: Optimize this loop
@@ -86,7 +86,7 @@ var expiresAt = DateTime.UtcNow.AddHours(24);
 // TODO (Issue #1234): Optimize this loop – currently O(n²), should be O(n log n)
 ```
 
-## Comment Culture
+## 1.3 Comment Culture
 
 **Rule: Comments explain "Why" – not "What"**
 
@@ -106,9 +106,9 @@ var user = new User(request) { CreatedAt = DateTime.UtcNow };
 - Be concise – 1–3 lines max
 - German or English, consistent per file
 
-## Example Patterns
+## 1.4 Example Patterns
 
-### Good: Documented Workaround
+### 1.4.1 Good: Documented Workaround
 ```csharp
 // Workaround for .NET Framework regex timeout issue
 // (https://github.com/dotnet/runtime/issues/1234)
@@ -120,19 +120,19 @@ if (input.Length > MaxPatternLength)
 var match = Regex.Match(input, pattern, RegexOptions.None, TimeSpan.FromSeconds(1));
 ```
 
-### Good: Business Rule
+### 1.4.2 Good: Business Rule
 ```csharp
 // Per finance dept (Issue #567): Premium users get 14-day trial,
 // others get 7-day. This is contractual, not a technical decision.
 var trialDays = customer.IsPremium ? 14 : 7;
 ```
 
-### Bad: No Comment Needed
+### 1.4.3 Bad: No Comment Needed
 ```csharp
 var isActive = user.Status == Status.Active && !user.IsDeleted;
 ```
 
-### Bad: Documenting the Wrong Thing
+### 1.4.4 Bad: Documenting the Wrong Thing
 ```csharp
 // ❌ DON'T comment what (code shows this):
 // Parse the JSON
@@ -145,7 +145,7 @@ var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 var data = JsonSerializer.Deserialize<Data>(json, options);
 ```
 
-## Guidelines
+## 1.5 Guidelines
 
 - **Density:** ~1 comment per 10–20 lines of code (not per line)
 - **Placement:** Above the code block it explains, not at end of line
