@@ -1,6 +1,6 @@
-# Contributing
+# 1. Contributing
 
-## Neuen Agent hinzufügen
+## 1.1 Neuen Agent hinzufügen
 
 1. Erstelle `plugins/kagents/agents/[name].agent.md`
 2. YAML-Frontmatter mit `name`, `description`, `tools`, `model`, optional `handoffs`
@@ -8,7 +8,7 @@
 4. Aktualisiere `plugins/kagents/.github/plugin.json`
 5. Aktualisiere `README.md` (Agents-Tabelle)
 
-## Neuen Skill hinzufügen
+## 1.2 Neuen Skill hinzufügen
 
 1. Erstelle Ordner `plugins/kagents/skills/[skill-name]/`
 2. Erstelle `SKILL.md` mit YAML-Frontmatter (`name`, `description`)
@@ -16,7 +16,7 @@
 4. Aktualisiere `plugins/kagents/.github/plugin.json` (skills-Array)
 5. Aktualisiere `README.md` (Skills-Tabelle)
 
-## OSS-Skill adaptieren
+## 1.3 OSS-Skill adaptieren
 
 Wenn ein Skill aus einem externen Repo stammt:
 
@@ -27,14 +27,14 @@ Wenn ein Skill aus einem externen Repo stammt:
    - Englische Beispiele beibehalten, deutsche Kommentare wo nötig
 3. In `README.md` unter "OSS-adaptierte Skills" eintragen
 
-## Konventionen
+## 1.4 Konventionen
 
-### Sprache
+### 1.4.1 Sprache
 - **Code:** Englisch
 - **Dokumentation, Kommentare, SKILL.md-Beschreibungen:** Deutsch
 - **YAML-Frontmatter `description`:** Deutsch
 
-### Commits
+### 1.4.2 Commits
 ```
 feat(agent): Neuen Security Auditor Agent hinzugefügt
 fix(skill): TUnit-Pattern für Playwright korrigiert
@@ -42,7 +42,7 @@ docs(readme): Skill-Tabelle aktualisiert
 chore(plugin): plugin.json um neuen Skill ergänzt
 ```
 
-### Qualitätskriterien für Skills
+### 1.4.3 Qualitätskriterien für Skills
 - [ ] YAML-Frontmatter vollständig (`name`, `description`)
 - [ ] `description` beschreibt wann der Skill genutzt werden soll
 - [ ] Code-Beispiele kompilierbar (C#) / ausführbar (PowerShell)
@@ -50,7 +50,7 @@ chore(plugin): plugin.json um neuen Skill ergänzt
 - [ ] xUnit/NUnit-Beispiele nach TUnit konvertiert (wenn Testing-Skill)
 - [ ] Quell-Attribution bei OSS-adaptierten Skills
 
-### Qualitätskriterien für Agents
+### 1.4.4 Qualitätskriterien für Agents
 - [ ] YAML-Frontmatter: `name`, `description`, `tools`, `model`
 - [ ] `description` beschreibt den Trigger (wann wird dieser Agent genutzt?)
 - [ ] Handoffs definiert (wenn sinnvoll)

@@ -3,12 +3,12 @@ name: playwright-blazor-testing
 description: "Blazor E2E testing with Playwright and TUnit — TUnit.Playwright, browser automation, WebApplication test fixtures, Blazor rendering waits, screenshot capture on failure. USE FOR: writing end-to-end UI tests for Blazor apps, setting up Playwright test fixtures with TUnit. DO NOT USE FOR: Blazor component logic (use blazor-patterns), unit tests (use tunit-patterns), or Aspire integration tests (use aspire-integration-testing)."
 ---
 
-# Playwright Blazor Testing (TUnit-Adaption)
+# 1. Playwright Blazor Testing (TUnit-Adaption)
 
 Adaptiert von: [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) (MIT)
 **Angepasst für TUnit** (nicht xUnit wie im Original).
 
-## Setup
+## 1.1 Setup
 ```xml
 <PackageReference Include="TUnit" Version="*" />
 <PackageReference Include="TUnit.Playwright" Version="*" />
@@ -20,7 +20,7 @@ Adaptiert von: [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/do
 pwsh bin/Debug/net10.0/playwright.ps1 install chromium
 ```
 
-## TUnit + Playwright Basis-Pattern
+## 1.2 TUnit + Playwright Basis-Pattern
 ```csharp
 using TUnit.Core;
 using TUnit.Playwright;
@@ -37,9 +37,9 @@ public async Task HomePage_LoadsSuccessfully(BlazorAppFixture app)
 }
 ```
 
-## Blazor-spezifische Patterns
+## 1.3 Blazor-spezifische Patterns
 
-### Auf Blazor-Rendering warten
+### 1.3.1 Auf Blazor-Rendering warten
 ```csharp
 // Warten bis Blazor fertig gerendert hat
 await page.WaitForSelectorAsync("[data-blazor-rendered='true']");
@@ -48,7 +48,7 @@ await page.WaitForSelectorAsync("[data-blazor-rendered='true']");
 await page.WaitForSelectorAsync(".user-list-loaded");
 ```
 
-### Interaktive Komponenten testen
+### 1.3.2 Interaktive Komponenten testen
 ```csharp
 [Test]
 [ClassDataSource<BlazorAppFixture>(Shared = SharedType.PerTestSession)]
@@ -68,7 +68,7 @@ public async Task UserForm_SubmitCreatesUser(BlazorAppFixture app)
 }
 ```
 
-### Screenshot bei Fehler (TUnit After-Hook)
+### 1.3.3 Screenshot bei Fehler (TUnit After-Hook)
 ```csharp
 [After(Test)]
 public async Task CaptureScreenshotOnFailure(TestContext context)
@@ -81,7 +81,7 @@ public async Task CaptureScreenshotOnFailure(TestContext context)
 }
 ```
 
-## Test-Fixture
+## 1.4 Test-Fixture
 ```csharp
 public class BlazorAppFixture : IAsyncDisposable
 {
@@ -112,7 +112,7 @@ public class BlazorAppFixture : IAsyncDisposable
 }
 ```
 
-## CI-Integration (GitHub Actions)
+## 1.5 CI-Integration (GitHub Actions)
 ```yaml
 - name: Install Playwright Browsers
   shell: pwsh

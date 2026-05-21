@@ -1,4 +1,4 @@
-# ADR-0001: Sprachenwahl – Python für K.Switchboard
+# 1. ADR-0001: Sprachenwahl – Python für K.Switchboard
 
 - **Status:** Angenommen
 - **Datum:** 2025-07-17
@@ -7,13 +7,13 @@
 
 ---
 
-## Kontext
+## 1.1 Kontext
 
 K.Switchboard ist ein HTTP-Proxy, der Anfragen von KI-Tools (Claude CLI, Claude Code Extension, VS Code Copilot Chat) transparent an Anthropic oder Ollama weiterleitet. Das Projekt startete im Rahmen der K.Agents-Monorepo-Infrastruktur, die primär auf .NET, Blazor und PowerShell setzt.
 
 Für den Switchboard-Kern musste eine Implementierungssprache gewählt werden.
 
-### Anforderungen
+### 1.1.1 Anforderungen
 
 | Nr. | Anforderung |
 |-----|-------------|
@@ -26,15 +26,15 @@ Für den Switchboard-Kern musste eine Implementierungssprache gewählt werden.
 
 ---
 
-## Entscheidung
+## 1.2 Entscheidung
 
 **Python 3.11+** mit **FastAPI 0.115+** und **httpx** (async HTTP-Client).
 
 ---
 
-## Alternativen
+## 1.3 Alternativen
 
-### Option A: Python (FastAPI + httpx) ✅ Gewählt
+### 1.3.1 Option A: Python (FastAPI + httpx) ✅ Gewählt
 
 **Pro:**
 - FastAPI bietet native async/await-Unterstützung mit minimalem Boilerplate
@@ -49,7 +49,7 @@ Für den Switchboard-Kern musste eine Implementierungssprache gewählt werden.
 - Typannotierungen optional (obwohl im Projekt konsequent eingesetzt)
 - Python-Interpreter auf Zielmaschine erforderlich
 
-### Option B: ASP.NET Core Minimal API (C#)
+### 1.3.2 Option B: ASP.NET Core Minimal API (C#)
 
 **Pro:**
 - Kongruent mit dem Haupt-Stack
@@ -62,7 +62,7 @@ Für den Switchboard-Kern musste eine Implementierungssprache gewählt werden.
 - Längerer Build-Zyklus (dotnet build/publish)
 - Für diesen Use Case unverhältnismäßig viel Boilerplate
 
-### Option C: Node.js (Express / Fastify)
+### 1.3.3 Option C: Node.js (Express / Fastify)
 
 **Pro:**
 - V8-basierte Event-Loop ideal für I/O-bound Proxies
@@ -73,7 +73,7 @@ Für den Switchboard-Kern musste eine Implementierungssprache gewählt werden.
 - TypeScript-Konfigurationsaufwand
 - Schwächere Typsicherheit ohne aufwändiges Setup
 
-### Option D: Go
+### 1.3.4 Option D: Go
 
 **Pro:**
 - Sehr geringe Latenz
@@ -85,24 +85,24 @@ Für den Switchboard-Kern musste eine Implementierungssprache gewählt werden.
 
 ---
 
-## Konsequenzen
+## 1.4 Konsequenzen
 
-### Positive Konsequenzen
+### 1.4.1 Positive Konsequenzen
 - Schnelle Implementierung dank FastAPI-Routing und httpx-Streaming
 - `uv` ermöglicht reproduzierbare Environments ohne systemweite Python-Installation
 - Pester-Tests in CI laufen parallel zu pytest ohne Konflikte
 
-### Negative Konsequenzen / Risiken
+### 1.4.2 Negative Konsequenzen / Risiken
 - Das Monorepo hat jetzt zwei primäre Laufzeiten (.NET und Python). Für neue Entwickler erhöht sich die Onboarding-Last minimal.
 - Python-Version muss explizit verwaltet werden (aktuell: `>=3.11`, in `pyproject.toml` festgelegt).
 
-### Grenzen dieser Entscheidung
+### 1.4.3 Grenzen dieser Entscheidung
 - Gilt nur für K.Switchboard. Alle anderen Komponenten im Monorepo (Blazor, MAUI, Minimal APIs, CI-Scripts) bleiben .NET/PowerShell.
 - Diese Entscheidung kann revidiert werden, wenn der Proxy-Layer in eine eigenständige Infrastrukturkomponente mit anderen Anforderungen wächst.
 
 ---
 
-## Einhaltung
+## 1.5 Einhaltung
 
 - Python-Version: `>=3.11` (in `pyproject.toml` unter `requires-python`)
 - Paketmanager: `uv` (kein pip/conda direkt in CI)

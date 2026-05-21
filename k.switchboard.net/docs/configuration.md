@@ -1,4 +1,4 @@
-# Konfigurationsreferenz
+# 1. Konfigurationsreferenz
 
 <!-- markdownlint-disable MD033 -->
 
@@ -8,7 +8,7 @@ K.Switchboard liest seine Konfiguration aus `%APPDATA%\K.Switchboard\config.json
 
 <a id="port"></a>
 
-## Port
+## 1.1 Port
 
 ```json
 "Port": 3456
@@ -24,7 +24,7 @@ Der TCP-Port, auf dem K.Switchboard HTTP-Anfragen entgegennimmt.
 
 <a id="anthropic-base-url"></a>
 
-## AnthropicBaseUrl
+## 1.2 AnthropicBaseUrl
 
 ```json
 "AnthropicBaseUrl": "https://api.anthropic.com"
@@ -40,7 +40,7 @@ Basis-URL des Anthropic-API-Endpunkts. Alle Anthropic-Anfragen werden an `{Anthr
 
 <a id="ollama-base-url"></a>
 
-## OllamaBaseUrl
+## 1.3 OllamaBaseUrl
 
 ```json
 "OllamaBaseUrl": "http://localhost:11434"
@@ -56,7 +56,7 @@ Basis-URL des lokalen Ollama-Endpunkts. Anfragen für Modelle mit `:` im Namen (
 
 <a id="model-aliases"></a>
 
-## ModelAliases
+## 1.4 ModelAliases
 
 ```json
 "ModelAliases": {
@@ -76,7 +76,7 @@ Alias-Mapping von beliebigen Kurznamen auf vollständige Modellnamen. Ein Client
 
 <a id="fallback-chains"></a>
 
-## FallbackChains
+## 1.5 FallbackChains
 
 ```json
 "FallbackChains": {
@@ -95,7 +95,7 @@ Definiert Fallback-Ketten pro Modell. Bei einem HTTP-Fehler (4xx/5xx) oder Netzw
 
 <a id="pricing"></a>
 
-## Pricing
+## 1.6 Pricing
 
 ```json
 "Pricing": {
@@ -117,7 +117,7 @@ Kosten pro Modell in USD pro Million Tokens. Wird für den `/stats`-Endpoint ver
 **Hinweis:** Nur Anthropic-Modelle liefern Token-Counts im Response-Body. Ollama-Aufrufe werden nicht in Kosten umgerechnet.  
 **Preisreferenz:** [Anthropic Pricing](https://www.anthropic.com/pricing#anthropic-api)
 
-### /stats-Antwortformat
+### 1.6.1 /stats-Antwortformat
 
 ```json
 {
@@ -139,7 +139,7 @@ Statistiken werden täglich in `%APPDATA%\K.Switchboard\costs-yyyy-MM-dd.json` g
 
 <a id="full-example"></a>
 
-## Vollständiges Beispiel
+## 1.7 Vollständiges Beispiel
 
 ```json
 {

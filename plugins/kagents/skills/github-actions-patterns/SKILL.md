@@ -3,9 +3,9 @@ name: github-actions-patterns
 description: "GitHub Actions workflow patterns — reusable workflows, composite actions, GitHub App Token, least-privilege permissions, matrix builds, caching, Quality Gate pipelines, pwsh shell. USE FOR: creating CI/CD workflows, optimizing pipeline structure, implementing GitHub Actions best practices. DO NOT USE FOR: analyzing failed workflow runs (use github-actions-debugging) or release branching strategy (use releaseflow-domain)."
 ---
 
-# GitHub Actions Patterns
+# 1. GitHub Actions Patterns
 
-## Reusable + Direct Trigger Pattern (Quality Gate Stil)
+## 1.1 Reusable + Direct Trigger Pattern (Quality Gate Stil)
 ```yaml
 # Kann als workflow_call UND direkt als pull_request genutzt werden
 on:
@@ -19,7 +19,7 @@ on:
         value: ${{ jobs.quality-gate.outputs.quality-success }}
 ```
 
-## GitHub App Token (statt PAT)
+## 1.2 GitHub App Token (statt PAT)
 ```yaml
 - name: Generate App Token
   id: app-token
@@ -42,7 +42,7 @@ on:
 - Downstream-Trigger für `on: push` Workflows
 - Kein Risiko bei Mitarbeiterwechsel
 
-## Quality Gate Pipeline-Muster
+## 1.3 Quality Gate Pipeline-Muster
 ```yaml
 jobs:
   quality-gate:
@@ -66,12 +66,12 @@ jobs:
     # ...
 ```
 
-## Runner-Version konfigurierbar
+## 1.4 Runner-Version konfigurierbar
 ```yaml
 runs-on: ${{ vars.UBUNTU_VERSION || 'ubuntu-24.04' }}
 ```
 
-## Permissions (Least-Privilege)
+## 1.5 Permissions (Least-Privilege)
 ```yaml
 permissions:
   contents: read
@@ -80,7 +80,7 @@ permissions:
 ```
 Nur `write` vergeben wenn der Job tatsächlich schreibt (Tags, PRs, Commits).
 
-## PowerShell in Actions
+## 1.6 PowerShell in Actions
 ```yaml
 - name: Run Script
   shell: pwsh   # NICHT 'powershell'!
@@ -89,7 +89,7 @@ Nur `write` vergeben wenn der Job tatsächlich schreibt (Tags, PRs, Commits).
     & "./.github/scripts/Run-PesterTests.ps1"
 ```
 
-## CI-Scripts auslagern (.github/scripts/)
+## 1.7 CI-Scripts auslagern (.github/scripts/)
 Komplexe Logik gehört nicht inline ins YAML — auslagern in `.github/scripts/`:
 ```yaml
 - name: Quality Gate auswerten
@@ -100,14 +100,14 @@ Komplexe Logik gehört nicht inline ins YAML — auslagern in `.github/scripts/`
       -LintSuccess     '${{ steps.lint.outputs.analysis-success }}'
 ```
 
-## Outputs aus PowerShell setzen
+## 1.8 Outputs aus PowerShell setzen
 ```powershell
 if ($env:GITHUB_OUTPUT) {
     "quality-success=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 }
 ```
 
-## Conditional Jobs mit Source-Branch-Filter
+## 1.9 Conditional Jobs mit Source-Branch-Filter
 ```yaml
 release:
   if: |
@@ -117,7 +117,7 @@ release:
     ) || github.event_name == 'workflow_dispatch'
 ```
 
-## Badge-Updates als separater Job
+## 1.10 Badge-Updates als separater Job
 ```yaml
 update-badges:
   needs: [quality-gate, release]
@@ -125,7 +125,7 @@ update-badges:
   continue-on-error: true  # Darf Pipeline nicht blockieren
 ```
 
-## Matrix Build
+## 1.11 Matrix Build
 ```yaml
 strategy:
   matrix:
@@ -134,7 +134,7 @@ strategy:
 runs-on: ${{ matrix.os }}
 ```
 
-## Caching
+## 1.12 Caching
 ```yaml
 - uses: actions/cache@v4
   with:
@@ -143,7 +143,7 @@ runs-on: ${{ matrix.os }}
     restore-keys: ${{ runner.os }}-nuget-
 ```
 
-## Security
+## 1.13 Security
 - Actions auf SHA pinnen (nicht nur Tag)
 - `permissions:` Block immer explizit setzen
 - Secrets nie in Logs: `::add-mask::${{ secrets.TOKEN }}`

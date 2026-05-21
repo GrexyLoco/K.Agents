@@ -3,22 +3,22 @@ name: releaseflow-coding-patterns
 description: "K.Actions.ReleaseFlow implementation patterns — unified Result-Objects, version-handler pattern, GitHub Actions output helpers, New-TestContext test factory, dot-sourcing conventions, strict mode boilerplate. USE FOR: implementing or modifying K.Actions.ReleaseFlow module code, following ReleaseFlow-specific coding conventions. DO NOT USE FOR: general PowerShell design (use powershell-module-design), general Pester tests (use pester-patterns), or ReleaseFlow process knowledge (use releaseflow-domain)."
 ---
 
-# ReleaseFlow Coding Patterns
+# 1. ReleaseFlow Coding Patterns
 
-## PowerShell-Modul-Konventionen
+## 1.1 PowerShell-Modul-Konventionen
 
-### Datei-Header (Pflicht an jeder .ps1 Datei)
+### 1.1.1 Datei-Header (Pflicht an jeder .ps1 Datei)
 ```powershell
 #Requires -Version 7.4
 ```
 
-### Strict Mode (Pflicht in Scripts und .psm1)
+### 1.1.2 Strict Mode (Pflicht in Scripts und .psm1)
 ```powershell
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 ```
 
-### Modul-Struktur
+### 1.1.3 Modul-Struktur
 ```
 ModuleName/
 ├── ModuleName.psd1              # Manifest
@@ -39,7 +39,7 @@ ModuleName/
 └── action.yml                   # GitHub Action Interface
 ```
 
-### Dot-Sourcing-Reihenfolge im .psm1
+### 1.1.4 Dot-Sourcing-Reihenfolge im .psm1
 ```powershell
 $script:ModuleRoot = $PSScriptRoot
 
@@ -65,7 +65,7 @@ foreach ($file in $publicFunctions) {
 }
 ```
 
-### Function-Pattern (Guardrail-Stil)
+### 1.1.5 Function-Pattern (Guardrail-Stil)
 Jede Guardrail-Function gibt ein einheitliches Result-Object zurück:
 ```powershell
 [PSCustomObject]@{
@@ -75,22 +75,22 @@ Jede Guardrail-Function gibt ein einheitliches Result-Object zurück:
 }
 ```
 
-### GitHub Actions Output-Pattern
+### 1.1.6 GitHub Actions Output-Pattern
 ```powershell
 if ($env:GITHUB_OUTPUT) {
     "output-name=$value" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 }
 ```
 
-### Version-Handler-Pattern
+### 1.1.7 Version-Handler-Pattern
 Separate Handler pro Projekttyp in `Functions/Private/Handlers/`:
 - `Update-PowerShellVersion.ps1` → `.psd1` (ModuleVersion, Prerelease)
 - `Update-DotNetVersion.ps1` → `.csproj` / `Directory.Build.props` (VersionPrefix, VersionSuffix)
 - Commit mit `[skip ci]` um Endlosschleifen zu verhindern
 
-## Pester-Test-Konventionen
+## 1.2 Pester-Test-Konventionen
 
-### Test-Helper-Pattern
+### 1.2.1 Test-Helper-Pattern
 ```powershell
 #region Helper Functions (Script Scope)
 
@@ -118,7 +118,7 @@ function script:New-TestContext {
 #endregion
 ```
 
-### InModuleScope-Pattern für Private Functions
+### 1.2.2 InModuleScope-Pattern für Private Functions
 ```powershell
 InModuleScope $script:TestModule.Name -Parameters @{ Context = $ctx } {
     param($Context)
@@ -127,7 +127,7 @@ InModuleScope $script:TestModule.Name -Parameters @{ Context = $ctx } {
 }
 ```
 
-### Mock-Pattern für GitHub CLI (`gh`)
+### 1.2.3 Mock-Pattern für GitHub CLI (`gh`)
 ```powershell
 Mock gh {
     $script:LASTEXITCODE = 0
@@ -147,17 +147,17 @@ Mock gh {
 }
 ```
 
-### Mock-Pattern für Git-Befehle
+### 1.2.4 Mock-Pattern für Git-Befehle
 ```powershell
 Mock git { return 'v1.0.0-freeze' } -ParameterFilter { $args[0] -eq 'tag' -and $args[1] -eq '-l' }
 ```
 
-### Test-Datei-Benennung
+### 1.2.5 Test-Datei-Benennung
 - `ModuleName.Feature.Tests.ps1` (z.B. `K.Actions.ReleaseFlow.Guardrails.Tests.ps1`)
 - `FunctionName.Tests.ps1` (z.B. `New-FreezeRelease.Tests.ps1`)
 - `ScriptName.Tests.ps1` (z.B. `Invoke-QualityGateEvaluation.Tests.ps1`)
 
-### BeforeAll/AfterAll-Pattern
+### 1.2.6 BeforeAll/AfterAll-Pattern
 ```powershell
 BeforeAll {
     $modulePath = Join-Path $PSScriptRoot '..' 'K.Actions.ReleaseFlow.psd1'
@@ -171,7 +171,7 @@ AfterAll {
 }
 ```
 
-## Quality Gate Workflow-Pattern
+## 1.3 Quality Gate Workflow-Pattern
 
 ```yaml
 # Wiederverwendbar als workflow_call UND direkt als pull_request
@@ -185,7 +185,7 @@ on:
         value: ${{ jobs.quality-gate.outputs.quality-success }}
 ```
 
-### Quality Gate Steps (Reihenfolge)
+### 1.3.1 Quality Gate Steps (Reihenfolge)
 1. Checkout (fetch-depth: 0)
 2. Action-Metadaten ermitteln
 3. GitLeaks Security Scan
@@ -195,7 +195,7 @@ on:
 7. Quality Gate Evaluation (aggregiert alle Ergebnisse)
 8. Summary schreiben
 
-### PSScriptAnalyzer-Konfiguration
+### 1.3.2 PSScriptAnalyzer-Konfiguration
 ```powershell
 @{
     Severity = @('Error', 'Warning')  # Information ignorieren
@@ -203,7 +203,7 @@ on:
 }
 ```
 
-## CI-Script-Konventionen (.github/scripts/)
+## 1.4 CI-Script-Konventionen (.github/scripts/)
 
 - Jedes Script hat Comment-Based Help (`.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.OUTPUTS`, `.EXAMPLE`)
 - `[CmdletBinding()]` + `param()` Block
@@ -211,9 +211,9 @@ on:
 - Keine `Write-Host` — verwende `Write-Information`, `Write-Verbose`, `Write-Output`
 - Exit-Codes: `exit 0` (Erfolg), `exit 1` (Fehler)
 
-## Consumer-Integration-Pattern
+## 1.5 Consumer-Integration-Pattern
 
-### Action-Interface
+### 1.5.1 Action-Interface
 
 `./.releaseflow` Composite Action (nach Cross-Repo-Checkout) akzeptiert:
 
@@ -226,7 +226,7 @@ on:
 | `issue-number` | Issue-Nr. | Nur für `resolve-milestone` |
 | `branch-name` | Branch-Name | Nur für `resolve-milestone` |
 
-### Cross-Repo-Checkout-Pattern (#390)
+### 1.5.2 Cross-Repo-Checkout-Pattern (#390)
 
 `K.Actions.ReleaseFlow` ist ein privates Repo, daher ist `uses: GrexyLoco/K.Actions.ReleaseFlow@v1` auf Consumer-Runnern nicht auflösbar. Die Workflows holen den Action-Code explizit mit App-Token ab:
 
@@ -257,7 +257,7 @@ on:
     action: release
 ```
 
-### Consumer-Hook-Workflow-Pattern (repository_dispatch)
+### 1.5.3 Consumer-Hook-Workflow-Pattern (repository_dispatch)
 
 Für Plugin-Metadata-Bumps, Deployments, Notifications:
 

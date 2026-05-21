@@ -3,25 +3,144 @@ name: Consumer Hooks
 # Reagiert auf repository_dispatch-Events der ReleaseFlow-App.
 # Übernimmt die Plugin-spezifische Logik, die nicht in den generischen
 # ReleaseFlow-Workflows enthalten ist:
-#   - Version-Bump in plugin.json, marketplace.json, .claude-plugin/marketplace.json
-#   - [skip ci]-Commit auf master
+#   - Version-Bump in allen 4 Plugin-JSONs (strict SemVer, kein v-Präfix)
+#   - Bump VOR Merge via releaseflow-prepare-promotion (Tag und Manifest atomar)
+#   - Fallback-Bump auf master nach Stable via releaseflow-stable
 #
 # Aktuelle Hooks:
-#   - releaseflow-stable → update-plugin-metadata
-#
-# Known-Issue (Issue folgt): JSON-Bump läuft NACH dem Stable-Tag — Konsistent
-# mit dem alten Push-on-master-Modell, aber Tag vX.Y.Z zeigt auf einen Commit
-# mit alter Plugin-JSON-Version. Marketplace-Installation per Tag liefert daher
-# plugin.json = (X.Y.Z-1). Fix erfordert Upstream-Änderung in ReleaseFlow
-# (Pre-Release-Hook oder JSON-Bump im Promotion-PR).
+#   - releaseflow-prepare-promotion → bump-on-promotion-pr  (K.Actions.ReleaseFlow v1.10+)
+#   - releaseflow-stable           → update-plugin-metadata (Fallback / Safety-Net)
 on:
   repository_dispatch:
     types:
+      - releaseflow-prepare-promotion
       - releaseflow-stable
 
 jobs:
+  bump-on-promotion-pr:
+    name: Manifest-Bump auf Promotion-PR-Branch
+    if: github.event.action == 'releaseflow-prepare-promotion'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Validate payload
+        shell: bash
+        env:
+          NEW_VERSION: ${{ github.event.client_payload.version }}
+          PR_BRANCH: ${{ github.event.client_payload.pr_branch }}
+          PHASE: ${{ github.event.client_payload.phase }}
+        run: |
+          if [ -z "$NEW_VERSION" ] || [ -z "$PR_BRANCH" ]; then
+            echo "::error::Invalid payload: version='$NEW_VERSION', pr_branch='$PR_BRANCH', phase='$PHASE'"
+            exit 1
+          fi
+          echo "Prepare-promotion: phase=$PHASE branch=$PR_BRANCH version=$NEW_VERSION"
+
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASEFLOW_APP_ID }}
+          private-key: ${{ secrets.RELEASEFLOW_APP_PRIVATE_KEY }}
+          owner: GrexyLoco
+          repositories: ${{ github.event.repository.name }}
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.client_payload.pr_branch }}
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Update Plugin-JSONs auf neue Version
+        shell: pwsh
+        env:
+          NEW_VERSION: ${{ github.event.client_payload.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $newVersion = $env:NEW_VERSION -replace '^v', ''
+
+          # 1. Source of Truth: plugin.json
+          $pluginPath = Join-Path 'plugins' 'kagents' '.github' 'plugin' 'plugin.json'
+          $plugin = Get-Content $pluginPath -Raw | ConvertFrom-Json
+          $plugin.version = $newVersion
+          $plugin | ConvertTo-Json -Depth 10 | Set-Content $pluginPath -Encoding utf8
+
+          # 2. Marketplace
+          $marketplacePath = Join-Path '.github' 'plugin' 'marketplace.json'
+          $marketplace = Get-Content $marketplacePath -Raw | ConvertFrom-Json
+          $marketplace.metadata.version = $newVersion
+          $marketplace.plugins[0].version = $newVersion
+          $marketplace | ConvertTo-Json -Depth 10 | Set-Content $marketplacePath -Encoding utf8
+
+          # 3. Claude Code Marketplace
+          $claudeMarketplacePath = Join-Path '.claude-plugin' 'marketplace.json'
+          if (Test-Path $claudeMarketplacePath) {
+            $claudeMarketplace = Get-Content $claudeMarketplacePath -Raw | ConvertFrom-Json
+            $claudeMarketplace.plugins[0].version = $newVersion
+            $claudeMarketplace | ConvertTo-Json -Depth 10 | Set-Content $claudeMarketplacePath -Encoding utf8
+          }
+
+          # 4. Claude Code Plugin Manifest
+          $claudePluginPath = Join-Path 'plugins' 'kagents' '.claude-plugin' 'plugin.json'
+          if (Test-Path $claudePluginPath) {
+            $claudePlugin = Get-Content $claudePluginPath -Raw | ConvertFrom-Json
+            $claudePlugin.version = $newVersion
+            $claudePlugin | ConvertTo-Json -Depth 10 | Set-Content $claudePluginPath -Encoding utf8
+          }
+
+          Write-Output "Plugin-Metadata auf $newVersion aktualisiert"
+
+      - name: Bump-Commit auf PR-Branch pushen
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NEW_VERSION: ${{ github.event.client_payload.version }}
+          PR_BRANCH: ${{ github.event.client_payload.pr_branch }}
+        shell: bash
+        run: |
+          # Committer-Identität: k-releaseflow[bot] — ReleaseFlow erkennt Bump über diese E-Mail.
+          git config user.name "k-releaseflow[bot]"
+          git config user.email "k-releaseflow[bot]@users.noreply.github.com"
+
+          git add plugins/kagents/.github/plugin/plugin.json .github/plugin/marketplace.json
+          if [ -f ".claude-plugin/marketplace.json" ]; then
+            git add .claude-plugin/marketplace.json
+          fi
+          if [ -f "plugins/kagents/.claude-plugin/plugin.json" ]; then
+            git add plugins/kagents/.claude-plugin/plugin.json
+          fi
+
+          if git diff --staged --quiet; then
+            echo "Keine Änderungen — Manifeste bereits auf $NEW_VERSION (idempotent)."
+            exit 0
+          fi
+
+          git commit -m "chore(plugin): Version auf $NEW_VERSION gesetzt"
+          git push origin "$PR_BRANCH"
+
+      - name: Summary
+        if: always()
+        env:
+          NEW_VERSION: ${{ github.event.client_payload.version }}
+          PHASE: ${{ github.event.client_payload.phase }}
+          PR_BRANCH: ${{ github.event.client_payload.pr_branch }}
+          PR_NUMBER: ${{ github.event.client_payload.pr_number }}
+        shell: bash
+        run: |
+          {
+            echo "## Consumer Hook: Manifest-Bump auf Promotion-PR"
+            echo ""
+            echo "| Feld | Wert |"
+            echo "|------|------|"
+            echo "| **Phase** | \`$PHASE\` |"
+            echo "| **Version** | \`$NEW_VERSION\` |"
+            echo "| **PR-Branch** | \`$PR_BRANCH\` |"
+            echo "| **PR** | #$PR_NUMBER |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   update-plugin-metadata:
-    name: Update Plugin-JSONs nach Stable-Release
+    name: Update Plugin-JSONs nach Stable-Release (Fallback)
+    if: github.event.action == 'releaseflow-stable'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -60,7 +179,7 @@ jobs:
           NEW_VERSION: ${{ github.event.client_payload.version }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $newVersion = $env:NEW_VERSION
+          $newVersion = $env:NEW_VERSION -replace '^v', ''
 
           # 1. Source of Truth: plugin.json
           $pluginPath = Join-Path 'plugins' 'kagents' '.github' 'plugin' 'plugin.json'
@@ -83,6 +202,14 @@ jobs:
             $claudeMarketplace | ConvertTo-Json -Depth 10 | Set-Content $claudeMarketplacePath -Encoding utf8
           }
 
+          # 4. Claude Code Plugin Manifest
+          $claudePluginPath = Join-Path 'plugins' 'kagents' '.claude-plugin' 'plugin.json'
+          if (Test-Path $claudePluginPath) {
+            $claudePlugin = Get-Content $claudePluginPath -Raw | ConvertFrom-Json
+            $claudePlugin.version = $newVersion
+            $claudePlugin | ConvertTo-Json -Depth 10 | Set-Content $claudePluginPath -Encoding utf8
+          }
+
           Write-Output "Plugin-Metadata auf $newVersion aktualisiert"
 
       - name: Commit + Push [skip ci]
@@ -99,6 +226,9 @@ jobs:
           git add plugins/kagents/.github/plugin/plugin.json .github/plugin/marketplace.json
           if [ -f ".claude-plugin/marketplace.json" ]; then
             git add .claude-plugin/marketplace.json
+          fi
+          if [ -f "plugins/kagents/.claude-plugin/plugin.json" ]; then
+            git add plugins/kagents/.claude-plugin/plugin.json
           fi
 
           if git diff --staged --quiet; then

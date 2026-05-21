@@ -3,15 +3,15 @@ name: documentation-patterns
 description: Technische Dokumentation — README, API-Docs, Changelogs, Release Notes, XML-Doc Comments, Comment-Based Help
 ---
 
-# Documentation-Patterns Skill
+# 1. Documentation-Patterns Skill
 
-## Übersicht
+## 1.1 Übersicht
 
 Dieses Skill behandelt systematisches Schreiben von technischer Dokumentation für .NET und PowerShell Projekte. Es deckt README, API-Dokumentation, Changelogs und Inline-Dokumentation ab.
 
-## README.md
+## 1.2 README.md
 
-### Struktur
+### 1.2.1 Struktur
 
 1. **Projektbeschreibung:** Was macht das Projekt? Für wen?
 2. **Voraussetzungen:** .NET Version, Tools, Konten
@@ -21,14 +21,14 @@ Dieses Skill behandelt systematisches Schreiben von technischer Dokumentation f�
 6. **Contributing:** Wie kann man beitragen?
 7. **License:** Lizenztyp
 
-### Best Practices
+### 1.2.2 Best Practices
 - Deutsch, prägnant, keine Prosa-Wüsten
 - Code-Beispiele > Beschreibungen
 - Copy-Paste-ready Quick Start
 - Links zu weiterführenden Dokumentationen
 - Badges für Status, Version, Build
 
-### Beispiel-Struktur
+### 1.2.3 Beispiel-Struktur
 
 ```markdown
 # Projektname
@@ -76,9 +76,9 @@ dotnet run
 [Wie kann man beitragen, PR-Prozess]
 ```
 
-## API-Dokumentation
+## 1.3 API-Dokumentation
 
-### XML-Doc Comments (C#)
+### 1.3.1 XML-Doc Comments (C#)
 
 Jede public Klasse, Methode, Property dokumentieren:
 
@@ -101,7 +101,7 @@ public async Task<UserDto> CreateAsync(CreateUserRequest request)
 }
 ```
 
-### XML-Doc Tags
+### 1.3.2 XML-Doc Tags
 
 | Tag | Zweck | Beispiel |
 |-----|-------|---------|
@@ -113,7 +113,7 @@ public async Task<UserDto> CreateAsync(CreateUserRequest request)
 | `<remarks>` | Detaillierte Erklärung | Zusätzlicher Kontext |
 | `<see cref>` | Interne Link | Zu anderen Typen |
 
-### Comment-Based Help (PowerShell)
+### 1.3.3 Comment-Based Help (PowerShell)
 
 ```powershell
 function Get-Something {
@@ -162,7 +162,7 @@ function Get-Something {
 }
 ```
 
-### Comment-Based Help Tags
+### 1.3.4 Comment-Based Help Tags
 
 | Tag | Zweck |
 |-----|-------|
@@ -174,11 +174,11 @@ function Get-Something {
 | `.NOTES` | Zusätzliche Informationen |
 | `.LINK` | Externe Referenzen |
 
-## Changelogs (CHANGELOG.md)
+## 1.4 Changelogs (CHANGELOG.md)
 
 Format: [Keep a Changelog](https://keepachangelog.com/de/) + Conventional Commits
 
-### Struktur
+### 1.4.1 Struktur
 
 ```markdown
 # Changelog
@@ -218,7 +218,7 @@ und [Conventional Commits](https://www.conventionalcommits.org/de/).
 ...
 ```
 
-### Kategorisierung
+### 1.4.2 Kategorisierung
 
 Nutze diese Ordnung (Breaking Changes immer oben):
 
@@ -229,7 +229,7 @@ Nutze diese Ordnung (Breaking Changes immer oben):
 5. **Entfernt** — Deprecated Features entfernt
 6. **Sicherheit** — Security-Fixes
 
-## Release Notes
+## 1.5 Release Notes
 
 Kompakter als Changelog, aus User-Perspektive:
 
@@ -263,9 +263,9 @@ Nützlich für Reports und Daten-Migration.
 Upgrade via NuGet oder PowerShell Gallery.
 ```
 
-## Inline-Dokumentation
+## 1.6 Inline-Dokumentation
 
-### Wann Inline-Kommentare sinnvoll sind
+### 1.6.1 Wann Inline-Kommentare sinnvoll sind
 
 **JA:**
 - **Warum** etwas getan wird (nicht **was** — das sagt der Code)
@@ -278,7 +278,7 @@ Upgrade via NuGet oder PowerShell Gallery.
 - Auskommentierter Code (löschen, Git hat die Historie)
 - TODO ohne Issue-Referenz
 
-### Beispiele
+### 1.6.2 Beispiele
 
 **Gut:**
 ```csharp
@@ -308,14 +308,14 @@ counter++; // Increment the counter
 // TODO: Fix this later
 ```
 
-## Workflow
+## 1.7 Workflow
 
 1. **Kontext verstehen:** Welcher Code? Für welches Issue?
 2. **Zielgruppe:** Entwickler? Endbenutzer? Ops?
 3. **Dokumentation schreiben:** Im passenden Format
 4. **Konsistenz prüfen:** Passt zum Rest der Dokumentation?
 
-## Best Practices
+## 1.8 Best Practices
 
 - **Sprache:** Deutsch für alle Dokumentation
 - **Code-Beispiele:** Müssen kompilier-/ausführbar sein
@@ -324,11 +324,11 @@ counter++; // Increment the counter
 - **Versionieren:** Dokumentation gehört zu Releases
 - **Verlinken:** Zu Issues, PRs, Referenzen
 
-## Related Skills
+## 1.9 Related Skills
 
 Keine direkten Cross-References erforderlich.
 
-## Regeln
+## 1.10 Regeln
 
 - Technisch präzise, nicht zu akademisch
 - Code-Beispiele sind Load-Bearing

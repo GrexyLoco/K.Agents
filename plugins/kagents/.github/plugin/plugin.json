@@ -1,7 +1,7 @@
 {
   "name": "kagents",
-  "description": "15 spezialisierte AI-Agents und 37 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
-  "version": "v1.18.0",
+  "description": "16 spezialisierte AI-Agents und 49 Skills fuer .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
+  "version": "1.18.0",
   "author": {
     "name": "GrexyLoco",
     "email": "noreply@grexyloco.dev"
@@ -34,7 +34,8 @@
     "../agents/security-auditor.agent.md",
     "../agents/tunit-tester.agent.md",
     "../agents/orchestrator.agent.md",
-    "../agents/dotnet-architect.agent.md"
+    "../agents/dotnet-architect.agent.md",
+    "../agents/commit-messenger.agent.md"
   ],
   "skills": [
     "../skills/csharp-patterns",
@@ -73,6 +74,18 @@
     "../skills/init-project",
     "../skills/releaseflow-train-status",
     "../skills/releaseflow-conflict-fix",
-    "../skills/releaseflow-push"
+    "../skills/releaseflow-push",
+    "../skills/api-design-patterns",
+    "../skills/api-documentation",
+    "../skills/changelog-automation",
+    "../skills/code-security-review",
+    "../skills/dotnet-dependency-scanning",
+    "../skills/github-actions-architecture",
+    "../skills/github-actions-security",
+    "../skills/inline-documentation",
+    "../skills/powershell-module-publishing",
+    "../skills/readme-patterns",
+    "../skills/release-notes-patterns",
+    "../skills/solution-layer-design"
   ]
 }

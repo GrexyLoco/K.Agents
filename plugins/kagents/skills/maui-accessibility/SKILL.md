@@ -3,11 +3,11 @@ name: maui-accessibility
 description: ".NET MAUI accessibility — SemanticProperties, AutomationProperties, screen readers (TalkBack, VoiceOver, Narrator), heading levels, programmatic focus, WCAG 2.1 compliance. USE FOR: making MAUI apps accessible, adding screen reader support, validating WCAG compliance. DO NOT USE FOR: general MAUI UI layout (use maui-patterns) or Blazor accessibility (use blazor-patterns)."
 ---
 
-# MAUI Accessibility
+# 1. MAUI Accessibility
 
 Basiert auf: [davidortinau/maui-skills](https://github.com/davidortinau/maui-skills) (MIT, David Ortinau, Microsoft)
 
-## SemanticProperties (Kern-API)
+## 1.1 SemanticProperties (Kern-API)
 ```xml
 <Image Source="logo.png"
        SemanticProperties.Description="Firmenlogo"
@@ -20,7 +20,7 @@ Basiert auf: [davidortinau/maui-skills](https://github.com/davidortinau/maui-ski
         SemanticProperties.Description="Änderungen speichern" />
 ```
 
-## Heading Levels
+## 1.2 Heading Levels
 ```xml
 <!-- Korrekte Hierarchie einhalten -->
 <Label SemanticProperties.HeadingLevel="Level1" Text="Haupttitel" />
@@ -28,7 +28,7 @@ Basiert auf: [davidortinau/maui-skills](https://github.com/davidortinau/maui-ski
 <Label SemanticProperties.HeadingLevel="Level3" Text="Unterabschnitt" />
 ```
 
-## AutomationProperties (Sichtbarkeit steuern)
+## 1.3 AutomationProperties (Sichtbarkeit steuern)
 ```xml
 <!-- Element für Screen Reader unsichtbar machen -->
 <BoxView AutomationProperties.IsInAccessibleTree="False" />
@@ -38,7 +38,7 @@ Basiert auf: [davidortinau/maui-skills](https://github.com/davidortinau/maui-ski
        Placeholder="E-Mail" />
 ```
 
-## Programmatischer Fokus & Announcements
+## 1.4 Programmatischer Fokus & Announcements
 ```csharp
 // Fokus setzen
 SemanticScreenReader.Default.SetFocus(myEntry);
@@ -47,7 +47,7 @@ SemanticScreenReader.Default.SetFocus(myEntry);
 SemanticScreenReader.Default.Announce("3 Ergebnisse geladen");
 ```
 
-## Platform-spezifische Hinweise
+## 1.5 Platform-spezifische Hinweise
 | Platform | Screen Reader | Test-Methode |
 |----------|-------------|--------------|
 | Android | TalkBack | Einstellungen → Bedienungshilfen → TalkBack |
@@ -55,7 +55,7 @@ SemanticScreenReader.Default.Announce("3 Ergebnisse geladen");
 | Windows | Narrator | Win + Ctrl + Enter |
 | macOS | VoiceOver | Cmd + F5 |
 
-## Checkliste
+## 1.6 Checkliste
 - [ ] Alle Bilder haben `SemanticProperties.Description`
 - [ ] Heading-Hierarchie korrekt (Level1 → Level2 → Level3)
 - [ ] Interaktive Elemente haben aussagekräftige Labels

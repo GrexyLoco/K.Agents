@@ -1,20 +1,20 @@
-# K.Agents
+# 1. K.Agents
 
-**15 AI-Agents (14 spezialisierte + 1 Orchestrator) und 37 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
+**16 AI-Agents (15 spezialisierte + 1 Orchestrator) und 49 Skills** für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.
 
-## Überblick
+## 1.1 Überblick
 
 Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual Studio 2026 und Claude Code. Jeder Agent hat eine klar definierte Rolle mit Handoff-Buttons zur nahtlosen Zusammenarbeit.
 
-## Agents
+## 1.2 Agents
 
-### Einstieg
+### 1.2.1 Einstieg
 
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
 | Orchestrator | Automatisches Routing — analysiert Aufgabe und delegiert sofort | Haiku |
 
-### Strategie & Planung
+### 1.2.2 Strategie & Planung
 
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
@@ -22,7 +22,7 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 | App Architect | .NET/Blazor/MAUI Architektur, Modular Monolith | Opus |
 | Automation Architect | CI/CD, Workflows, Release-Strategie | Opus |
 
-### Implementierung
+### 1.2.3 Implementierung
 
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
@@ -31,7 +31,7 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 | Azure Specialist | Aspire, Monitoring + EU-Alternativen | Sonnet |
 | Database Engineer | EF Core, Migrations, Performance | Sonnet |
 
-### Qualitätssicherung
+### 1.2.4 Qualitätssicherung
 
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
@@ -40,14 +40,14 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 | Security Auditor | OWASP, Dependency Scanning | Sonnet |
 | Code Reviewer | Patterns, Performance, Architektur | Opus |
 
-### Querschnitt
+### 1.2.5 Querschnitt
 
 | Agent | Beschreibung | Model |
 |-------|-------------|-------|
 | Documentation | README, Changelog, API-Docs | Sonnet |
 | Git Forensics | Blame, Bisect, Conventional Commits | Sonnet |
 
-## Skills (37)
+## 1.3 Skills (49)
 
 | Kategorie | Skills |
 |-----------|--------|
@@ -67,7 +67,7 @@ Kuratierte Sammlung von Custom Agents und Skills für VS Code Copilot, Visual St
 | VCS/Git | `git-forensics` |
 | Dokumentation | `documentation-patterns` |
 
-## Tools
+## 1.4 Tools
 
 Ausführbare PowerShell-Scripts für KI-Agenten zur deterministischen ReleaseFlow-Steuerung.
 
@@ -76,7 +76,7 @@ Ausführbare PowerShell-Scripts für KI-Agenten zur deterministischen ReleaseFlo
 | `releaseflow/Get-ReleaseTrain` | Train-Status, Phase, erlaubte Branches, Milestone, blockierende Issues |
 | `releaseflow/Invoke-ReleaseConflictFix` | ReleaseFlow-spezifischer Merge-Konflikt-Workflow |
 
-## Skill-Mechanismus
+## 1.5 Skill-Mechanismus
 
 Skills werden über zwei Mechanismen geladen:
 - **`skills:` Frontmatter** (Claude Code): Automatisches Laden beim Agent-Start
@@ -84,7 +84,7 @@ Skills werden über zwei Mechanismen geladen:
 
 Beide Mechanismen verwenden denselben `SKILL.md`-Inhalt — das Verhalten ist plattformunabhängig identisch.
 
-## Besonderheiten
+## 1.6 Besonderheiten
 
 - **TUnit** als .NET-Testframework (nicht xUnit/NUnit)
 - **Pester 5.6.x** für PowerShell-Tests
@@ -93,11 +93,11 @@ Beide Mechanismen verwenden denselben `SKILL.md`-Inhalt — das Verhalten ist pl
 - **Write-Host überall verboten** (auch CI-Scripts)
 - **Deutsch** als Arbeitssprache für Doku, Issues, Commits
 
-## Copilot Chat Integration
+## 1.7 Copilot Chat Integration
 
 K.Agents funktioniert am besten, wenn Copilot Chat weiss, wie es die CLIs und den Orchestrator nutzen soll.
 
-### Option A: Template kopieren (empfohlen)
+### 1.7.1 Option A: Template kopieren (empfohlen)
 
 ```powershell
 # Fuer ein einzelnes Repo
@@ -109,7 +109,7 @@ K.Agents funktioniert am besten, wenn Copilot Chat weiss, wie es die CLIs und de
 
 Passe danach den Abschnitt `## Projekt-Kontext` in der installierten Datei an.
 
-### Option B: Manuell kopieren
+### 1.7.2 Option B: Manuell kopieren
 
 ```powershell
 # Repo-spezifisch
@@ -121,18 +121,18 @@ Copy-Item (Join-Path $PSScriptRoot 'templates' 'copilot-instructions.md') `
           (Join-Path $env:USERPROFILE '.github' 'copilot-instructions.md')
 ```
 
-### Verifizieren
+### 1.7.3 Verifizieren
 
 Nach Setup, frage Copilot Chat:
 > "Welche CLIs und Agenten stehen dir zur Verfuegung?"
 
 Die Antwort sollte Claude CLI, Copilot CLI und den Orchestrator erwaehnen.
 
-## MCP-Server
+## 1.8 MCP-Server
 
 K.Agents bringt vorkonfigurierte MCP-Server mit. Bei Plugin-Installation werden alle MCPs automatisch registriert.
 
-### Inkludierte MCPs
+### 1.8.1 Inkludierte MCPs
 
 | MCP | Typ | Funktion | Genutzt von |
 |-----|-----|----------|-------------|
@@ -140,7 +140,7 @@ K.Agents bringt vorkonfigurierte MCP-Server mit. Bei Plugin-Installation werden 
 | **NuGet** | STDIO | Package-Management, Vulnerabilities, READMEs | `dotnet-developer`, `security-auditor`, `app-architect` |
 | **GitHub** | STDIO | Repos, Issues, PRs, Code Search, Workflows | `planning`, `code-reviewer`, `git-forensics`, `automation-architect` |
 
-### MCP-Status pruefen
+### 1.8.2 MCP-Status pruefen
 
 ```bash
 # Claude CLI
@@ -150,7 +150,7 @@ claude mcp list
 copilot mcp list
 ```
 
-### Manuell MCP hinzufuegen
+### 1.8.3 Manuell MCP hinzufuegen
 
 Falls ein MCP nach Installation fehlt:
 
@@ -165,7 +165,7 @@ claude mcp add com.microsoft/nuget
 claude mcp add io.github.github/github-mcp-server
 ```
 
-### GitHub MCP: Credentials
+### 1.8.4 GitHub MCP: Credentials
 
 Standard: CLI-Auth via `gh auth token`.
 Override: Umgebungsvariable `GITHUB_TOKEN` setzen.
@@ -175,11 +175,11 @@ Override: Umgebungsvariable `GITHUB_TOKEN` setzen.
 $env:GITHUB_TOKEN = (gh auth token)
 ```
 
-## Logging & Audit-Trail
+## 1.9 Logging & Audit-Trail
 
 K.Agents loggt alle Agent-Aktivitaeten automatisch via Hooks.
 
-### Log-Verzeichnis
+### 1.9.1 Log-Verzeichnis
 
 ```
 ${CLAUDE_PLUGIN_ROOT}/logs/
@@ -190,7 +190,7 @@ ${CLAUDE_PLUGIN_ROOT}/logs/
 
 Format: **JSONL** — eine JSON-Zeile pro Event, ein File pro Tag.
 
-### Events
+### 1.9.2 Events
 
 | Event | Trigger |
 |-------|---------|
@@ -200,7 +200,7 @@ Format: **JSONL** — eine JSON-Zeile pro Event, ein File pro Tag.
 | `error` | Fehler aufgetreten |
 | `fallback` | CLI-Wechsel wegen Rate Limit |
 
-### Log analysieren
+### 1.9.3 Log analysieren
 
 ```powershell
 # Alle Fehler von heute
@@ -215,20 +215,20 @@ Get-Content (Join-Path $env:CLAUDE_PLUGIN_ROOT 'logs' '*.jsonl') |
     Sort-Object Count -Descending
 ```
 
-### Log-Rotation
+### 1.9.4 Log-Rotation
 
 ```powershell
 # Logs aelter als 30 Tage loeschen
 & (Join-Path $PSScriptRoot 'scripts' 'cleanup-logs.ps1') -RetentionDays 30
 ```
 
-## ReleaseFlow-Guardrail
+## 1.10 ReleaseFlow-Guardrail
 
 K.Agents schuetzt den [K.Actions.ReleaseFlow](https://github.com/GrexyLoco/K.Actions.ReleaseFlow)-Prozess
 automatisch via PreToolUse-Hook. Der Guardrail blockiert direkte `master`/`main`-Merges, die den
 Branching-Prozess umgehen wuerden.
 
-### Geschuetzte Kommandos
+### 1.10.1 Geschuetzte Kommandos
 
 | Kommando | Geprueft | Erlaubt |
 |----------|----------|---------|
@@ -236,13 +236,13 @@ Branching-Prozess umgehen wuerden.
 | `gh pr create` (ohne `--base`) | Warnung: Default-Target koennte master sein | Explizit `--base` setzen |
 | `gh pr merge` | Head-Branch muss `release/v*` sein | Nur von release-Branches |
 
-### ReleaseFlow-Branching-Modell
+### 1.10.2 ReleaseFlow-Branching-Modell
 
 ```
 feature/* oder fix/*  →  dev/vX.Y.Z  →  release/vX.Y.Z  →  master
 ```
 
-### Repo-Erkennung
+### 1.10.3 Repo-Erkennung
 
 Der Guardrail ist nur aktiv in Repos, die ReleaseFlow verwenden. Erkennungs-Marker:
 
@@ -251,7 +251,7 @@ Der Guardrail ist nur aktiv in Repos, die ReleaseFlow verwenden. Erkennungs-Mark
 - `action.yml` mit `K.Actions.ReleaseFlow`-Referenz
 - `.github/workflows/*.yml` mit `K.Actions.ReleaseFlow`-Referenz
 
-### Break-Glass
+### 1.10.4 Break-Glass
 
 Wenn ein direkter Master-Merge beabsichtigt ist (z.B. Hotfix ausserhalb ReleaseFlow), kann der
 Guardrail mit der Umgebungsvariable `RELEASEFLOW_BYPASS=1` umgangen werden:
@@ -269,7 +269,7 @@ Remove-Item Env:RELEASEFLOW_BYPASS
 
 > **Hinweis:** Jede Bypass-Nutzung wird ins Audit-Log geschrieben (`event: releaseflow_guardrail_bypass`).
 
-### Guardrail deaktivieren
+### 1.10.5 Guardrail deaktivieren
 
 Der Guardrail ist Teil der K.Agents Hooks. Er kann per Uninstall-Script deaktiviert werden:
 
@@ -277,6 +277,6 @@ Der Guardrail ist Teil der K.Agents Hooks. Er kann per Uninstall-Script deaktivi
 & (Join-Path $PSScriptRoot 'scripts' 'Uninstall-Hooks.ps1')
 ```
 
-## Lizenz
+## 1.11 Lizenz
 
 MIT — Siehe [LICENSE](../../LICENSE) für Details.

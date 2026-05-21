@@ -3,9 +3,9 @@ name: readme-patterns
 description: README-Muster — Struktur, Quick Start, Badges, Verzeichnis. USE FOR: writing project READMEs, planning README structure, understanding README best practices. DO NOT USE FOR: API documentation (use api-documentation) or release notes (use release-notes-patterns).
 ---
 
-# README-Muster
+# 1. README-Muster
 
-## README-Struktur
+## 1.1 README-Struktur
 
 **Standard-Layout für professionelle READMEs:**
 
@@ -20,7 +20,7 @@ description: README-Muster — Struktur, Quick Start, Badges, Verzeichnis. USE F
 9. **Contributing** – Wie beitragen? (Link zu CONTRIBUTING.md)
 10. **License** – MIT, Apache 2.0, etc.
 
-## Quick Start Section
+## 1.2 Quick Start Section
 
 Minimales Beispiel für 5 Minuten:
 
@@ -45,7 +45,7 @@ Minimales Beispiel für 5 Minuten:
    \`\`\`
 ```
 
-## Badges
+## 1.3 Badges
 
 Häufige Badges (führen auf Status-Seite):
 
@@ -56,7 +56,7 @@ Häufige Badges (führen auf Status-Seite):
 [![Coverage](https://img.shields.io/codecov/c/github/user/repo.svg)](https://codecov.io/gh/user/repo)
 ```
 
-## Beispiele-Section
+## 1.4 Beispiele-Section
 
 **Good:** Runnable Code-Samples mit erwarteter Ausgabe
 
@@ -82,7 +82,7 @@ var client = new Client(auth, handler);
 \`\`\`
 ```
 
-## Regeln
+## 1.5 Regeln
 
 - **Deutsch** für deutsche Projekte, sonst **Englisch**
 - Code-Beispiele **müssen kompilieren/ausführen**

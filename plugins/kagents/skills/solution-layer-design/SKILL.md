@@ -3,9 +3,9 @@ name: solution-layer-design
 description: "Solution-Layer-Design — Domain/App/Infra/Presentation Schichten, Aspire AppHost, Modular-Monolith-Entscheidungen. USE FOR: designing layered architecture, deciding when to use monolith vs. services, structuring Aspire orchestration. DO NOT USE FOR: Minimal API implementation (use minimal-api-patterns) or Aspire integration tests (use aspire-integration-testing)."
 ---
 
-# Solution-Layer-Design
+# 1. Solution-Layer-Design
 
-## Vier-Schichten-Architektur
+## 1.1 Vier-Schichten-Architektur
 
 **Domain Layer** (Business Logic)
 - Entities, Value Objects, Aggregates
@@ -31,7 +31,7 @@ description: "Solution-Layer-Design — Domain/App/Infra/Presentation Schichten,
 - Authorization Policies
 - OpenAPI Generation
 
-## Aspire AppHost Design
+## 1.2 Aspire AppHost Design
 
 ```csharp
 var builder = DistributedApplication.CreateBuilder(args);
@@ -62,7 +62,7 @@ builder.Build().Run();
 
 **Pattern:** Services referenzieren abhängige Infrastruktur; Abhängigkeiten top-down (Web → API → DB/Cache).
 
-## Monolith vs. Microservices
+## 1.3 Monolith vs. Microservices
 
 | Entscheidung | Monolith | Services |
 |---|---|---|
@@ -74,7 +74,7 @@ builder.Build().Run();
 
 **Modular Monolith:** Physisch single Deployment, aber logisch getrennte Module mit feinen Schnittstellen.
 
-## Abhängigkeits-Regeln
+## 1.4 Abhängigkeits-Regeln
 
 - Domain hat **keine** Abhängigkeiten zu anderen Layern
 - Application kennt Infrastructure über Interfaces (Dependency Inversion)

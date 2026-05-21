@@ -3,9 +3,9 @@ name: minimal-api-patterns
 description: "ASP.NET Core Minimal API for .NET 10 \u2014 MapGroup, endpoint routing, TypedResults, request/response records, IValidator<T>, OpenAPI generation. USE FOR: building REST API endpoints with Minimal API syntax, structuring endpoint groups, implementing request validation. DO NOT USE FOR: Blazor components (use blazor-patterns) or general C# patterns (use csharp-patterns)."
 ---
 
-# Minimal API Patterns (.NET 10)
+# 1. Minimal API Patterns (.NET 10)
 
-## Endpoint-Gruppen
+## 1.1 Endpoint-Gruppen
 ```csharp
 var users = app.MapGroup("/api/users")
     .WithTags("Users")
@@ -18,7 +18,7 @@ users.MapPut("/{id:guid}", UpdateUserAsync);
 users.MapDelete("/{id:guid}", DeleteUserAsync);
 ```
 
-## Typed Results
+## 1.2 Typed Results
 ```csharp
 static async Task<Results<Ok<UserResponse>, NotFound, ValidationProblem>> GetUserByIdAsync(
     Guid id,
@@ -31,7 +31,7 @@ static async Task<Results<Ok<UserResponse>, NotFound, ValidationProblem>> GetUse
 }
 ```
 
-## Request Validation
+## 1.3 Request Validation
 ```csharp
 users.MapPost("/", async (CreateUserRequest request, IValidator<CreateUserRequest> validator, IUserService service) =>
 {
@@ -44,7 +44,7 @@ users.MapPost("/", async (CreateUserRequest request, IValidator<CreateUserReques
 });
 ```
 
-## Regeln
+## 1.4 Regeln
 - Request/Response als Records, nicht Domain Models exponieren
 - `TypedResults` statt `Results` (bessere OpenAPI-Generierung)
 - Endpoint-Handler als `static` Methoden oder in Endpoint-Klassen

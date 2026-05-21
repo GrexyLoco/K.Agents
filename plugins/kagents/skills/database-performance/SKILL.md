@@ -3,11 +3,11 @@ name: database-performance
 description: "EF Core query performance — N+1 detection, compiled queries, split queries, query tags, AsNoTracking, index strategy (composite, filtered, covering), read/write DbContext separation. USE FOR: diagnosing slow queries, optimizing EF Core performance, designing database indexes. DO NOT USE FOR: DbContext setup or migrations (use efcore-patterns) or general database schema design (use database-engineer agent)."
 ---
 
-# Database Performance (EF Core)
+# 1. Database Performance (EF Core)
 
 Adaptiert von: [Aaronontheweb/dotnet-skills](https://github.com/Aaronontheweb/dotnet-skills) (MIT)
 
-## N+1 Query Erkennung
+## 1.1 N+1 Query Erkennung
 ```csharp
 // ❌ N+1 Problem
 var users = await context.Users.ToListAsync();
@@ -28,7 +28,7 @@ var dtos = await context.Users
     .ToListAsync();
 ```
 
-## Split Queries
+## 1.2 Split Queries
 ```csharp
 // Bei Include-Chains > 2 Ebenen: AsSplitQuery()
 var orders = await context.Orders
@@ -39,7 +39,7 @@ var orders = await context.Orders
     .ToListAsync();
 ```
 
-## Compiled Queries (Hot Paths)
+## 1.3 Compiled Queries (Hot Paths)
 ```csharp
 private static readonly Func<AppDbContext, Guid, Task<User?>> GetUserById =
     EF.CompileAsyncQuery((AppDbContext ctx, Guid id) =>
@@ -49,7 +49,7 @@ private static readonly Func<AppDbContext, Guid, Task<User?>> GetUserById =
 var user = await GetUserById(context, userId);
 ```
 
-## Query Tags (Debugging)
+## 1.4 Query Tags (Debugging)
 ```csharp
 var users = await context.Users
     .TagWith("GetActiveUsers - UserService.cs:42")
@@ -58,7 +58,7 @@ var users = await context.Users
 // Tag erscheint im SQL-Log → einfache Zuordnung
 ```
 
-## Index-Strategie
+## 1.5 Index-Strategie
 ```csharp
 // Häufige WHERE-Klausel → Index
 builder.HasIndex(u => u.Email).IsUnique();
@@ -75,7 +75,7 @@ builder.HasIndex(u => u.LastName)
     .IncludeProperties(u => new { u.FirstName, u.Email });
 ```
 
-## Read/Write Separation
+## 1.6 Read/Write Separation
 ```csharp
 // Separate DbContexte für Read und Write
 services.AddDbContext<ReadDbContext>(o => o
@@ -86,7 +86,7 @@ services.AddDbContext<WriteDbContext>(o => o
     .UseSqlServer(config["Primary"]));
 ```
 
-## Performance-Checkliste
+## 1.7 Performance-Checkliste
 - [ ] `AsNoTracking()` bei allen Read-Only Queries
 - [ ] Keine N+1 Queries (Include oder Projection)
 - [ ] `AsSplitQuery()` bei tiefen Include-Chains
