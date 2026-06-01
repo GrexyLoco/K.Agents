@@ -108,6 +108,60 @@ public sealed class CostingServiceTests
     }
 
     [Test]
+    public async Task TryExtractUsage_DecimalTokenValue_SkipsFieldWithoutThrowing()
+    {
+        // Robustheit (Try-Vertrag): ein dezimaler output_tokens-Wert (25.5) darf NICHT werfen.
+        // Erwartung: Dezimalfeld wird übersprungen, geschwisterliches input_tokens=150 bleibt lesbar.
+        var body = Encoding.UTF8.GetBytes("""
+            {"usage":{"input_tokens":150,"output_tokens":25.5}}
+            """);
+
+        var extracted = CostingService.TryExtractUsage(body, out var input, out var output);
+
+        await Assert.That(extracted).IsTrue();
+        await Assert.That(input).IsEqualTo(150);
+        await Assert.That(output).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task TryExtractUsage_StringTokenValue_SkipsFieldWithoutThrowing()
+    {
+        // Try-Vertrag: ein nicht-numerischer (String-)Token-Wert darf NICHT werfen.
+        // ValueKind-Guard verhindert den InvalidOperationException-Pfad von TryGetInt32.
+        var body = Encoding.UTF8.GetBytes("""
+            {"usage":{"input_tokens":150,"output_tokens":"abc"}}
+            """);
+
+        var extracted = CostingService.TryExtractUsage(body, out var input, out var output);
+
+        await Assert.That(extracted).IsTrue();
+        await Assert.That(input).IsEqualTo(150);
+        await Assert.That(output).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task TryExtractUsage_AnthropicSseStreamWithCrlf_TakesInputFromStartAndCumulativeOutput()
+    {
+        // Wie der Anthropic-SSE-Test, aber mit CRLF-Zeilenenden (\r\n) statt \n.
+        // TrimEnd('\r') muss die data:-Zeilen identisch parsen.
+        var body = Encoding.UTF8.GetBytes(
+            "event: message_start\r\n" +
+            "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"usage\":{\"input_tokens\":25,\"output_tokens\":1}}}\r\n\r\n" +
+            "event: message_delta\r\n" +
+            "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":null},\"usage\":{\"output_tokens\":10}}\r\n\r\n" +
+            "event: message_delta\r\n" +
+            "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":15}}\r\n\r\n" +
+            "event: message_stop\r\n" +
+            "data: {\"type\":\"message_stop\"}\r\n\r\n");
+
+        var extracted = CostingService.TryExtractUsage(body, out var input, out var output);
+
+        await Assert.That(extracted).IsTrue();
+        await Assert.That(input).IsEqualTo(25);
+        await Assert.That(output).IsEqualTo(15);
+    }
+
+    [Test]
     public async Task TryExtractUsage_EmptySseWithoutUsage_ReturnsFalse()
     {
         var body = Encoding.UTF8.GetBytes(

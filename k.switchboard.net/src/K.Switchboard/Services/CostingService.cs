@@ -173,11 +173,17 @@ public sealed class CostingService(
     {
         if (usage.ValueKind != JsonValueKind.Object) return;
 
-        if (usage.TryGetProperty("input_tokens", out var inp) && inp.ValueKind == JsonValueKind.Number)
-            inputTokens = Math.Max(inputTokens, inp.GetInt32());
+        // TryGetInt32 statt GetInt32: liefert bei Dezimal/Out-of-Range false (kein Throw).
+        // ValueKind-Guard bleibt, weil TryGetInt32 bei Nicht-Number (String/Bool/...) WIRFT.
+        if (usage.TryGetProperty("input_tokens", out var inp)
+            && inp.ValueKind == JsonValueKind.Number
+            && inp.TryGetInt32(out var inpVal))
+            inputTokens = Math.Max(inputTokens, inpVal);
 
-        if (usage.TryGetProperty("output_tokens", out var outp) && outp.ValueKind == JsonValueKind.Number)
-            outputTokens = Math.Max(outputTokens, outp.GetInt32());
+        if (usage.TryGetProperty("output_tokens", out var outp)
+            && outp.ValueKind == JsonValueKind.Number
+            && outp.TryGetInt32(out var outpVal))
+            outputTokens = Math.Max(outputTokens, outpVal);
     }
 
     private static string GetCostsFilePath(string baseDir)

@@ -144,4 +144,6 @@ Die Token-Erfassung deckt sowohl **nicht-gestreamte** Antworten (einzelnes JSON 
 
 Bei SSE wird je Feld (`input_tokens`, `output_tokens`) das Maximum über alle `usage`-Vorkommen aller Events gebildet. Das ist korrekt, weil Anthropics `output_tokens` kumulativ-monoton übertragen wird (der letzte Wert ist der Gesamtwert) und der `input_tokens`-Wert bereits im `message_start`-Event steht.
 
-Fehlt für ein Modell ein `Pricing`-Eintrag, wird der Verbrauch dennoch mit `costUsd: 0` erfasst — Token-Zahlen gehen also nie verloren.
+Fehlt für ein Modell ein `Pricing`-Eintrag, wird der Verbrauch dennoch mit `costUsd: 0` erfasst — der Eintrag entfällt also nicht nur wegen fehlender Preise.
+
+> **Hinweis (Scope #250):** Erfasst werden ausschließlich `input_tokens` und `output_tokens`. Die cache-spezifischen Felder des Anthropic-`usage`-Objekts (`cache_creation_input_tokens`, `cache_read_input_tokens`) werden aktuell **NICHT** erfasst. Bei stark Prompt-Cache-nutzendem Verkehr (z. B. Claude Code) ist `input_tokens` daher nur der nicht-gecachte Rest — die Input-Kosten für gecachten Traffic sind in diesem Fall unvollständig.
