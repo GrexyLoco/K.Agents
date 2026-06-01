@@ -1,7 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <!-- Simuliert das Trim-Verhalten: Reflection-basierte JSON-Serialisierung deaktiviert.
+         Reproduziert Bug #247 (GET /stats liefert 500 ohne Source-Gen-Resolver). -->
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.*-*" />
     <PackageReference Include="TUnit" Version="0.21.7" />
     <ProjectReference Include="..\..\src\K.Switchboard\K.Switchboard.csproj" />
   </ItemGroup>
