@@ -76,7 +76,7 @@ function Invoke-GetReleaseTrain {
     $releaseJson = gh release list --repo $Repo --json tagName,isDraft,isPrerelease --limit 20 2>$null
     $releases    = if ($releaseJson) { $releaseJson | ConvertFrom-Json } else { @() }
 
-    # Neuesten Non-Draft Release-Tag finden
+    # Neuesten Non-Draft Release-Tag finden (Fallback-Quelle)
     $latestTag = ''
     foreach ($rel in $releases) {
         if (-not $rel.isDraft) {
@@ -85,18 +85,79 @@ function Invoke-GetReleaseTrain {
         }
     }
 
+    # ── 1b. Aktiven Train ermitteln (offener Milestone + dev/ + release/-Branch) ──
+    $activeTrain = $null
+    $openMilestonesJson = gh api "repos/$Repo/milestones?state=open" 2>$null
+    $openMilestones     = if ($openMilestonesJson) { $openMilestonesJson | ConvertFrom-Json } else { @() }
+
+    # Nur Milestones der Form vX.Y.Z beachten; hoechste SemVer gewinnt
+    $trainCandidates = @($openMilestones | Where-Object { $_.title -match '^v\d+\.\d+\.\d+$' })
+    foreach ($ms in ($trainCandidates | Sort-Object {
+        $t = $_.title -replace '^v', ''
+        [System.Version]$t
+    } -Descending)) {
+        $msVersion = $ms.title -replace '^v', ''
+        $devCandidate     = "dev/v${msVersion}"
+        $releaseCandidate = "release/v${msVersion}"
+        gh api "repos/$Repo/branches/$devCandidate"     2>$null | Out-Null
+        $devExists     = $LASTEXITCODE -eq 0
+        gh api "repos/$Repo/branches/$releaseCandidate" 2>$null | Out-Null
+        $releaseExists = $LASTEXITCODE -eq 0
+        if ($devExists -and $releaseExists) {
+            $activeTrain = [PSCustomObject]@{
+                Version         = $msVersion
+                DevBranch       = $devCandidate
+                ReleaseBranch   = $releaseCandidate
+                MilestoneTitle  = $ms.title
+                MilestoneUrl    = $ms.html_url
+            }
+            break
+        }
+    }
+
     # ── 2. Phase + Version ───────────────────────────────────────────────────
-    $phase   = Get-PhaseFromTag $latestTag
-    $version = Get-VersionFromTag $latestTag
+    if ($activeTrain) {
+        # Aktiver Train gefunden: Phase aus Pre-Release-Tags des Trains bestimmen
+        $version = $activeTrain.Version
+        $trainPreReleaseTags = @($releases | Where-Object {
+            $_.isPrerelease -and (-not $_.isDraft) -and ($_.tagName -match "^v${version}-")
+        } | ForEach-Object { $_.tagName })
+
+        if ($trainPreReleaseTags.Count -eq 0) {
+            # Kein Pre-Release-Tag vorhanden: Phase ist Alpha (frisch geplanter Train)
+            $phase = 'Alpha'
+        } else {
+            # Mehrere Pre-Release-Tags eines Trains koennen gleichzeitig existieren
+            # (Tags werden nicht geloescht, z.B. -freeze UND -beta1). Die Reihenfolge
+            # aus `gh release list` ist NICHT garantiert — daher die fortgeschrittenste
+            # Phase ueber ein explizites Ranking bestimmen statt [0] zu nehmen.
+            $phaseRank = @{ Alpha = 1; Freeze = 2; Beta = 3; Stable = 4 }
+            $mostAdvancedPhase = $trainPreReleaseTags |
+                ForEach-Object { Get-PhaseFromTag $_ } |
+                Where-Object  { $phaseRank.ContainsKey($_) } |
+                Sort-Object   { $phaseRank[$_] } -Descending |
+                Select-Object -First 1
+            $phase = if ($mostAdvancedPhase) { $mostAdvancedPhase } else { 'Alpha' }
+        }
+    } else {
+        # Kein aktiver Train: Fallback auf letzten Non-Draft-Tag
+        $phase   = Get-PhaseFromTag $latestTag
+        $version = Get-VersionFromTag $latestTag
+    }
 
     # ── 3. Branch-Namen ableiten ─────────────────────────────────────────────
     $devBranch     = if ($version) { "dev/v${version}" }     else { $null }
     $releaseBranch = if ($version) { "release/v${version}" } else { $null }
 
     # ReleaseBranch nur setzen wenn er remote existiert
-    if ($releaseBranch) {
-        $branchExists = gh api "repos/$Repo/branches/$releaseBranch" 2>$null
-        if (-not $branchExists) { $releaseBranch = $null }
+    # (bei aktivem Train bereits verifiziert; Fallback-Pfad prueft neu)
+    if ($activeTrain) {
+        # Branches bereits geprueft — direkt aus Train uebernehmen
+        $devBranch     = $activeTrain.DevBranch
+        $releaseBranch = $activeTrain.ReleaseBranch
+    } elseif ($releaseBranch) {
+        gh api "repos/$Repo/branches/$releaseBranch" 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) { $releaseBranch = $null }
     }
 
     # ── 4. AllowedBranches + PushAllowed aus Phase ───────────────────────────
@@ -125,7 +186,13 @@ function Invoke-GetReleaseTrain {
 
     # ── 5. Milestone ─────────────────────────────────────────────────────────
     $milestone = $null
-    if ($version) {
+    if ($activeTrain) {
+        # Milestone-Daten aus dem aktiven Train uebernehmen (bereits ermittelt)
+        $milestone = [PSCustomObject]@{
+            Title = $activeTrain.MilestoneTitle
+            Url   = $activeTrain.MilestoneUrl
+        }
+    } elseif ($version) {
         $milestonesJson = gh api "repos/$Repo/milestones" 2>$null
         $milestones     = if ($milestonesJson) { $milestonesJson | ConvertFrom-Json } else { @() }
 
