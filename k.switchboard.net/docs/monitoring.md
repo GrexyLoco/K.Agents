@@ -137,3 +137,11 @@ Invoke-RestMethod http://localhost:3456/stats
 ```
 
 Statistiken werden in `%APPDATA%\K.Switchboard\costs-yyyy-MM-dd.json` gespeichert. Preise müssen in `config.json` unter `Pricing` konfiguriert sein — siehe [Konfigurationsreferenz](configuration.md#pricing).
+
+### 1.4.1 Erfasster Traffic
+
+Die Token-Erfassung deckt sowohl **nicht-gestreamte** Antworten (einzelnes JSON mit Top-Level `usage`) als auch **SSE-Streaming**-Antworten (`text/event-stream` mit `data: {...}`-Events) ab. Damit wird der Anthropic-(Claude-)Passthrough — der praktisch immer mit `stream:true` läuft — ebenso erfasst wie der Ollama-Streaming-Verkehr.
+
+Bei SSE wird je Feld (`input_tokens`, `output_tokens`) das Maximum über alle `usage`-Vorkommen aller Events gebildet. Das ist korrekt, weil Anthropics `output_tokens` kumulativ-monoton übertragen wird (der letzte Wert ist der Gesamtwert) und der `input_tokens`-Wert bereits im `message_start`-Event steht.
+
+Fehlt für ein Modell ein `Pricing`-Eintrag, wird der Verbrauch dennoch mit `costUsd: 0` erfasst — Token-Zahlen gehen also nie verloren.
