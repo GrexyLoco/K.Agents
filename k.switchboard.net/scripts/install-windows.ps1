@@ -64,6 +64,31 @@ $script:ServiceInstallDir  = Join-Path $env:ProgramData 'K.Switchboard'
 
 # --- Hilfsfunktionen ---
 
+function New-NetworkServiceAccessRule {
+    <#
+    .SYNOPSIS
+        Erzeugt eine FileSystemAccessRule fuer NetworkService via well-known SID S-1-5-20.
+
+    .DESCRIPTION
+        Verwendet [SecurityIdentifier] statt einem lokalisierten Account-String,
+        sodass die Regel auf allen Windows-Sprachversionen (en-US, de-DE, …) funktioniert.
+        Die well-known SID S-1-5-20 entspricht NT AUTHORITY\NETWORK SERVICE.
+        Erfordert keine Administratorrechte — reine .NET-Objekt-Konstruktion.
+    #>
+    [CmdletBinding()]
+    [OutputType([System.Security.AccessControl.FileSystemAccessRule])]
+    param()
+
+    $sid = [System.Security.Principal.SecurityIdentifier]::new('S-1-5-20')
+    return [System.Security.AccessControl.FileSystemAccessRule]::new(
+        $sid,
+        [System.Security.AccessControl.FileSystemRights]'ReadAndExecute, Synchronize',
+        [System.Security.AccessControl.InheritanceFlags]'ContainerInherit, ObjectInherit',
+        [System.Security.AccessControl.PropagationFlags]::None,
+        [System.Security.AccessControl.AccessControlType]::Allow
+    )
+}
+
 function Get-DefaultExePath {
     [CmdletBinding()]
     param()
@@ -123,19 +148,20 @@ function Set-ServiceInstallPermissions {
 
     if ($PSCmdlet.ShouldProcess($TargetDir, 'ACL für NetworkService (ReadAndExecute) setzen')) {
         $acl = Get-Acl -Path $TargetDir
-        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-            'NT AUTHORITY\NETWORK SERVICE',
-            'ReadAndExecute, Synchronize',
-            'ContainerInherit, ObjectInherit',
-            'None',
-            'Allow'
-        )
+        $rule = New-NetworkServiceAccessRule
 
+        # Dedup-Pruefung via SID (sprachunabhaengig — kein Vergleich mit lokalisiertem Account-String)
+        $networkServiceSid = [System.Security.Principal.SecurityIdentifier]::new('S-1-5-20')
         $exists = $false
         foreach ($entry in $acl.Access) {
-            if ($entry.IdentityReference -eq 'NT AUTHORITY\NETWORK SERVICE' -and
-                $entry.AccessControlType -eq 'Allow' -and
-                ($entry.FileSystemRights.ToString().Contains('ReadAndExecute'))) {
+            try {
+                $entrySid = $entry.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier])
+            } catch {
+                continue
+            }
+            if ($entrySid.Value -eq $networkServiceSid.Value -and
+                $entry.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and
+                $entry.FileSystemRights.HasFlag([System.Security.AccessControl.FileSystemRights]::ReadAndExecute)) {
                 $exists = $true
                 break
             }
@@ -224,6 +250,8 @@ function Unregister-WindowsService {
 }
 
 # --- Hauptlogik ---
+# Guard: bei Dot-Sourcing (z.B. in Tests) wird die Hauptlogik uebersprungen.
+if ($MyInvocation.InvocationName -eq '.') { return }
 
 # EXE-Pfad auflösen
 if ($ExePath -eq '') {
