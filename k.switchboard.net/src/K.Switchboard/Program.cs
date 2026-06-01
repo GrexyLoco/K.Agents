@@ -71,6 +71,15 @@ try
         otel.AddConsoleExporter();
     });
 
+    // --- JSON-Serialisierung: Source-Generated Context global registrieren ---
+    // Behebt Bug #247: TypedResults.Ok(...) in /stats und /config schlägt unter
+    // PublishTrimmed=true fehl, da Reflection-Metadata für DailyStats/SwitchboardOptions
+    // entfernt wird. Der Source-Gen-Context stellt trim-sichere TypeInfo bereit.
+    builder.Services.ConfigureHttpJsonOptions(opts =>
+    {
+        opts.SerializerOptions.TypeInfoResolverChain.Insert(0, SwitchboardJsonContext.Default);
+    });
+
     // --- Options + Health Checks ---
     builder.Services
         .Configure<SwitchboardOptions>(builder.Configuration)
