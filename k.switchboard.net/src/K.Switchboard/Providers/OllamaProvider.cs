@@ -23,7 +23,7 @@ public sealed class OllamaProvider(
         var opts = options.CurrentValue;
         var upstreamUrl = opts.OllamaBaseUrl.TrimEnd('/') + "/api/chat";
 
-        var (ollamaBody, isStreaming) = await BuildOllamaBodyAsync(context.Request.Body, resolvedModel, cancellationToken);
+        var (ollamaBody, isStreaming) = await BuildOllamaBodyAsync(context.Request.Body, resolvedModel, opts.OllamaKeepAlive, cancellationToken);
 
         logger.LogDebug("Forwarding {Method} to Ollama: {Url} (model: {Model})",
             context.Request.Method, upstreamUrl, resolvedModel);
@@ -58,7 +58,7 @@ public sealed class OllamaProvider(
         await WriteJsonAnthropicResponseAsync(context, response, cancellationToken);
     }
 
-    private static async Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyAsync(Stream body, string resolvedModel, CancellationToken ct)
+    private static async Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyAsync(Stream body, string resolvedModel, string keepAlive, CancellationToken ct)
     {
         using var reader = new StreamReader(body, Encoding.UTF8, leaveOpen: true);
         var json = await reader.ReadToEndAsync(ct);
@@ -89,7 +89,8 @@ public sealed class OllamaProvider(
         {
             ["model"] = resolvedModel,
             ["messages"] = messages,
-            ["stream"] = isStreaming
+            ["stream"] = isStreaming,
+            ["keep_alive"] = keepAlive
         };
 
         if (request["max_tokens"]?.GetValue<int?>() is int maxTokens)

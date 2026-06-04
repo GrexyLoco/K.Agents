@@ -12,6 +12,12 @@ public sealed record SwitchboardOptions
     /// <summary>Basis-URL des Ollama-Endpunkts.</summary>
     public string OllamaBaseUrl { get; init; } = "http://localhost:11434";
 
+    /// <summary>Timeout für Ollama-Forwarding in Sekunden (lokale Inferenz kann lange dauern).</summary>
+    public int OllamaTimeoutSeconds { get; init; } = 600;
+
+    /// <summary>keep_alive-Wert für Ollama (wie lange das Modell nach einem Request geladen bleibt).</summary>
+    public string OllamaKeepAlive { get; init; } = "30m";
+
     /// <summary>Optionaler API-Key für den Zugriff auf den Proxy-Endpunkt.</summary>
     public string? ApiKey { get; init; }
 
@@ -32,6 +38,11 @@ public sealed record SwitchboardOptions
 
     /// <summary>Kosten-Konfiguration (Input/Output pro Million Tokens in USD).</summary>
     public Dictionary<string, ModelPricing> Pricing { get; init; } = [];
+
+    /// <summary>Ordnet jedem Ollama-Modell das Claude-Modell zu, das es vertritt
+    /// (Baseline für die Ersparnis-Berechnung). Key = Ollama-Modellname (mit ':'),
+    /// Value = Claude-Modellname, der als Pricing-Key in <see cref="Pricing"/> existieren muss.</summary>
+    public Dictionary<string, string> SavingsBaseline { get; init; } = [];
 }
 
 /// <summary>Preis-Konfiguration für ein Modell.</summary>

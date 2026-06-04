@@ -71,6 +71,15 @@ try
         otel.AddConsoleExporter();
     });
 
+    // --- JSON-Serialisierung: Source-Generated Context global registrieren ---
+    // Behebt Bug #247: TypedResults.Ok(...) in /stats und /config schlägt unter
+    // PublishTrimmed=true fehl, da Reflection-Metadata für DailyStats/SwitchboardOptions
+    // entfernt wird. Der Source-Gen-Context stellt trim-sichere TypeInfo bereit.
+    builder.Services.ConfigureHttpJsonOptions(opts =>
+    {
+        opts.SerializerOptions.TypeInfoResolverChain.Insert(0, SwitchboardJsonContext.Default);
+    });
+
     // --- Options + Health Checks ---
     builder.Services
         .Configure<SwitchboardOptions>(builder.Configuration)
@@ -94,6 +103,19 @@ try
 
     // --- Provider + Routing (Phase 3) ---
     builder.Services.AddHttpClient();
+
+    // Named Ollama-Client mit konfigurierbarem Timeout: lokale CPU-Inferenz groesserer
+    // Modelle kann den .NET-Default von 100s ueberschreiten. Der Anthropic-Client
+    // ("anthropic") bleibt bewusst auf dem kurzen Default.
+    var ollamaOptions = builder.Configuration.Get<SwitchboardOptions>() ?? new SwitchboardOptions();
+    builder.Services.AddHttpClient("ollama", client =>
+    {
+        // Clamp wie beim Rate-Limit oben: 0/negativ wuerde TimeSpan.FromSeconds in eine
+        // ArgumentOutOfRangeException laufen lassen (erst beim ersten Request, schwer diagnostizierbar).
+        var timeoutSeconds = Math.Max(1, ollamaOptions.OllamaTimeoutSeconds);
+        client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+    });
+
     builder.Services.AddSingleton<IProvider, AnthropicProvider>();
     builder.Services.AddSingleton<IProvider, OllamaProvider>();
     builder.Services.AddSingleton<ProviderRegistry>();
