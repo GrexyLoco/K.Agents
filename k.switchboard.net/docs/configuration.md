@@ -63,7 +63,8 @@ Basis-URL des lokalen Ollama-Endpunkts. Anfragen für Modelle mit `:` im Namen (
 Timeout in Sekunden für den HTTP-Client, der Anfragen an Ollama weiterleitet. Lokale CPU-Inferenz größerer Modelle überschreitet häufig den .NET-Standard-Timeout von 100 s und führte zuvor zu `TaskCanceledException`/Timeout-Abbrüchen. Der Wert gilt ausschließlich für den Ollama-Pfad — der Anthropic-Client behält bewusst den kurzen Standard-Timeout.
 
 **Standardwert:** `600` (10 Minuten)  
-**Typ:** Ganzzahl (Sekunden)
+**Typ:** Ganzzahl (Sekunden)  
+**Hinweis:** Änderungen an `OllamaTimeoutSeconds` erfordern einen Neustart (wird beim Start in den HTTP-Client eingebacken, analog zu `Port`); `OllamaKeepAlive` wird hingegen per-Request gelesen und wirkt sofort.
 
 <a id="ollama-keep-alive"></a>
 

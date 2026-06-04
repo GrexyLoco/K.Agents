@@ -110,7 +110,10 @@ try
     var ollamaOptions = builder.Configuration.Get<SwitchboardOptions>() ?? new SwitchboardOptions();
     builder.Services.AddHttpClient("ollama", client =>
     {
-        client.Timeout = TimeSpan.FromSeconds(ollamaOptions.OllamaTimeoutSeconds);
+        // Clamp wie beim Rate-Limit oben: 0/negativ wuerde TimeSpan.FromSeconds in eine
+        // ArgumentOutOfRangeException laufen lassen (erst beim ersten Request, schwer diagnostizierbar).
+        var timeoutSeconds = Math.Max(1, ollamaOptions.OllamaTimeoutSeconds);
+        client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
     });
 
     builder.Services.AddSingleton<IProvider, AnthropicProvider>();
