@@ -7,6 +7,19 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Added
 
+- **Ollama-Ersparnis (≈ geschätzte avoided cost) sichtbar machen** (#259): K.Switchboard weist
+  jetzt aus, was lokal über Ollama bediente Requests an Claude-Kosten *vermieden* haben. Neue
+  Config-Map `SavingsBaseline` in `SwitchboardOptions` ordnet jedem Ollama-Modell ein
+  Claude-Referenzmodell zu (Key = Ollama-Modellname mit `:`, Value = Claude-Modell als
+  `Pricing`-Key). `CostingService.RecordUsageAsync` berechnet die Ersparnis als
+  `inputTokens × inputPerMillion / 1e6 + outputTokens × outputPerMillion / 1e6` der Baseline
+  und akkumuliert sie pro Modell als `SavedUsd` (+ `BaselineModel`); `GET /stats` zeigt
+  `savedUsd` pro Modell und `totalSavedUsd` gesamt. Ersparnis wird nur gebucht, wenn tatsächlich
+  Ollama bedient hat — Claude-Fallbacks stehen nicht in `SavingsBaseline` und buchen keine
+  fiktive Ersparnis. Die Berechnung ist eine Schätzung (Ollama-Tokenizer ≠ Claude-Tokenizer).
+  Bestehende `costs-*.json` ohne `savedUsd` bleiben abwärtskompatibel deserialisierbar
+  (fehlendes Feld → Default 0). Kein Eingriff in Routing/`FallbackService`.
+
 - **Konfigurierbarer Ollama-Timeout und keep_alive** (#252): Zwei neue Felder in
   `SwitchboardOptions` für den Ollama-Forwarding-Pfad. `OllamaTimeoutSeconds` (Default `600`)
   registriert einen benannten HttpClient `"ollama"` mit erhöhtem Timeout — lokale CPU-Inferenz

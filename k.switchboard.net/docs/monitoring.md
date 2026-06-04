@@ -129,10 +129,20 @@ Invoke-RestMethod http://localhost:3456/stats
     "claude-3-5-sonnet-20241022": {
       "inputTokens": 45200,
       "outputTokens": 8900,
-      "costUsd": 0.268300
+      "costUsd": 0.268300,
+      "savedUsd": 0,
+      "baselineModel": null
+    },
+    "qwen2.5-coder:14b": {
+      "inputTokens": 12000,
+      "outputTokens": 3400,
+      "costUsd": 0,
+      "savedUsd": 0.087000,
+      "baselineModel": "claude-sonnet-4-6"
     }
   },
-  "totalCostUsd": 0.268300
+  "totalCostUsd": 0.268300,
+  "totalSavedUsd": 0.087000
 }
 ```
 
@@ -147,3 +157,28 @@ Bei SSE wird je Feld (`input_tokens`, `output_tokens`) das Maximum über alle `u
 Fehlt für ein Modell ein `Pricing`-Eintrag, wird der Verbrauch dennoch mit `costUsd: 0` erfasst — der Eintrag entfällt also nicht nur wegen fehlender Preise.
 
 > **Hinweis (Scope #250):** Erfasst werden ausschließlich `input_tokens` und `output_tokens`. Die cache-spezifischen Felder des Anthropic-`usage`-Objekts (`cache_creation_input_tokens`, `cache_read_input_tokens`) werden aktuell **NICHT** erfasst. Bei stark Prompt-Cache-nutzendem Verkehr (z. B. Claude Code) ist `input_tokens` daher nur der nicht-gecachte Rest — die Input-Kosten für gecachten Traffic sind in diesem Fall unvollständig.
+
+### 1.4.2 Ersparnis durch Ollama (≈ geschätzte avoided cost)
+
+Wird ein Request lokal von einem **Ollama-Modell** bedient (Kosten 0 USD), macht K.Switchboard sichtbar, was derselbe Request bei einem Claude-Modell gekostet **hätte** — die *vermiedenen* Kosten ("avoided cost"). Diese werden pro Modell als `savedUsd` und insgesamt als `totalSavedUsd` ausgewiesen.
+
+Die Zuordnung "welches Claude-Modell vertritt dieses Ollama-Modell" wird **pro Ollama-Modell** über die Map `SavingsBaseline` in `config.json` konfiguriert (Key = Ollama-Modellname inkl. `:`, Value = Claude-Modellname, der als `Pricing`-Key existieren muss):
+
+```json
+{
+  "SavingsBaseline": {
+    "qwen2.5-coder:14b": "claude-sonnet-4-6",
+    "llama3.1:8b": "claude-haiku-4-5"
+  },
+  "Pricing": {
+    "claude-sonnet-4-6": { "inputPerMillion": 3.0, "outputPerMillion": 15.0 },
+    "claude-haiku-4-5":  { "inputPerMillion": 0.8, "outputPerMillion": 4.0 }
+  }
+}
+```
+
+Berechnung: `savedUsd = inputTokens × inputPerMillion / 1e6 + outputTokens × outputPerMillion / 1e6` der konfigurierten Baseline.
+
+Ersparnis wird **nur** gebucht, wenn tatsächlich Ollama bedient hat: Fällt ein Request auf Claude zurück, ist das erfasste Modell ein Claude-Name → steht nicht in `SavingsBaseline` → es wird (zu Recht) **keine** fiktive Ersparnis gebucht. Fehlt für ein Ollama-Modell der `SavingsBaseline`-Eintrag (oder der Baseline-`Pricing`-Eintrag), bleibt `savedUsd = 0` — der Verbrauch wird trotzdem normal erfasst.
+
+> **Annahme (Schätzung, nicht exakt):** Die Berechnung ist "Ollama-Token-Zahl × Claude-Preis". Ollama nutzt einen **anderen Tokenizer** als Claude, und die Output-Längen unterscheiden sich → `savedUsd`/`totalSavedUsd` sind eine **≈ geschätzte Ersparnis**, kein cent-genauer Wert. Ziel ist die Sichtbarkeit des Spareffekts, nicht exakte Abrechnung.

@@ -38,6 +38,11 @@ public sealed record SwitchboardOptions
 
     /// <summary>Kosten-Konfiguration (Input/Output pro Million Tokens in USD).</summary>
     public Dictionary<string, ModelPricing> Pricing { get; init; } = [];
+
+    /// <summary>Ordnet jedem Ollama-Modell das Claude-Modell zu, das es vertritt
+    /// (Baseline für die Ersparnis-Berechnung). Key = Ollama-Modellname (mit ':'),
+    /// Value = Claude-Modellname, der als Pricing-Key in <see cref="Pricing"/> existieren muss.</summary>
+    public Dictionary<string, string> SavingsBaseline { get; init; } = [];
 }
 
 /// <summary>Preis-Konfiguration für ein Modell.</summary>
