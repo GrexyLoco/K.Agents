@@ -6,13 +6,13 @@
   },
   "metadata": {
     "description": "16 spezialisierte AI-Agents und 49 Skills für .NET 10, C# 14, Blazor, MAUI, PowerShell Core, GitHub Actions und Azure.",
-    "version": "1.18.1"
+    "version": "1.19.0"
   },
   "plugins": [
     {
       "name": "kagents",
       "description": "16 spezialisierte AI-Agents und 49 Skills fuer .NET, PowerShell und Azure",
-      "version": "1.18.1",
+      "version": "1.19.0",
       "source": "./plugins/kagents"
     }
   ]
