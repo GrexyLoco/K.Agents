@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Net.Http;
 
 namespace K.Switchboard.Tests.Integration;
 
@@ -109,5 +110,27 @@ public sealed class StatsEndpointTests
         await Assert.That(modelsEl.TryGetProperty("claude-stats-test", out var modelEl)).IsTrue();
         await Assert.That(modelEl.GetProperty("inputTokens").GetInt32()).IsEqualTo(100);
         await Assert.That(modelEl.GetProperty("outputTokens").GetInt32()).IsEqualTo(50);
+    }
+
+    /// <summary>
+    /// Verdrahtungstest für #252: der named HttpClient "ollama" muss den konfigurierten
+    /// OllamaTimeoutSeconds übernehmen. Bricht die Registrierung (Umbenennung, Löschung),
+    /// fällt IHttpClientFactory.CreateClient still auf einen neuen HttpClient mit
+    /// .NET-Default (100s) zurück — dieser Test fängt das.
+    /// Verglichen wird gegen den vom SELBEN ServiceProvider aufgelösten Options-Wert,
+    /// damit der Test unabhängig vom Ambient-%APPDATA%-config.json (lokal vs. CI) ist.
+    /// </summary>
+    [Test]
+    [ClassDataSource<SwitchboardTestFixture>(Shared = SharedType.PerTestSession)]
+    public async Task OllamaHttpClient_TimeoutWirdAusConfigVerdrahtet(
+        SwitchboardTestFixture fixture)
+    {
+        var options = fixture.Services.GetRequiredService<IOptions<SwitchboardOptions>>().Value;
+        var client = fixture.Services
+            .GetRequiredService<IHttpClientFactory>()
+            .CreateClient("ollama");
+
+        await Assert.That(client.Timeout)
+            .IsEqualTo(TimeSpan.FromSeconds(options.OllamaTimeoutSeconds));
     }
 }

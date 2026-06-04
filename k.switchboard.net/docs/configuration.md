@@ -52,6 +52,33 @@ Basis-URL des lokalen Ollama-Endpunkts. Anfragen für Modelle mit `:` im Namen (
 **Typ:** URL-Zeichenkette  
 **API-Referenz:** [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
 
+<a id="ollama-timeout-seconds"></a>
+
+### 1.3.1 OllamaTimeoutSeconds
+
+```json
+"OllamaTimeoutSeconds": 600
+```
+
+Timeout in Sekunden für den HTTP-Client, der Anfragen an Ollama weiterleitet. Lokale CPU-Inferenz größerer Modelle überschreitet häufig den .NET-Standard-Timeout von 100 s und führte zuvor zu `TaskCanceledException`/Timeout-Abbrüchen. Der Wert gilt ausschließlich für den Ollama-Pfad — der Anthropic-Client behält bewusst den kurzen Standard-Timeout.
+
+**Standardwert:** `600` (10 Minuten)  
+**Typ:** Ganzzahl (Sekunden)  
+**Hinweis:** Änderungen an `OllamaTimeoutSeconds` erfordern einen Neustart (wird beim Start in den HTTP-Client eingebacken, analog zu `Port`); `OllamaKeepAlive` wird hingegen per-Request gelesen und wirkt sofort.
+
+<a id="ollama-keep-alive"></a>
+
+### 1.3.2 OllamaKeepAlive
+
+```json
+"OllamaKeepAlive": "30m"
+```
+
+Wert für das `keep_alive`-Feld im weitergeleiteten Ollama-Request. Steuert, wie lange Ollama das Modell nach einem Request im Speicher geladen hält. Ohne diesen Wert entlädt Ollama das Modell nach 5 Minuten Idle, was beim nächsten Request einen Cold-Load auslöst. Akzeptiert Ollama-Dauer-Zeichenketten (z. B. `"30m"`, `"1h"`) — siehe [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md#parameters).
+
+**Standardwert:** `"30m"`  
+**Typ:** Zeichenkette (Ollama-Dauer)
+
 ---
 
 <a id="model-aliases"></a>
@@ -146,6 +173,8 @@ Statistiken werden täglich in `%APPDATA%\K.Switchboard\costs-yyyy-MM-dd.json` g
   "Port": 3456,
   "AnthropicBaseUrl": "https://api.anthropic.com",
   "OllamaBaseUrl": "http://localhost:11434",
+  "OllamaTimeoutSeconds": 600,
+  "OllamaKeepAlive": "30m",
   "ModelAliases": {
     "local-coder": "codellama:13b",
     "local-fast": "llama3.2:3b",

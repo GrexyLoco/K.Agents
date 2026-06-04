@@ -103,6 +103,19 @@ try
 
     // --- Provider + Routing (Phase 3) ---
     builder.Services.AddHttpClient();
+
+    // Named Ollama-Client mit konfigurierbarem Timeout: lokale CPU-Inferenz groesserer
+    // Modelle kann den .NET-Default von 100s ueberschreiten. Der Anthropic-Client
+    // ("anthropic") bleibt bewusst auf dem kurzen Default.
+    var ollamaOptions = builder.Configuration.Get<SwitchboardOptions>() ?? new SwitchboardOptions();
+    builder.Services.AddHttpClient("ollama", client =>
+    {
+        // Clamp wie beim Rate-Limit oben: 0/negativ wuerde TimeSpan.FromSeconds in eine
+        // ArgumentOutOfRangeException laufen lassen (erst beim ersten Request, schwer diagnostizierbar).
+        var timeoutSeconds = Math.Max(1, ollamaOptions.OllamaTimeoutSeconds);
+        client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+    });
+
     builder.Services.AddSingleton<IProvider, AnthropicProvider>();
     builder.Services.AddSingleton<IProvider, OllamaProvider>();
     builder.Services.AddSingleton<ProviderRegistry>();
