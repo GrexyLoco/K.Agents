@@ -12,6 +12,12 @@ public sealed record SwitchboardOptions
     /// <summary>Basis-URL des Ollama-Endpunkts.</summary>
     public string OllamaBaseUrl { get; init; } = "http://localhost:11434";
 
+    /// <summary>Timeout fuer Ollama-Forwarding in Sekunden (lokale Inferenz kann lange dauern).</summary>
+    public int OllamaTimeoutSeconds { get; init; } = 600;
+
+    /// <summary>keep_alive-Wert fuer Ollama (wie lange das Modell nach einem Request geladen bleibt).</summary>
+    public string OllamaKeepAlive { get; init; } = "30m";
+
     /// <summary>Optionaler API-Key für den Zugriff auf den Proxy-Endpunkt.</summary>
     public string? ApiKey { get; init; }
 

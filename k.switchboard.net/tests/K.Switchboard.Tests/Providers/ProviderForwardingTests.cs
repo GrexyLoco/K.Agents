@@ -198,6 +198,54 @@ public sealed class ProviderForwardingTests
         await Assert.That(hasHeader).IsFalse();
     }
 
+    [Test]
+    public async Task OllamaProvider_IncludesDefaultKeepAliveInBody()
+    {
+        var capturedBody = string.Empty;
+        var (provider, _) = CreateOllamaProvider(
+            onRequest: async req =>
+            {
+                capturedBody = req.Content is not null
+                    ? await req.Content.ReadAsStringAsync()
+                    : string.Empty;
+            });
+
+        var ctx = BuildContext("""{"model":"codellama:13b","messages":[]}""");
+        await provider.ForwardAsync(ctx, "codellama:13b", CancellationToken.None);
+
+        var doc = JsonDocument.Parse(capturedBody);
+        await Assert.That(doc.RootElement.GetProperty("keep_alive").GetString()).IsEqualTo("30m");
+    }
+
+    [Test]
+    public async Task OllamaProvider_IncludesConfiguredKeepAliveInBody()
+    {
+        var capturedBody = string.Empty;
+        var (provider, _) = CreateOllamaProvider(
+            keepAlive: "1h",
+            onRequest: async req =>
+            {
+                capturedBody = req.Content is not null
+                    ? await req.Content.ReadAsStringAsync()
+                    : string.Empty;
+            });
+
+        var ctx = BuildContext("""{"model":"codellama:13b","messages":[]}""");
+        await provider.ForwardAsync(ctx, "codellama:13b", CancellationToken.None);
+
+        var doc = JsonDocument.Parse(capturedBody);
+        await Assert.That(doc.RootElement.GetProperty("keep_alive").GetString()).IsEqualTo("1h");
+    }
+
+    [Test]
+    public async Task SwitchboardOptions_HasExpectedOllamaDefaults()
+    {
+        var options = new SwitchboardOptions();
+
+        await Assert.That(options.OllamaTimeoutSeconds).IsEqualTo(600);
+        await Assert.That(options.OllamaKeepAlive).IsEqualTo("30m");
+    }
+
     // --- Hilfsmethoden ---
 
     private static (AnthropicProvider Provider, MockHttpHandler Handler) CreateAnthropicProvider(
@@ -218,13 +266,15 @@ public sealed class ProviderForwardingTests
         string baseUrl = "http://localhost:11434",
         Action<HttpRequestMessage>? onRequest = null,
         HttpStatusCode responseCode = HttpStatusCode.OK,
-        string responseBody = "{}")
+        string responseBody = "{}",
+        string keepAlive = "30m")
     {
         var handler = new MockHttpHandler(onRequest, responseCode, responseBody);
         var factory = new SingleClientFactory(new HttpClient(handler));
         var opts = new FakeOptionsMonitor<SwitchboardOptions>(new SwitchboardOptions
         {
-            OllamaBaseUrl = baseUrl
+            OllamaBaseUrl = baseUrl,
+            OllamaKeepAlive = keepAlive
         });
         return (new OllamaProvider(factory, opts, NullLogger<OllamaProvider>.Instance), handler);
     }

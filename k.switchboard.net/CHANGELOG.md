@@ -5,6 +5,17 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Konfigurierbarer Ollama-Timeout und keep_alive** (#252): Zwei neue Felder in
+  `SwitchboardOptions` für den Ollama-Forwarding-Pfad. `OllamaTimeoutSeconds` (Default `600`)
+  registriert einen benannten HttpClient `"ollama"` mit erhöhtem Timeout — lokale CPU-Inferenz
+  größerer Modelle überschreitet häufig den .NET-Default von 100 s und lief zuvor in
+  `TaskCanceledException`/Timeout-Retries. `OllamaKeepAlive` (Default `"30m"`) wird als
+  `keep_alive` in den weitergeleiteten Ollama-Request aufgenommen, sodass das Modell nicht
+  bereits nach 5 Minuten Idle entladen wird (vermeidet Cold-Load beim Folge-Request). Der
+  Anthropic-Client bleibt bewusst auf dem kurzen Default-Timeout.
+
 ### Fixed
 
 - **Anthropic-/SSE-Streaming-Traffic wird jetzt im Cost-Tracking erfasst** (#250): Die
