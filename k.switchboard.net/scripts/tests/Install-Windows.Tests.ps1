@@ -19,6 +19,38 @@ BeforeAll {
     . $script:InstallScript
 }
 
+Describe 'Install-Portable' {
+
+    Context 'Rueckgabe-Aritaet' {
+
+        AfterEach {
+            if ($script:TempTarget -and (Test-Path $script:TempTarget)) {
+                Remove-Item -Recurse -Force $script:TempTarget -ErrorAction SilentlyContinue
+            }
+        }
+
+        It 'liefert genau einen Rueckgabewert (String mit Ziel-EXE-Pfad)' {
+            $script:TempTarget = Join-Path ([System.IO.Path]::GetTempPath()) ("pester-263-" + [System.IO.Path]::GetRandomFileName())
+            $dummyExe = Join-Path ([System.IO.Path]::GetTempPath()) ("pester-263-dummy-" + [System.IO.Path]::GetRandomFileName() + ".exe")
+            $null = New-Item -ItemType File -Path $dummyExe -Force
+
+            try {
+                $result = Install-Portable -SourceExe $dummyExe -TargetDir $script:TempTarget
+
+                # PRIMARY discriminator: exactly one value returned (not array of [message, path])
+                @($result).Count | Should -Be 1
+                # must be a string (non-piped to avoid pipeline array-unroll)
+                ($result -is [string]) | Should -BeTrue
+                # must point to the destination EXE
+                $result | Should -Match 'K\.Switchboard\.exe$'
+            }
+            finally {
+                if (Test-Path $dummyExe) { Remove-Item -Force $dummyExe -ErrorAction SilentlyContinue }
+            }
+        }
+    }
+}
+
 Describe 'New-NetworkServiceAccessRule' {
 
     Context 'SID-basierte Regel-Erzeugung (sprachunabhaengig)' {
