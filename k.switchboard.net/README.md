@@ -216,3 +216,4 @@ Die vollständige Migrationstabelle inklusive YAML→JSON-Mapping steht in [docs
 - [Troubleshooting](docs/troubleshooting.md) — Symptome, Ursachen, Lösungen
 - [Migration von Python](docs/migration-from-python.md) — Befehlsvergleich und Config-Mapping
 - [RFC-178 Erfüllungsnachweis](docs/rfc-178-fulfillment.md) — checklistenbasierter Nachweisstand
+- [RFC-177 Auslieferungsstrategie](docs/rfc-177-delivery-strategy.md) — Optionenvergleich (Release-ZIP, Docker, winget) inkl. lokale-KI-Frage
