@@ -31,6 +31,14 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Fixed
 
+- **`install-windows.ps1 -AsService` bricht nicht mehr mit Array-Konvertierungsfehler ab** (#263):
+  `Install-Portable` schrieb zwei Werte in den Output-Stream (`Write-Output` Statusmeldung +
+  `return $destExe`). Der Aufrufer `$installedExe = Install-Portable …` erhielt dadurch ein
+  `object[]`-Array; `Register-WindowsService -ExeFullPath $installedExe` ([string]-Parameter)
+  konnte das Array nicht konvertieren → Abbruch bei jedem `-AsService`-Lauf. Fix: Statusmeldung
+  auf `Write-Host` umgestellt (Information-Stream), sodass nur noch der Pfad in die Pipeline
+  geht.
+
 - **Anthropic-/SSE-Streaming-Traffic wird jetzt im Cost-Tracking erfasst** (#250): Die
   Token-Extraktion (`CostingService.TryExtractUsage`) verstand bisher nur nicht-gestreamte
   Einzel-JSON-Antworten mit Top-Level `usage`. Bei SSE-Streaming (`stream:true`, von Claude

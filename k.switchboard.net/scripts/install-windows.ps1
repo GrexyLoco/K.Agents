@@ -130,7 +130,7 @@ function Install-Portable {
 
     if ($PSCmdlet.ShouldProcess($destExe, 'EXE kopieren')) {
         Copy-Item -Path $SourceExe -Destination $destExe -Force
-        Write-Output "K.Switchboard.exe installiert: $destExe"
+        Write-Host "K.Switchboard.exe installiert: $destExe"
     }
 
     return $destExe
