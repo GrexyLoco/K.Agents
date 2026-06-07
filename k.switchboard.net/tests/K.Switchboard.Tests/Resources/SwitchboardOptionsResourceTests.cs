@@ -31,6 +31,7 @@ public sealed class SwitchboardOptionsResourceTests
 
         await Assert.That(opts.LocalModelTiers["qwen2.5-coder:14b"]).IsEqualTo("L");
         await Assert.That(opts.TierSubstitutions["S"]).IsEqualTo("claude-haiku-4-5");
+        await Assert.That(opts.ResourceGate.Enabled).IsTrue();
         await Assert.That(opts.ResourceGate.CpuMaxLoadPercent).IsEqualTo(85);
         await Assert.That(opts.HardwareClasses[0].Name).IsEqualTo("gpu-14b");
         await Assert.That(opts.HardwareClasses[0].Match.MinVramMb).IsEqualTo(10240);
