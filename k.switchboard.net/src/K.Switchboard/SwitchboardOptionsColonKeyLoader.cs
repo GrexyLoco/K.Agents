@@ -14,7 +14,9 @@ public static class SwitchboardOptionsColonKeyLoader
     /// werden die entsprechenden Collections überschrieben — so bleiben via IConfiguration
     /// (z.B. Umgebungsvariablen) gesetzte Werte erhalten, wenn die Sektion in der JSON fehlt.
     /// Null-Guard: STJ source-gen belässt fehlende Properties auf dem Typ-Default (null),
-    /// nicht auf dem Record-Initializer-Default (= []); beide Seiten werden defensiv geprüft.</summary>
+    /// nicht auf dem Record-Initializer-Default (= []); beide Seiten werden defensiv geprüft.
+    /// Hinweis: Leert der Nutzer eine colon-Sektion bewusst auf <c>{}</c>, bleibt der In-Memory-Wert
+    /// bei Hot-Reload unverändert (kein Lösch-Szenario unterstützt — Neustart erforderlich).</summary>
     public static void ApplyFromFile(SwitchboardOptions target, string configFilePath)
     {
         SwitchboardOptions? parsed;
