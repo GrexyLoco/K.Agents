@@ -106,7 +106,8 @@ public sealed record HardwareClassMatch
 /// <summary>Empirische Validierungs-Daten eines lokalen Modells auf einer HW-Klasse.</summary>
 public sealed record ModelValidation
 {
-    /// <summary>Beobachteter Peak-RAM (MB) beim realistischen Max-Kontext. 0 = nicht gemessen (Default nutzen).</summary>
+    /// <summary>Beobachteter Peak-RAM (MB) beim realistischen Max-Kontext.
+    /// 0 = nicht validiert → lokale Ausführung gesperrt (ResourceGate erzwingt Substitution).</summary>
     public int PeakRamMb { get; init; }
 
     /// <summary>Setup-Beschreibung, auf dem gemessen wurde (Reproduzierbarkeit, siehe eval-measurement.md).</summary>

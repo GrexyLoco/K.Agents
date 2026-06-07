@@ -10,6 +10,12 @@ public sealed class ResourceGateTests
             => Task.FromResult(snap);
     }
 
+    private sealed class ThrowingProbe : ILiveResourceProbe
+    {
+        public Task<LiveResourceSnapshot> SampleAsync(string model, int cpuWindowSeconds, CancellationToken ct)
+            => throw new InvalidOperationException("Monitor kaputt");
+    }
+
     private sealed class FixedDetector(HardwareProfile p) : IHardwareProfileDetector
     {
         public Task<HardwareProfile> DetectAsync(CancellationToken ct)
@@ -121,5 +127,40 @@ public sealed class ResourceGateTests
         var d = await gate.EvaluateAsync("local-coder", CancellationToken.None);
         await Assert.That(d.Action).IsEqualTo(RoutingAction.Proceed);
         await Assert.That(d.EffectiveModel).IsEqualTo("local-coder");
+    }
+
+    [Test]
+    public async Task Fails_open_to_proceed_when_resource_monitor_throws()
+    {
+        // Validiertes Modell (Pfad führt zur Probe), aber die Probe wirft → fail-open statt 500.
+        var opts = new SwitchboardOptions
+        {
+            ResourceGate = new ResourceGateOptions { Enabled = true, CpuMaxLoadPercent = 85 },
+            ModelAliases = new() { ["local-coder"] = "qwen2.5-coder:14b" },
+            LocalModelTiers = new() { ["qwen2.5-coder:14b"] = "L" },
+            TierSubstitutions = new() { ["L"] = "claude-sonnet-4-6" },
+            HardwareClasses =
+            [
+                new()
+                {
+                    Name = "gpu-14b",
+                    Match = new() { GpuVendor = "NVIDIA", MinVramMb = 10240 },
+                    Models = new() { ["qwen2.5-coder:14b"] = new ModelValidation { PeakRamMb = 11000, ValidatedOn = "rig" } }
+                }
+            ]
+        };
+        var optsMon = new FakeOptionsMonitor<SwitchboardOptions>(opts);
+        var tmp = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(tmp);
+        var cache = new HardwareProfileCache(new FixedDetector(Gpu14b), tmp,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<HardwareProfileCache>.Instance);
+        var gate = new ResourceGate(new ModelRouter(optsMon), cache, new HardwareClassifier(),
+            new ThrowingProbe(), optsMon,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<ResourceGate>.Instance);
+
+        var d = await gate.EvaluateAsync("local-coder", CancellationToken.None);
+
+        await Assert.That(d.Action).IsEqualTo(RoutingAction.Proceed);   // fail-open, kein 500
+        await Assert.That(d.EffectiveModel).IsEqualTo("local-coder");   // unverändert durchgereicht
     }
 }

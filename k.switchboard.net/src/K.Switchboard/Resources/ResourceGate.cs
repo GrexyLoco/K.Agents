@@ -24,32 +24,45 @@ public sealed class ResourceGate(
         if (!string.Equals(providerName, "ollama", StringComparison.OrdinalIgnoreCase))
             return Proceed(requestedModel, "non-local-provider");
 
-        var profile = await cache.GetAsync(ct);
-        var hwClass = classifier.Match(profile, opts.HardwareClasses);
-        var validation = hwClass is not null && hwClass.Models.TryGetValue(resolvedModel, out var v) ? v : null;
-
-        if (validation is { PeakRamMb: > 0 })
+        try
         {
-            var buffer = opts.ResourceGate.RamBufferMb > 0
-                ? opts.ResourceGate.RamBufferMb
-                : Math.Max(1024, validation.PeakRamMb / 4);
-            var need = validation.PeakRamMb + buffer;
-            var live = await probe.SampleAsync(resolvedModel, opts.ResourceGate.CpuLoadWindowSeconds, ct);
+            var profile = await cache.GetAsync(ct);
+            var hwClass = classifier.Match(profile, opts.HardwareClasses);
+            var validation = hwClass is not null && hwClass.Models.TryGetValue(resolvedModel, out var v) ? v : null;
 
-            if (live.FreeRamMb >= need && live.CpuLoadPercent <= opts.ResourceGate.CpuMaxLoadPercent)
+            if (validation is { PeakRamMb: > 0 })
             {
-                logger.LogInformation(
-                    "ResourceGate: lokal zugelassen {Model} (frei {Free}MB ≥ {Need}MB, CPU {Cpu}%, warm={Warm})",
-                    resolvedModel, live.FreeRamMb, need, live.CpuLoadPercent, live.ModelWarm);
-                return Proceed(requestedModel, $"local-admitted free={live.FreeRamMb}MB warm={live.ModelWarm}");
+                var buffer = opts.ResourceGate.RamBufferMb > 0
+                    ? opts.ResourceGate.RamBufferMb
+                    : Math.Max(1024, validation.PeakRamMb / 4);
+                var need = validation.PeakRamMb + buffer;
+                var live = await probe.SampleAsync(resolvedModel, opts.ResourceGate.CpuLoadWindowSeconds, ct);
+
+                if (live.FreeRamMb >= need && live.CpuLoadPercent <= opts.ResourceGate.CpuMaxLoadPercent)
+                {
+                    logger.LogInformation(
+                        "ResourceGate: lokal zugelassen {Model} (frei {Free}MB ≥ {Need}MB, CPU {Cpu}%, warm={Warm})",
+                        resolvedModel, live.FreeRamMb, need, live.CpuLoadPercent, live.ModelWarm);
+                    return Proceed(requestedModel, $"local-admitted free={live.FreeRamMb}MB warm={live.ModelWarm}");
+                }
+
+                return BuildSubstitution(requestedModel, resolvedModel, opts,
+                    $"free {live.FreeRamMb}MB/{need}MB, CPU {live.CpuLoadPercent:F0}%");
             }
 
             return BuildSubstitution(requestedModel, resolvedModel, opts,
-                $"free {live.FreeRamMb}MB/{need}MB, CPU {live.CpuLoadPercent:F0}%");
+                hwClass is null ? "no matching hardware class" : "no validated footprint");
         }
-
-        return BuildSubstitution(requestedModel, resolvedModel, opts,
-            hwClass is null ? "no matching hardware class" : "no validated footprint");
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Fail-open: ein interner Fehler des Ressourcen-Monitors (Cache/Detektor/Probe) darf
+            // NICHT jeden lokalen Request mit 500 killen. Lieber unverändert an FallbackService
+            // durchreichen — der bleibt für reaktive HTTP-Fehler zuständig. Request-Cancellation
+            // (OperationCanceledException) wird bewusst weitergereicht.
+            logger.LogWarning(ex,
+                "ResourceGate: Ressourcen-Check fehlgeschlagen für {Model} → fail-open (Proceed).", requestedModel);
+            return Proceed(requestedModel, "resource-monitor-error");
+        }
     }
 
     private RoutingDecision BuildSubstitution(string requestedModel, string localModel, SwitchboardOptions opts, string reason)
@@ -64,12 +77,18 @@ public sealed class ResourceGate(
         }
 
         // 2) Tier-Substitution.
-        if (opts.LocalModelTiers.TryGetValue(localModel, out var tier)
-            && opts.TierSubstitutions.TryGetValue(tier, out var claude))
+        if (opts.LocalModelTiers.TryGetValue(localModel, out var tier))
         {
-            var header = $"{claude} (local {localModel} not viable — {reason})";
-            logger.LogInformation("ResourceGate: substitution {Header}", header);
-            return new RoutingDecision { Action = RoutingAction.Proceed, EffectiveModel = claude, Reason = reason, SubstitutionHeader = header };
+            if (opts.TierSubstitutions.TryGetValue(tier, out var claude))
+            {
+                var header = $"{claude} (local {localModel} not viable — {reason})";
+                logger.LogInformation("ResourceGate: substitution {Header}", header);
+                return new RoutingDecision { Action = RoutingAction.Proceed, EffectiveModel = claude, Reason = reason, SubstitutionHeader = header };
+            }
+
+            // Tier konfiguriert, aber kein Substitut hinterlegt → klaren Grund loggen (sonst opakes 503).
+            logger.LogWarning(
+                "ResourceGate: Tier '{Tier}' für {Model} ist nicht in TierSubstitutions konfiguriert.", tier, localModel);
         }
 
         // 3) Kein Fallback, kein Substitut → hart fehlschlagen.
