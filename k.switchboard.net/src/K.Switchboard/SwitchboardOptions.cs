@@ -55,6 +55,32 @@ public sealed record SwitchboardOptions
 
     /// <summary>Einstellungen des ResourceGate (Pre-flight-Ressourcen-Check).</summary>
     public ResourceGateOptions ResourceGate { get; init; } = new();
+
+    /// <summary>Auslieferungs-Defaults für eine Neuinstallation (committed Mapping b + Substitution +
+    /// aktiviertes ResourceGate). Bestehende config.json bleiben unberührt → Gate bleibt aus, solange
+    /// keine ResourceGate-Sektion vorhanden ist (Enabled-Default = false).</summary>
+    public static SwitchboardOptions CreateDefault() => new()
+    {
+        LocalModelTiers = new()
+        {
+            ["qwen2.5-coder:1.5b"] = "S", ["llama3.2:3b"] = "S",
+            ["qwen2.5-coder:7b"] = "M",  ["llama3.1:8b"] = "M",
+            ["qwen2.5-coder:14b"] = "L", ["qwen2.5-coder:32b"] = "L"
+        },
+        TierSubstitutions = new()
+        {
+            ["S"] = "claude-haiku-4-5", ["M"] = "claude-sonnet-4-6", ["L"] = "claude-sonnet-4-6"
+        },
+        ResourceGate = new ResourceGateOptions { Enabled = true, RamBufferMb = 0, CpuLoadWindowSeconds = 4, CpuMaxLoadPercent = 85 },
+        HardwareClasses =
+        [
+            new() { Name = "cpu-low",      Match = new() { MaxRamMb = 16384 } },
+            new() { Name = "gpu-7b",       Match = new() { MinVramMb = 6144,  MaxVramMb = 10239 } },
+            new() { Name = "gpu-14b",      Match = new() { MinVramMb = 10240, MaxVramMb = 16383 } },
+            new() { Name = "gpu-14b-plus", Match = new() { MinVramMb = 16384 } },
+            new() { Name = "cpu-32",       Match = new() { MinRamMb = 24576 } }
+        ]
+    };
 }
 
 /// <summary>Preis-Konfiguration für ein Modell.</summary>

@@ -34,7 +34,7 @@ try
             ? JsonSerializer.Serialize(
                 builder.Configuration.GetSection("Switchboard").Get<SwitchboardOptions>() ?? new SwitchboardOptions(),
                 SwitchboardJsonContext.Default.SwitchboardOptions)
-            : JsonSerializer.Serialize(new SwitchboardOptions(),
+            : JsonSerializer.Serialize(SwitchboardOptions.CreateDefault(),
                 SwitchboardJsonContext.Default.SwitchboardOptions);
         File.WriteAllText(appDataConfig, defaultConfig);
         Log.Information("[Bootstrap] Default-Config erstellt: {Path}", appDataConfig);
@@ -116,6 +116,13 @@ try
         client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
     });
 
+    builder.Services.AddSingleton<IProcessRunner, ProcessRunner>();
+    builder.Services.AddSingleton<IHardwareProfileDetector, HardwareProfileDetector>();
+    builder.Services.AddSingleton<HardwareProfileCache>();
+    builder.Services.AddSingleton<HardwareClassifier>();
+    builder.Services.AddSingleton<ICpuLoadSampler, CpuLoadSampler>();
+    builder.Services.AddSingleton<ILiveResourceProbe, LiveResourceProbe>();
+    builder.Services.AddSingleton<ResourceGate>();
     builder.Services.AddSingleton<LocalInferenceGate>();
     builder.Services.AddSingleton<IProvider, AnthropicProvider>();
     builder.Services.AddSingleton<IProvider, OllamaProvider>();
@@ -141,7 +148,7 @@ try
     }
 
     // --- Proxy-Endpoint: POST /v1/messages ---
-    app.MapPost("/v1/messages", async (HttpContext ctx, ModelRouter router, FallbackService fallback, IOptionsSnapshot<SwitchboardOptions> options, CancellationToken ct) =>
+    app.MapPost("/v1/messages", async (HttpContext ctx, ModelRouter router, FallbackService fallback, ResourceGate gate, IOptionsSnapshot<SwitchboardOptions> options, CancellationToken ct) =>
     {
         if (!string.IsNullOrWhiteSpace(options.Value.ApiKey))
         {
@@ -185,7 +192,22 @@ try
 
         ctx.Request.Body.Position = 0;
 
-        await fallback.ForwardWithFallbackAsync(ctx, requestedModel, ct);
+        var decision = await gate.EvaluateAsync(requestedModel, ct);
+        if (decision.Action == RoutingAction.Fail)
+        {
+            ctx.Response.StatusCode = decision.FailStatusCode;
+            await ctx.Response.WriteAsJsonAsync(new ProblemDetails
+            {
+                Title = "Local model not viable",
+                Detail = $"No fallback or substitute available — {decision.Reason}."
+            },
+            SwitchboardJsonContext.Default.ProblemDetails, cancellationToken: ct);
+            return;
+        }
+        if (decision.SubstitutionHeader is { } sub)
+            ctx.Response.Headers["X-K-Switchboard-Substitution"] = sub;
+
+        await fallback.ForwardWithFallbackAsync(ctx, decision.EffectiveModel, ct);
     }).RequireRateLimiting("proxy");
 
     // --- Statistik-Endpoint: GET /stats ---

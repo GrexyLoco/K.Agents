@@ -22,3 +22,6 @@ plugins/kagents/logs/
 
 # Claude Code lokal-spezifische Einstellungen
 .claude/settings.local.json
+
+# K.Switchboard per-install HW-Profil-Cache (maschinenspezifisch, nie committen)
+hw-profile.json
