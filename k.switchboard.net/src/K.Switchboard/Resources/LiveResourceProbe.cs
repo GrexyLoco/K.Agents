@@ -30,9 +30,13 @@ public sealed class LiveResourceProbe(
         {
             var client = httpFactory.CreateClient("ollama");
             var baseUrl = options.CurrentValue.OllamaBaseUrl.TrimEnd('/');
-            using var resp = await client.GetAsync($"{baseUrl}/api/ps", ct);
+            // Probe-lokales Kurz-Timeout: der "ollama"-Client hat ein langes Inferenz-Timeout (600s).
+            // /api/ps muss billig bleiben — bei hängendem Ollama nach 3s abbrechen → Modell = kalt.
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(3));
+            using var resp = await client.GetAsync($"{baseUrl}/api/ps", timeoutCts.Token);
             if (!resp.IsSuccessStatusCode) return false;
-            var json = await resp.Content.ReadAsStringAsync(ct);
+            var json = await resp.Content.ReadAsStringAsync(timeoutCts.Token);
             using var doc = JsonDocument.Parse(json);
             if (!doc.RootElement.TryGetProperty("models", out var models)) return false;
             foreach (var m in models.EnumerateArray())
