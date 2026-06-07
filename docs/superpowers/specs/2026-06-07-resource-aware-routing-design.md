@@ -108,41 +108,79 @@ Strukturierte Entscheidung speist **beides**:
 
 ## 4. Config-Schema (committed, `SwitchboardOptions`)
 
+### 4.1 HW-Klassen-Taxonomie (b) — VRAM-getrieben
+
+Klassen matchen über **RAM + GPU-Vendor + VRAM-Schwelle** (nicht über spezifische Kartennamen — die
+konkreten Karten sind Beispiele je VRAM-Bucket). VRAM-Schwellen aus Recherche: 7B ≈ 5–6 GB, 14B (Q4_K_M)
+≈ 8,7 GB → Buckets `6144` / `10240` / `16384` MB.
+
+| Klasse | Match | Beispiel-HW | Lokaler Pfad |
+|---|---|---|---|
+| `cpu-low` | `maxRamMb 16384`, `gpuVendor none` | **Dieser Laptop** (15,4 GB, CPU) | Keine lokalen Modelle (real 0 % A/B, #251) → immer substituieren |
+| `cpu-32` | `minRamMb 24576`, GPU `none` **oder** `maxVramMb 6143` | 32 GB ohne GPU · 32 GB + **GTX 970** (3,5 GB eff.) / GTX 1050 Ti / RX 580 | CPU-Inferenz 7B/14B (langsam) |
+| `gpu-7b` | `minVramMb 6144`, `maxVramMb 10239` | 8-GB-GPUs | 7B auf GPU |
+| `gpu-14b` | `minVramMb 10240`, `maxVramMb 16383` | **GTX 1080 Ti** (11 GB) · AMD **RX 6700 XT** (12 GB) | 7B komfortabel, 14B eng |
+| `gpu-14b-plus` | `minVramMb 16384` | **RTX 5070 Ti** (16 GB) · AMD **RX 9070 XT** (16 GB) | 14B + großer Kontext, 32B knapp |
+
+> **GTX 970 = real 3.584 MB nutzbar** (Hardware-Partitionierung, Class-Action-bekannt) → unter 6-GB-Schwelle,
+> fällt in `cpu-32`. Schwache GPUs (970, 1050 Ti) ändern den Pfad nicht ggü. reiner CPU. `gpuVendor`
+> unterscheidet CUDA (`NVIDIA`) / ROCm (`AMD`) / CPU (`none`).
+
+### 4.2 Tier-basiertes Substitutions-Mapping — datenbasiert
+
+**Kein** Qualitäts-Match (jedes lokale Modell liegt unter dem schwächsten Claude: `qwen:32b` = 8 % vs.
+Haiku 28 % vs. Sonnet 79 % Aider Polyglot). Stattdessen **Aufgaben-Tier** des konfigurierten Modells.
+Tier-Zuordnung aus **LiveCodeBench** (S <10 %, M ~18 %, L >23 %; HumanEval/MBPP gesättigt → **nie** fürs Routing).
+
 ```jsonc
-"HardwareClasses": [                              // (b) kuratiert, committed
-  { "name": "gpu-consumer-nvidia",
-    "match": { "gpuVendor": "NVIDIA", "minVramMb": 8192 },
-    "models": {
-      "qwen2.5-coder:14b": { "peakRamMb": 11000, "validatedOn": "<setup>", "latencyP50Ms": 0, "score": "B" }
-    } },
-  { "name": "cpu-mid",
-    "match": { "minRamMb": 16384, "maxRamMb": 32768, "gpuVendor": "none" },
-    "models": {
-      "llama3.2:3b": { "peakRamMb": 4200, "validatedOn": "2026-06-07 <setup>", "latencyP50Ms": 0, "score": "A" }
-    } }
-],
-"LocalProviderSubstitutions": {                  // lokal ↔ Provider-Äquivalent, committed
-  "qwen2.5-coder:14b": "claude-opus-4-8",
-  "llama3.2:3b": "claude-haiku-4-5"
+"LocalModelTiers": {                 // lokales Modell → Tier (wartungsarm erweiterbar)
+  "qwen2.5-coder:1.5b": "S", "llama3.2:3b": "S",
+  "qwen2.5-coder:7b":  "M", "llama3.1:8b": "M",
+  "qwen2.5-coder:14b": "L", "qwen2.5-coder:32b": "L"
 },
+"TierSubstitutions": {               // Tier → Claude-Substitut
+  "S": "claude-haiku-4-5",           //  einfachste Aufgaben (Format/Commits)
+  "M": "claude-sonnet-4-6",          //  Standard-Coding
+  "L": "claude-sonnet-4-6"           //  Code-Review — Opus per Opt-in (auf claude-opus-4-8 setzen)
+}
+```
+
+### 4.3 HardwareClasses (b) + ResourceGate
+
+```jsonc
+"HardwareClasses": [
+  { "name": "gpu-14b",
+    "match": { "minRamMb": 24576, "gpuVendor": "NVIDIA", "minVramMb": 10240, "maxVramMb": 16383 },
+    "models": { "qwen2.5-coder:14b": { "peakRamMb": 0, "validatedOn": "<eval>", "latencyP50Ms": 0, "score": "" } } },
+  { "name": "cpu-low",
+    "match": { "maxRamMb": 16384, "gpuVendor": "none" },
+    "models": {} }                   // leer = keine lokalen Modelle tauglich → immer substituieren
+],
 "ResourceGate": {
   "enabled": true,
-  "ramBufferMb": 2048,
+  "ramBufferMb": 0,                  // 0 = im eval-measurement.md hergeleiteter Default (siehe §5)
   "cpuLoadWindowSeconds": 4,
   "cpuMaxLoadPercent": 85
 }
 ```
 
 Neue Records: `HardwareClassConfig` (name, match, models), `HardwareClassMatch`
-(minRamMb?, maxRamMb?, minCores?, gpuVendor?, minVramMb?), `ModelValidation`
+(minRamMb?, maxRamMb?, minCores?, gpuVendor?, minVramMb?, maxVramMb?), `ModelValidation`
 (peakRamMb, validatedOn, latencyP50Ms, score), `ResourceGateOptions`. Hot-Reload über bestehenden
 `IOptionsMonitor`-Pfad; Defaults so, dass fehlende Sektion = Gate deaktiviert (backward-compatible).
 
-## 5. Admission-Sizing
+## 5. Admission-Sizing & ramBuffer-Kalibrierung
 
-`freier RAM ≥ realer Lade-Footprint + Puffer` — **nicht** die `ollama list`-Dateigröße allein
-(geladenes Modell = Datei + KV-Cache/Kontext-Overhead). Headroom empirisch: `peakRamMb` aus dem
-`validatedOn`-Eval erfasst den **beobachteten Peak-RAM**, nicht nur Pass/Fail.
+`freier RAM ≥ peakRamMb + ramBuffer` — **nicht** die `ollama list`-Dateigröße allein (geladenes Modell =
+Datei + KV-Cache/Kontext-Overhead, wächst mit Kontextlänge). Die Live-Probe misst bereits den **freien**
+RAM (nach OS/IDE); der `ramBuffer` deckt nur noch (a) KV-Cache-Wachstum über die Eval-Kontextlänge hinaus,
+(b) Allokations-Jitter, (c) Reserve gegen die Swapping-Schwelle (#251: Swapping = Ollama-Hänger).
+
+**Kalibrierung (statt geratener 2 GB):**
+- `peakRamMb` im Hybrid-Eval beim **realistischen Max-Kontext** messen (Referenz: #248-Payload ~4.130 Tokens
+  bzw. konfiguriertes Maximum), nicht beim Minimal-Prompt.
+- `ramBuffer`-Default im `eval-measurement.md` **datenbasiert hergeleitet** (Differenz Peak bei kleinem vs.
+  großem Kontext + OS-Reserve), konfigurierbar. `ramBufferMb: 0` in der Config = „nutze hergeleiteten Default".
 
 ## 6. Eval-Measurement (Hybrid)
 
