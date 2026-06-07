@@ -63,13 +63,18 @@ public sealed record SwitchboardOptions
     {
         LocalModelTiers = new()
         {
-            ["qwen2.5-coder:1.5b"] = "S", ["llama3.2:3b"] = "S",
-            ["qwen2.5-coder:7b"] = "M",  ["llama3.1:8b"] = "M",
-            ["qwen2.5-coder:14b"] = "L", ["qwen2.5-coder:32b"] = "L"
+            ["qwen2.5-coder:1.5b"] = "S",
+            ["llama3.2:3b"] = "S",
+            ["qwen2.5-coder:7b"] = "M",
+            ["llama3.1:8b"] = "M",
+            ["qwen2.5-coder:14b"] = "L",
+            ["qwen2.5-coder:32b"] = "L"
         },
         TierSubstitutions = new()
         {
-            ["S"] = "claude-haiku-4-5", ["M"] = "claude-sonnet-4-6", ["L"] = "claude-sonnet-4-6"
+            ["S"] = "claude-haiku-4-5",
+            ["M"] = "claude-sonnet-4-6",
+            ["L"] = "claude-sonnet-4-6"
         },
         ResourceGate = new ResourceGateOptions { Enabled = true, RamBufferMb = 0, CpuLoadWindowSeconds = 4, CpuMaxLoadPercent = 85 },
         HardwareClasses =
