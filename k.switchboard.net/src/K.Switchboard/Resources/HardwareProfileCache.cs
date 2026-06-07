@@ -1,7 +1,5 @@
 namespace K.Switchboard.Resources;
 
-using System.Text.Json;
-
 /// <summary>
 /// Hält das erkannte HW-Profil (a) als <c>hw-profile.json</c> im Per-Install-Verzeichnis
 /// (ApplicationData, NICHT committed). Refresh bei leer/unlesbar ODER wenn der zuletzt erkannte
@@ -40,6 +38,10 @@ public sealed class HardwareProfileCache
         await _lock.WaitAsync(ct);
         try
         {
+            // Double-Check: ein paralleler Caller könnte das Memo gesetzt haben, während wir warteten.
+            if (_memo is { } cached && IsCurrentMonth(cached.DetectedOn))
+                return cached;
+
             var loaded = TryLoad();
             if (loaded is { } p && IsCurrentMonth(p.DetectedOn))
             {

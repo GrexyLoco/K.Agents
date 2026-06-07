@@ -72,4 +72,25 @@ public sealed class HardwareProfileCacheTests
         await Assert.That(detector.Calls).IsEqualTo(1);
         await Assert.That(p.TotalRamMb).IsEqualTo(32000);   // frisch erkannt, nicht der stale-Wert
     }
+
+    [Test]
+    public async Task Loads_current_month_profile_from_disk_without_detection()
+    {
+        var dir = FreshTempDir();
+        // Erste Instanz: erkennt + persistiert (camelCase via SwitchboardJsonContext).
+        var detector1 = new CountingDetector(new HardwareProfile { TotalRamMb = 32000, Cores = 8 });
+        var cache1 = new HardwareProfileCache(detector1, dir,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<HardwareProfileCache>.Instance);
+        await cache1.GetAsync(CancellationToken.None);
+
+        // Zweite Instanz: frisches Memo, gleiches Verzeichnis → muss von Disk lesen, nicht detektieren.
+        var detector2 = new CountingDetector(new HardwareProfile { TotalRamMb = 99999, Cores = 99 });
+        var cache2 = new HardwareProfileCache(detector2, dir,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<HardwareProfileCache>.Instance);
+        var p = await cache2.GetAsync(CancellationToken.None);
+
+        await Assert.That(detector2.Calls).IsEqualTo(0);   // aus Datei gelesen, nicht erkannt
+        await Assert.That(p.TotalRamMb).IsEqualTo(32000);  // camelCase source-gen roundtrip korrekt
+        await Assert.That(p.Cores).IsEqualTo(8);
+    }
 }
