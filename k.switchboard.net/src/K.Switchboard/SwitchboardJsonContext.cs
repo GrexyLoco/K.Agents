@@ -13,6 +13,7 @@ namespace K.Switchboard;
 [JsonSerializable(typeof(ModelUsage))]
 [JsonSerializable(typeof(DailyStats))]
 [JsonSerializable(typeof(ProblemDetails))]
+[JsonSerializable(typeof(K.Switchboard.Resources.HardwareProfile))]
 [JsonSourceGenerationOptions(
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
