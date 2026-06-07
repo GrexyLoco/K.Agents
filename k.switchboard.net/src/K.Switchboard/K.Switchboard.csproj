@@ -3,6 +3,10 @@
   <!-- Serilog nutzt intern Reflection und ist noch nicht vollständig trim-kompatibel (IL2104).
        TrimmerRootAssembly stellt sicher, dass die Assemblies vollständig behalten werden.
        Statt globaler Warnungsunterdrückung wird nur IL2104 gezielt unterdrückt. -->
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(PublishTrimmed)'=='true'">
     <TrimmerRootAssembly Include="Serilog" />
     <TrimmerRootAssembly Include="Serilog.Settings.Configuration" />
