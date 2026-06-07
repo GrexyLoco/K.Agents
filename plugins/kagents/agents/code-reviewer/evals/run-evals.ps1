@@ -54,9 +54,10 @@ function Get-FreeRamMb {
     elseif ($IsLinux) {
         # /proc/meminfo: MemAvailable-Zeile
         $memInfoPath = '/proc/meminfo'
-        $memPattern  = 'MemAvailable'
-        $lines = Get-Content -Path $memInfoPath | Where-Object { $_ -match $memPattern }
-        if ($lines -and $lines[0] -match '\d+') {
+        $line = Get-Content -Path $memInfoPath |
+            Where-Object { $_ -match 'MemAvailable' } |
+            Select-Object -First 1
+        if ($line -and $line -match '\d+') {
             return [int]([long]$Matches[0] / 1024)
         }
         return 0

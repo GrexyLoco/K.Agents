@@ -11,7 +11,7 @@
 ResourceGate entscheidet pro Request, ob ein lokales Modell auf der aktuellen
 Hardware ausführbar ist (§ 2 der Spec). Die Entscheidungslogik lautet:
 
-```
+```text
 benötigter_RAM = PeakRamMb + RamBufferMb
 lokale Ausführung zulässig ↔ freier_RAM ≥ benötigter_RAM ∧ CPU-Last ≤ Schwelle
 ```
@@ -33,7 +33,7 @@ das Qualitätskriterium ≥ 70 % A/B erfüllt. Die Messwerte dienen als Referenz
 
 ### 2.1 Skript
 
-```
+```text
 plugins/kagents/agents/commit-messenger/evals/run-evals.ps1
 plugins/kagents/agents/code-reviewer/evals/run-evals.ps1
 ```
@@ -44,7 +44,7 @@ Beide Skripte sind unabhängig (kein gemeinsamer Include); die Hilfsfunktionen
 **Wichtige Parameter:**
 
 | Parameter | Default | Zweck |
-|---|---|---|
+| --- | --- | --- |
 | `-Models` | modellspezifisch | Ollama-Modellnamen, die getestet werden |
 | `-MaxInputs` | 0 (alle) | Anzahl Inputs begrenzen (defensiver Schnelllauf) |
 | `-TimeoutSec` | 300 / 1800 | HTTP-Timeout pro Inference-Call |
@@ -66,7 +66,7 @@ Jedes Run-Ergebnis enthält eine Baseline-Zeile am Ende der Datei, die den
 freien RAM unmittelbar vor dem ersten Inference-Call für dieses Modell ausweist.
 Das Hardware-Setup (HW-Klasse) muss manuell in `results.md` erfasst werden:
 
-```
+```text
 HW-Setup: <Gerät>, <Gesamt-RAM> MB, <CPU/GPU>, Klasse: <cpu-low|gpu-7b|…>
 ```
 
@@ -82,8 +82,9 @@ function Get-FreeRamMb {
         return [int]((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1024)
     }
     elseif ($IsLinux) {
-        $lines = Get-Content -Path '/proc/meminfo' | Where-Object { $_ -match 'MemAvailable' }
-        if ($lines -and $lines[0] -match '\d+') { return [int]([long]$Matches[0] / 1024) }
+        $line = Get-Content -Path '/proc/meminfo' |
+            Where-Object { $_ -match 'MemAvailable' } | Select-Object -First 1
+        if ($line -and $line -match '\d+') { return [int]([long]$Matches[0] / 1024) }
         return 0
     }
     else { return 0 }   # macOS: vm_stat-Parsing optional
@@ -92,7 +93,7 @@ function Get-FreeRamMb {
 
 ### 3.2 Ablauf pro Inference-Call
 
-```
+```text
 1. preFree = Get-FreeRamMb          ← free RAM unmittelbar vor dem Call
 2. Inference-Call in Start-ThreadJob (PS7 in-process, leichter als Start-Job)
 3. Foreground-Loop alle 300 ms: f = Get-FreeRamMb; if f < localMin → localMin = f
@@ -181,14 +182,15 @@ Ergebnisse landen in `runs/<yyyy-MM-dd>/`. Scores und P50-Latenz manuell in
 ## 6. Messwerte-Tabelle
 
 > **Interpretation:**
+>
 > - **PeakRamMb** = `/api/ps` `size` (MB) beim Cold-Load; freier-RAM-Delta als Quervergleich.
 > - **LatenzP50Ms** = Median der `total_duration`-Werte über alle Inputs (ms).
 > - **Score** = Anteil A/B aus Spike #251 (Quality-Eval gegen Claude-Baseline).
 > - **Status** = `gemessen` (auf dieser HW real erhoben) | `ausstehend`.
 
 | Modell | HW-Klasse | PeakRamMb | LatenzP50Ms | Score (A/B) | Status |
-|---|---|---:|---:|:---:|---|
-| `llama3.2:3b` | cpu-low | 3887 | 15 700 | 0 % | gemessen (2026-06-07, warm; Cold-Load-Wert laut /api/ps) |
+| --- | --- | ---: | ---: | :---: | --- |
+| `llama3.2:3b` | cpu-low | 3887 | 15 700 ¹ | 0 % | gemessen (2026-06-07, warm; /api/ps-Footprint; Latenz aus #251) |
 | `qwen2.5-coder:1.5b` | cpu-low | — | 7 400 | 0 % | ausstehend — konservativer Default |
 | `qwen2.5-coder:7b` | cpu-low | — | 34 800 | 0 % | ausstehend — konservativer Default |
 | `qwen2.5-coder:14b` | cpu-low | — | n/a | n/a | nicht testbar (RAM-Limit, #251) |
@@ -206,7 +208,7 @@ reproduzierbaren Cold-Load-Wert: `ollama stop llama3.2:3b` vor dem Lauf ausführ
 **Latenz** (aus #251-Daten, cpu-low, alle 5 Inputs):
 
 | Modell | Input01 | Input02 | Input03 | Input04 | Input05 | P50 |
-|---|---:|---:|---:|---:|---:|---:|
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | `qwen2.5-coder:1.5b` | 11,9 s | 3,1 s | 7,4 s | 11,6 s | 7,6 s | ~7,6 s |
 | `llama3.2:3b` | 18,3 s | 5,4 s | 15,7 s | 25,3 s | 15,8 s | ~15,7 s |
 | `qwen2.5-coder:7b` | 41,7 s | 12,7 s | 34,8 s | 62,4 s | 33,3 s | ~34,8 s |
@@ -226,13 +228,13 @@ var buffer = opts.ResourceGate.RamBufferMb > 0
 **Begründung:**
 
 | Anteil | Herleitung |
-|---|---|
+| --- | --- |
 | `PeakRamMb / 4` | 25 % Puffer für Kontext-Overhead: ein `llama3.2:3b`-Peak von ~3887 MB erzeugt bei großem Kontext (Input #04, ~1500 Tokens) ca. 300–600 MB mehr als bei kleinem Kontext. 25 % ≈ 970 MB decken diesen Spielraum. |
 | `max(…, 1024)` | OS-Reserve: Windows und Linux halten typischerweise 0,5–2 GB RAM für Kernel, I/O-Cache und andere Systemdienste vor. Das Minimum von 1 GB stellt sicher, dass auch bei sehr kleinen Modellen (z. B. 1.5b-Modelle mit ~1,3 GB Peak) kein Rechner in Swap-Gefahr gerät. |
 
 **Beispielrechnung `llama3.2:3b` auf `cpu-low`:**
 
-```
+```text
 PeakRamMb    = 3887
 Buffer       = max(1024, 3887 / 4) = max(1024, 971) = 1024
 Bedarf       = 3887 + 1024 = 4911 MB
