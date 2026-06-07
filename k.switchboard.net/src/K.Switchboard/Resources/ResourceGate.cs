@@ -14,7 +14,7 @@ public sealed class ResourceGate(
     IOptionsMonitor<SwitchboardOptions> options,
     ILogger<ResourceGate> logger)
 {
-    public async Task<RoutingDecision> EvaluateAsync(string requestedModel, CancellationToken ct)
+    public async Task<RoutingDecision> EvaluateAsync(string requestedModel, int inputTokens, CancellationToken ct)
     {
         var opts = options.CurrentValue;
         if (!opts.ResourceGate.Enabled)
@@ -30,35 +30,48 @@ public sealed class ResourceGate(
             var hwClass = classifier.Match(profile, opts.HardwareClasses);
             var validation = hwClass is not null && hwClass.Models.TryGetValue(resolvedModel, out var v) ? v : null;
 
-            if (validation is { PeakRamMb: > 0 })
+            if (validation is null)
+                return BuildSubstitution(requestedModel, resolvedModel, opts,
+                    hwClass is null ? "no matching hardware class" : "no validated footprint");
+
+            var gpuPath = validation.PeakVramMb > 0
+                          && !string.Equals(profile.GpuVendor, "none", StringComparison.OrdinalIgnoreCase)
+                          && profile.VramMb > 0;
+
+            if (!gpuPath && validation.PeakRamMb <= 0)
+                return BuildSubstitution(requestedModel, resolvedModel, opts, "no validated footprint");
+
+            var live = await probe.SampleAsync(resolvedModel, opts.ResourceGate.CpuLoadWindowSeconds, ct);
+
+            if (live.CpuLoadPercent > opts.ResourceGate.CpuMaxLoadPercent)
+                return BuildSubstitution(requestedModel, resolvedModel, opts, $"CPU {live.CpuLoadPercent:F0}%");
+
+            if (gpuPath)
+            {
+                var usableVram = profile.VramMb - opts.ResourceGate.VramDisplayReserveMb;
+                if (validation.PeakVramMb > usableVram)
+                    return BuildSubstitution(requestedModel, resolvedModel, opts,
+                        $"VRAM {validation.PeakVramMb}MB/{usableVram}MB");
+            }
+            else
             {
                 var buffer = opts.ResourceGate.RamBufferMb > 0
                     ? opts.ResourceGate.RamBufferMb
                     : Math.Max(1024, validation.PeakRamMb / 4);
                 var need = validation.PeakRamMb + buffer;
-                var live = await probe.SampleAsync(resolvedModel, opts.ResourceGate.CpuLoadWindowSeconds, ct);
-
-                if (live.FreeRamMb >= need && live.CpuLoadPercent <= opts.ResourceGate.CpuMaxLoadPercent)
-                {
-                    logger.LogInformation(
-                        "ResourceGate: lokal zugelassen {Model} (frei {Free}MB ≥ {Need}MB, CPU {Cpu}%, warm={Warm})",
-                        resolvedModel, live.FreeRamMb, need, live.CpuLoadPercent, live.ModelWarm);
-                    return Proceed(requestedModel, $"local-admitted free={live.FreeRamMb}MB warm={live.ModelWarm}");
-                }
-
-                return BuildSubstitution(requestedModel, resolvedModel, opts,
-                    $"free {live.FreeRamMb}MB/{need}MB, CPU {live.CpuLoadPercent:F0}%");
+                if (live.FreeRamMb < need)
+                    return BuildSubstitution(requestedModel, resolvedModel, opts, $"free {live.FreeRamMb}MB/{need}MB");
             }
 
-            return BuildSubstitution(requestedModel, resolvedModel, opts,
-                hwClass is null ? "no matching hardware class" : "no validated footprint");
+            // === Task 5 Einhängepunkt: Latenz-Gate (nach bestandener Ressourcen-Admission) ===
+
+            logger.LogInformation(
+                "ResourceGate: lokal zugelassen {Model} ({Path}, CPU {Cpu}%, warm={Warm})",
+                resolvedModel, gpuPath ? "GPU" : "CPU", live.CpuLoadPercent, live.ModelWarm);
+            return Proceed(requestedModel, $"local-admitted {(gpuPath ? "gpu" : "cpu")} warm={live.ModelWarm}");
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Fail-open: ein interner Fehler des Ressourcen-Monitors (Cache/Detektor/Probe) darf
-            // NICHT jeden lokalen Request mit 500 killen. Lieber unverändert an FallbackService
-            // durchreichen — der bleibt für reaktive HTTP-Fehler zuständig. Request-Cancellation
-            // (OperationCanceledException) wird bewusst weitergereicht.
             logger.LogWarning(ex,
                 "ResourceGate: Ressourcen-Check fehlgeschlagen für {Model} → fail-open (Proceed).", requestedModel);
             return Proceed(requestedModel, "resource-monitor-error");

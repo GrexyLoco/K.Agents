@@ -199,7 +199,7 @@ try
 
         ctx.Request.Body.Position = 0;
 
-        var decision = await gate.EvaluateAsync(requestedModel, ct);
+        var decision = await gate.EvaluateAsync(requestedModel, 0, ct);
         if (decision.Action == RoutingAction.Fail)
         {
             ctx.Response.StatusCode = decision.FailStatusCode;
