@@ -824,6 +824,8 @@ Commit `feat(switchboard): HW-classifier (profil→klasse-match)` (Bulletpoints:
 - Test: `k.switchboard.net/tests/K.Switchboard.Tests/Resources/LiveResourceProbeTests.cs`
 
 > **Design (Spec §3.3):** Freier RAM ist der primäre, robuste Maschinenschutz (#251-Ursache war RAM→Swapping). Er kommt aus `GC.GetGCMemoryInfo()` (`TotalAvailableMemoryBytes − MemoryLoadBytes`, trim-safe, systemweit). CPU-Last ist sekundär und kommt aus `ICpuLoadSampler` (MVP: Linux `/proc/stat`, sonst nicht-blockierend `0`; robustere Messung in Ausbau +1). Warmth = ist der Modellname in Ollama `/api/ps`.
+>
+> ⚠️ **Validierung auf echter Hardware (Pflicht in Step 5, nicht nur Unit-Test):** `GC.GetGCMemoryInfo()` ist ein Snapshot vom letzten GC — bei Idle evtl. veraltet. Da `FreeRamMb` der gesamte Maschinenschutz ist, auf der realen Maschine prüfen, dass (a) `FreeRamMb` dem OS-gemeldeten freien RAM nahekommt und (b) nach einer großen Allokation zügig sinkt. Falls stale: in der Probe einen frischen Read erzwingen (z.B. minimaler Alloc vor `GetGCMemoryInfo`, oder — falls nötig — OS-Read via `/proc/meminfo` auf Linux). **Konsistenz mit Task 9:** Die Admission `FreeRamMb ≥ peakRamMb + buffer` vergleicht den hier (GC) gemessenen freien RAM mit dem in Task 9 (OS-level CIM/`/proc/meminfo`) gemessenen `peakRamMb`-**Delta**. Das ist konzeptionell korrekt (absolut-frei ≥ inkrementeller-Verbrauch), aber beim realen Lauf bestätigen, dass beide Größen vergleichbar skalieren (sonst Quelle angleichen).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1591,15 +1593,25 @@ Die ausgelieferte Default-Config um die kuratierten Sektionen erweitern (datenba
 "TierSubstitutions": { "S": "claude-haiku-4-5", "M": "claude-sonnet-4-6", "L": "claude-sonnet-4-6" },
 "ResourceGate": { "enabled": true, "ramBufferMb": 0, "cpuLoadWindowSeconds": 4, "cpuMaxLoadPercent": 85 },
 "HardwareClasses": [
-  { "name": "cpu-low",       "match": { "maxRamMb": 16384, "gpuVendor": "none" }, "models": {} },
-  { "name": "cpu-32",        "match": { "minRamMb": 24576, "gpuVendor": "none" }, "models": {} },
+  { "name": "cpu-low",       "match": { "maxRamMb": 16384 }, "models": {} },
   { "name": "gpu-7b",        "match": { "minVramMb": 6144,  "maxVramMb": 10239 }, "models": {} },
   { "name": "gpu-14b",       "match": { "minVramMb": 10240, "maxVramMb": 16383 }, "models": {} },
-  { "name": "gpu-14b-plus",  "match": { "minVramMb": 16384 }, "models": {} }
+  { "name": "gpu-14b-plus",  "match": { "minVramMb": 16384 }, "models": {} },
+  { "name": "cpu-32",        "match": { "minRamMb": 24576 }, "models": {} }
 ]
 ```
 
-> **Hinweis:** `cpu-32` ohne VRAM-Constraint matcht auch 32-GB-Maschinen mit schwacher GPU (GTX 970 = 3,5 GB < 6144 → keine `gpu-*`-Klasse greift, da deren `minVramMb` nicht erreicht wird; Reihenfolge: spezifische GPU-Klassen vor `cpu-32` listen, falls VRAM ausreicht). **Wichtig:** Klassen-Reihenfolge = Match-Priorität. GPU-Klassen VOR `cpu-32` einsortieren, sonst greift `cpu-32` (kein VRAM-Constraint) zuerst. Korrigierte Reihenfolge: `cpu-low`, `gpu-7b`, `gpu-14b`, `gpu-14b-plus`, `cpu-32` (Catch-all zuletzt). Diese Reihenfolge im Seed verwenden.
+> **Wichtig — Reihenfolge = Match-Priorität, und der Catch-all darf KEINEN `gpuVendor`-Constraint haben.**
+> `HardwareClassifier.Match` nimmt die *erste* passende Klasse. `cpu-32` ist der Catch-all und steht **zuletzt**;
+> er constraint NUR auf `minRamMb` (kein `gpuVendor`), sonst fallen Maschinen mit erkannter, aber zu schwacher
+> GPU (GTX 970 = 3584 MB < 6144) **und alle AMD-Maschinen** (Detektor liefert oft `VramMb=0`) durch ALLE Klassen
+> → null → Dauer-Substitution. Verifikation per Trace (in den Classifier-Tests aus Task 4 ergänzen):
+> - `{32000, NVIDIA, 3584}` (GTX 970) → `cpu-32` ✓ (nicht null)
+> - `{32000, AMD, 0}` (AMD ohne VRAM-Read) → `cpu-32` ✓
+> - `{32000, NVIDIA, 11264}` (GTX 1080 Ti) → `gpu-14b` ✓
+> - `{32000, NVIDIA, 16384}` (RTX 5070 Ti) → `gpu-14b-plus` ✓
+> - `{15400, none, 0}` (Laptop) → `cpu-low` ✓
+> Ebenso hat `cpu-low` bewusst **keinen** `gpuVendor`-Constraint (ein 15-GB-Laptop mit schwacher GPU bleibt `cpu-low`).
 
 - [ ] **Step 4: gitignore the per-install cache**
 
