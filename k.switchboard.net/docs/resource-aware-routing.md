@@ -84,7 +84,7 @@ ResourceGate kombiniert zwei getrennte Datenquellen:
 ### 3.1 Datenspeicher A — HW-Profil (`hw-profile.json`)
 
 - **Was:** Maschinenspezifisches Hardware-Profil (RAM, Cores, GPU, VRAM, Zeitpunkt)
-- **Ort:** `%APPDATA%\K.Switchboard\hw-profile.json` (Windows) / `~/.config/K.Switchboard/hw-profile.json` (Linux/macOS)
+- **Ort:** `%APPDATA%\K.Switchboard\hw-profile.json` (Windows) / `~/.config/K.Switchboard/hw-profile.json` (Linux) / `~/Library/Application Support/K.Switchboard/hw-profile.json` (macOS)
 - **Herkunft:** Automatisch erkannt beim ersten Request; 1× pro Kalendermonat erneuert
 - **Committed:** Nein — maschinenspezifisch, per `.gitignore` ausgeschlossen
 - **Felder:** `TotalRamMb`, `Cores`, `GpuVendor`, `GpuModel`, `VramMb`, `DetectedOn`

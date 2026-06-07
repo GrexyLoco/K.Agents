@@ -174,7 +174,8 @@ K.Switchboard erkennt beim ersten Start das lokale Hardware-Profil und speichert
 | Betriebssystem | Pfad |
 | --- | --- |
 | Windows | `%APPDATA%\K.Switchboard\hw-profile.json` |
-| Linux / macOS | `~/.config/K.Switchboard/hw-profile.json` |
+| Linux | `~/.config/K.Switchboard/hw-profile.json` |
+| macOS | `~/Library/Application Support/K.Switchboard/hw-profile.json` |
 
 Die Datei ist maschinenspezifisch und wird **nicht committed**. Sie enthält folgende Felder:
 
