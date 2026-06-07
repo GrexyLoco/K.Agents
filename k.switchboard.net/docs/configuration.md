@@ -164,9 +164,294 @@ Statistiken werden täglich in `%APPDATA%\K.Switchboard\costs-yyyy-MM-dd.json` g
 
 ---
 
+<a id="hw-profil-cache"></a>
+
+## 1.7 HW-Profil-Cache (`hw-profile.json`)
+
+K.Switchboard erkennt beim ersten Start das lokale Hardware-Profil und speichert es als
+`hw-profile.json` im Per-Install-Verzeichnis:
+
+| Betriebssystem | Pfad |
+| --- | --- |
+| Windows | `%APPDATA%\K.Switchboard\hw-profile.json` |
+| Linux / macOS | `~/.config/K.Switchboard/hw-profile.json` |
+
+Die Datei ist maschinenspezifisch und wird **nicht committed**. Sie enthält folgende Felder:
+
+```json
+{
+  "TotalRamMb": 16384,
+  "Cores": 12,
+  "GpuVendor": "NVIDIA",
+  "GpuModel": "NVIDIA GeForce RTX 3070",
+  "VramMb": 8192,
+  "DetectedOn": "2026-06-07T09:00:00+00:00"
+}
+```
+
+| Feld | Beschreibung |
+| --- | --- |
+| `TotalRamMb` | Gesamter System-RAM in MB (via .NET GC-API) |
+| `Cores` | Logische CPU-Kerne (`Environment.ProcessorCount`) |
+| `GpuVendor` | `"NVIDIA"`, `"AMD"` oder `"none"` |
+| `GpuModel` | GPU-Modellname oder leer |
+| `VramMb` | VRAM in MB (0 = keine oder unbekannte GPU) |
+| `DetectedOn` | UTC-Zeitpunkt der letzten Erkennung |
+
+**Refresh-Logik:** Die Erkennung läuft beim ersten Request des Monats (UTC) neu, wenn die
+Datei fehlt, unlesbar ist oder `DetectedOn` nicht im aktuellen Kalendermonat liegt (1×/Monat).
+
+**Datei löschen → sofortige Neu-Detektion:** Um das Profil manuell zu erzwingen (z.B. nach
+GPU-Wechsel), die Datei löschen und K.Switchboard neu starten oder den nächsten Request abwarten.
+
+```pwsh
+Remove-Item "$env:APPDATA\K.Switchboard\hw-profile.json" -Force
+```
+
+**GPU-Erkennung:** Reihenfolge — `nvidia-smi` (cross-platform), dann `wmic` (Windows-Fallback),
+dann `system_profiler` (macOS). Steht kein Tool zur Verfügung oder gibt es Exit-Code ≠ 0,
+wird `GpuVendor="none"` gesetzt und der CPU-Pfad genutzt. Siehe auch
+[GPU wird nicht erkannt](troubleshooting.md#gpu-nicht-erkannt).
+
+---
+
+<a id="hardware-classes"></a>
+
+## 1.8 HardwareClasses (Mapping b)
+
+`HardwareClasses` ist das committede Mapping, das festlegt, welche lokalen Modelle auf welcher
+HW-Klasse validiert sind. Es wird einmalig vom Team gepflegt und liegt in `config.json`.
+
+```json
+"HardwareClasses": [
+  {
+    "Name": "cpu-low",
+    "Match": { "MaxRamMb": 16384 },
+    "Models": {}
+  },
+  {
+    "Name": "gpu-7b",
+    "Match": { "MinVramMb": 6144, "MaxVramMb": 10239 },
+    "Models": {
+      "qwen2.5-coder:7b": {
+        "PeakRamMb": 5200,
+        "ValidatedOn": "gpu-7b, RTX 3060 12GB, 2026-06-01",
+        "LatencyP50Ms": 1800,
+        "Score": "B"
+      }
+    }
+  }
+]
+```
+
+### 1.8.1 Schema
+
+**`HardwareClassConfig`:**
+
+| Feld | Typ | Beschreibung |
+| --- | --- | --- |
+| `Name` | string | Eindeutiger Klassenname (z.B. `"gpu-14b"`, `"cpu-low"`) |
+| `Match` | Objekt | Match-Kriterien gegen das erkannte HW-Profil (AND-Verknüpfung) |
+| `Models` | Objekt | Validierte Modelle dieser Klasse; Key = Ollama-Modellname (darf `:` enthalten) |
+
+**`HardwareClassMatch`** — alle Felder optional (`null` = kein Constraint):
+
+| Feld | Typ | Beschreibung |
+| --- | --- | --- |
+| `MinRamMb` | int? | Mindest-RAM in MB (inklusive) |
+| `MaxRamMb` | int? | Maximal-RAM in MB (inklusive) |
+| `MinCores` | int? | Mindest-Kernzahl (inklusive) |
+| `GpuVendor` | string? | GPU-Vendor: `"NVIDIA"`, `"AMD"` oder `"none"` |
+| `MinVramMb` | int? | Mindest-VRAM in MB (inklusive) |
+| `MaxVramMb` | int? | Maximal-VRAM in MB (inklusive) |
+
+**`ModelValidation`** — empirische Messdaten (siehe [eval-measurement.md](eval-measurement.md)):
+
+| Feld | Typ | Beschreibung |
+| --- | --- | --- |
+| `PeakRamMb` | int | Beobachteter Peak-RAM (MB) bei realistischem Max-Kontext. **0 = nicht validiert → lokale Ausführung gesperrt** |
+| `ValidatedOn` | string | Setup-Beschreibung für Reproduzierbarkeit |
+| `LatencyP50Ms` | int | Median-Latenz (ms) aus dem Eval. 0 = nicht gemessen |
+| `Score` | string | Qualitäts-Score aus dem Eval (`A`/`B`/`C`/`F`). Leer = nicht bewertet |
+
+**Hinweis:** Model-Keys dürfen `:` enthalten (z.B. `"qwen2.5-coder:14b"`) — das ist gültiges JSON.
+
+### 1.8.2 Reihenfolge = Match-Priorität
+
+Die Klassen werden der Reihe nach geprüft; die **erste** passende Klasse gewinnt. Die fünf
+ausgelieferten Klassen sind:
+
+| Klasse | Match-Kriterien | Modelle (Auslieferung) |
+| --- | --- | --- |
+| `cpu-low` | `MaxRamMb ≤ 16384` | keine (leer — cpu-low ist intentional ohne lokale Modelle, siehe [Troubleshooting](troubleshooting.md#immer-substitution)) |
+| `gpu-7b` | `MinVramMb ≥ 6144, MaxVramMb ≤ 10239` | auszufüllen nach Eval |
+| `gpu-14b` | `MinVramMb ≥ 10240, MaxVramMb ≤ 16383` | auszufüllen nach Eval |
+| `gpu-14b-plus` | `MinVramMb ≥ 16384` | auszufüllen nach Eval |
+| `cpu-32` | `MinRamMb ≥ 24576` | auszufüllen nach Eval |
+
+**Kein Match:** Passt keine Klasse (z.B. kein VRAM und 17–24 GB RAM), ergibt sich kein
+`hwClass`-Treffer. ResourceGate substituiert in diesem Fall mit Grund
+`"no matching hardware class"` — fail-safe.
+
+---
+
+<a id="local-model-tiers"></a>
+
+## 1.9 LocalModelTiers und TierSubstitutions
+
+### 1.9.1 Konzept
+
+`LocalModelTiers` ordnet jedem lokalen Ollama-Modell ein Aufgaben-**Tier** zu (`S`, `M` oder
+`L`). `TierSubstitutions` legt fest, welches Claude-Modell eingesetzt wird, wenn ein lokales
+Modell des jeweiligen Tiers nicht ausführbar ist.
+
+Das Tier beschreibt die **Aufgabengröße** (nicht Qualitätsäquivalenz): S = leicht/schnell,
+M = mittel, L = komplex/lang. Die Substitutions-Entscheidung ist datenbasiert —
+nach Spike #251 (0 % A/B auf cpu-low) wurde bewusst auf Tier-Substitution umgestellt,
+statt eine Qualitätsstufe anzunehmen.
+
+### 1.9.2 Ausgelieferte Defaults
+
+`CreateDefault()` liefert folgendes Mapping:
+
+**`LocalModelTiers`:**
+
+| Modell | Tier |
+| --- | --- |
+| `qwen2.5-coder:1.5b` | S |
+| `llama3.2:3b` | S |
+| `qwen2.5-coder:7b` | M |
+| `llama3.1:8b` | M |
+| `qwen2.5-coder:14b` | L |
+| `qwen2.5-coder:32b` | L |
+
+**`TierSubstitutions`:**
+
+| Tier | Claude-Modell |
+| --- | --- |
+| S | `claude-haiku-4-5` |
+| M | `claude-sonnet-4-6` |
+| L | `claude-sonnet-4-6` |
+
+### 1.9.3 Opus für Tier-L aktivieren
+
+Das ausgelieferte Tier-L-Substitut ist `claude-sonnet-4-6`. Um Opus für L-Tier-Anfragen zu
+aktivieren, `TierSubstitutions["L"]` in `config.json` überschreiben:
+
+```json
+"TierSubstitutions": {
+  "S": "claude-haiku-4-5",
+  "M": "claude-sonnet-4-6",
+  "L": "claude-opus-4-8"
+}
+```
+
+**Achtung:** Opus-Anfragen erzeugen deutlich höhere API-Kosten. Eval-Daten zum Vergleich:
+[eval-measurement.md](eval-measurement.md).
+
+---
+
+<a id="resource-gate"></a>
+
+## 1.10 ResourceGate
+
+`ResourceGate` ist ein Pre-flight-Check: Bevor K.Switchboard einen lokalen Ollama-Request
+weiterleitet, prüft er ob RAM und CPU die Ausführung erlauben. Schlägt der Check fehl,
+wird auf die FallbackChain oder Tier-Substitution ausgewichen.
+
+```json
+"ResourceGate": {
+  "Enabled": true,
+  "RamBufferMb": 0,
+  "CpuLoadWindowSeconds": 4,
+  "CpuMaxLoadPercent": 85
+}
+```
+
+### 1.10.1 Felder
+
+| Feld | Typ | Default | Beschreibung |
+| --- | --- | --- | --- |
+| `Enabled` | bool | `false` (Property-Default) | Gate aktiv? Bestehende `config.json` ohne `ResourceGate`-Sektion → Gate bleibt **aus** (rückwärtskompatibel). Neue Installationen via `CreateDefault()` erhalten `true`. |
+| `RamBufferMb` | int | `0` | Zusätzlicher Sicherheitspuffer über `PeakRamMb`. `0` = Code-hergeleiteter Default: `max(1024, PeakRamMb / 4)`. Siehe [eval-measurement.md § 7](eval-measurement.md#7-rambuffermb-herleitung). |
+| `CpuLoadWindowSeconds` | int | `4` | Fenster (s) für den rollenden CPU-Last-Mittelwert. |
+| `CpuMaxLoadPercent` | int | `85` | CPU-Last-Schwelle (%). Lokale Inferenz wird blockiert, wenn die CPU-Last diesen Wert überschreitet. |
+
+### 1.10.2 Zulassungs-Bedingung
+
+K.Switchboard lässt einen lokalen Request durch, wenn **beide** Bedingungen erfüllt sind:
+
+```text
+freier_RAM ≥ PeakRamMb + RamBuffer
+CPU-Last   ≤ CpuMaxLoadPercent
+```
+
+Fehlt das validierte Footprint (`PeakRamMb = 0` oder kein `hwClass`-Match), erzwingt das Gate
+immer die Substitution — fail-safe, kein Fehler.
+
+---
+
+<a id="blast-radius"></a>
+
+## 1.11 Blast-Radius (Maschinen-Schutz)
+
+K.Switchboard trifft zwei Maßnahmen, um die Entwicklermaschine zu schützen:
+
+**1. `num_thread`-Drosselung:**  
+Ollama-Requests erhalten `options.num_thread = max(2, Kerne - 2)`. Auf einer 12-Kern-Maschine
+werden 10 Threads für Ollama reserviert, 2 verbleiben für das OS und andere Prozesse. Der Floor
+von 2 verhindert, dass auf Maschinen mit sehr wenigen Kernen `num_thread` auf 0 oder 1 fällt.
+
+**2. Single-Inference-Serialisierung:**  
+Ein interner `LocalInferenceGate`-Lock stellt sicher, dass stets nur eine Ollama-Inferenz
+gleichzeitig läuft. Parallele Requests warten, bis die laufende Inferenz abgeschlossen ist.
+
+---
+
+<a id="transparenz-header"></a>
+
+## 1.12 Transparenz-Header (`X-K-Switchboard-Substitution`)
+
+Bei jeder ResourceGate-Substitution setzt K.Switchboard den Response-Header
+`X-K-Switchboard-Substitution`. Der Wert zeigt Clients, warum und wohin umgeleitet wurde.
+
+**Format bei FallbackChain-Umleitung:**
+
+```text
+<lokalesModell> -> <zielModell> (deferred: <grund>)
+```
+
+Beispiel:
+
+```text
+qwen2.5-coder:14b -> claude-sonnet-4-6 (deferred: free 3200MB/9871MB, CPU 12%)
+```
+
+**Format bei Tier-Substitution:**
+
+```text
+<claudeModell> (local <lokalesModell> not viable — <grund>)
+```
+
+Beispiel:
+
+```text
+claude-sonnet-4-6 (local qwen2.5-coder:14b not viable — no matching hardware class)
+```
+
+**Mögliche Gründe (`<grund>`):**
+
+| Grund | Bedeutung |
+| --- | --- |
+| `free <X>MB/<N>MB, CPU <n>%` | Zu wenig freier RAM oder CPU-Last zu hoch |
+| `no matching hardware class` | Kein HW-Klassen-Match für dieses Gerät |
+| `no validated footprint` | `PeakRamMb = 0` oder Modell fehlt in der Klasse |
+
+---
+
 <a id="full-example"></a>
 
-## 1.7 Vollständiges Beispiel
+## 1.13 Vollständiges Beispiel
 
 ```json
 {
@@ -176,24 +461,75 @@ Statistiken werden täglich in `%APPDATA%\K.Switchboard\costs-yyyy-MM-dd.json` g
   "OllamaTimeoutSeconds": 600,
   "OllamaKeepAlive": "30m",
   "ModelAliases": {
-    "local-coder": "codellama:13b",
+    "local-coder": "qwen2.5-coder:14b",
     "local-fast": "llama3.2:3b",
-    "prod": "claude-3-5-sonnet-20241022",
-    "fast": "claude-3-5-haiku-20241022"
+    "prod": "claude-sonnet-4-6"
   },
   "FallbackChains": {
-    "claude-opus-latest": ["claude-sonnet-latest"],
-    "claude-3-5-sonnet-20241022": ["claude-3-5-haiku-20241022", "codellama:13b"]
+    "claude-opus-latest": ["claude-sonnet-4-6"]
   },
   "Pricing": {
-    "claude-3-5-sonnet-20241022": {
+    "claude-sonnet-4-6": {
       "InputPerMillion": 3.0,
       "OutputPerMillion": 15.0
     },
-    "claude-3-5-haiku-20241022": {
+    "claude-haiku-4-5": {
       "InputPerMillion": 0.8,
       "OutputPerMillion": 4.0
     }
-  }
+  },
+  "LocalModelTiers": {
+    "qwen2.5-coder:1.5b": "S",
+    "llama3.2:3b": "S",
+    "qwen2.5-coder:7b": "M",
+    "llama3.1:8b": "M",
+    "qwen2.5-coder:14b": "L",
+    "qwen2.5-coder:32b": "L"
+  },
+  "TierSubstitutions": {
+    "S": "claude-haiku-4-5",
+    "M": "claude-sonnet-4-6",
+    "L": "claude-sonnet-4-6"
+  },
+  "ResourceGate": {
+    "Enabled": true,
+    "RamBufferMb": 0,
+    "CpuLoadWindowSeconds": 4,
+    "CpuMaxLoadPercent": 85
+  },
+  "HardwareClasses": [
+    {
+      "Name": "cpu-low",
+      "Match": { "MaxRamMb": 16384 },
+      "Models": {}
+    },
+    {
+      "Name": "gpu-7b",
+      "Match": { "MinVramMb": 6144, "MaxVramMb": 10239 },
+      "Models": {
+        "qwen2.5-coder:7b": {
+          "PeakRamMb": 5200,
+          "ValidatedOn": "gpu-7b, RTX 3060 12GB, 2026-06-01",
+          "LatencyP50Ms": 1800,
+          "Score": "B"
+        }
+      }
+    },
+    {
+      "Name": "gpu-14b",
+      "Match": { "MinVramMb": 10240, "MaxVramMb": 16383 },
+      "Models": {}
+    },
+    {
+      "Name": "gpu-14b-plus",
+      "Match": { "MinVramMb": 16384 },
+      "Models": {}
+    },
+    {
+      "Name": "cpu-32",
+      "Match": { "MinRamMb": 24576 },
+      "Models": {}
+    }
+  ]
 }
 ```

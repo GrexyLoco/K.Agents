@@ -1,0 +1,187 @@
+# Ressourcen-bewusstes Routing
+
+<!-- markdownlint-disable MD033 -->
+
+> **Querverweise:**
+> [Konfigurationsreferenz](configuration.md) › [ResourceGate](configuration.md#resource-gate) ·
+> [HardwareClasses](configuration.md#hardware-classes) ·
+> [LocalModelTiers / TierSubstitutions](configuration.md#local-model-tiers) ·
+> [Eval-Messmethodik](eval-measurement.md) ·
+> [Troubleshooting](troubleshooting.md#unerwartete-substitution)
+
+---
+
+## 1. Konzept
+
+K.Switchboard betreibt zwei komplementäre Schutzmechanismen:
+
+| Mechanismus | Zeitpunkt | Auslöser | Zweck |
+| --- | --- | --- | --- |
+| **ResourceGate** (proaktiv) | Pre-flight, vor dem Upstream-Call | RAM/CPU-Prüfung | verhindert Überlastung der Maschine |
+| **FallbackService** (reaktiv) | Nach einem fehlgeschlagenen Upstream-Call | HTTP 4xx/5xx oder Netzwerkfehler | Resilienz bei Laufzeitfehlern |
+
+ResourceGate entscheidet anhand von Echtzeit-Ressourcen und committed Messdaten, **bevor** ein
+Request die Maschine belastet. Der FallbackService greift als zweite Absicherung, wenn ein
+lokaler oder Cloud-Upstream trotzdem mit einem Fehler antwortet.
+
+---
+
+## 2. Datenfluss
+
+```text
+Client-Request (model: "qwen2.5-coder:14b")
+        │
+        ▼
+  ┌─────────────────────────────────────────────────────┐
+  │                    ResourceGate                     │
+  │                                                     │
+  │  1. Gate aktiv? (Enabled=true)                      │
+  │     Nein → Proceed (gate-disabled)            ──────┼──► FallbackService / Upstream
+  │                                                     │
+  │  2. Ziel-Provider = Ollama?                         │
+  │     Nein (Anthropic, etc.) → Proceed          ──────┼──► FallbackService / Upstream
+  │     (non-local-provider)                            │
+  │                                                     │
+  │  3. HW-Profil laden (hw-profile.json / Cache)       │
+  │     ↓                                               │
+  │  4. HW-Klassen-Match (erste passende Klasse)        │
+  │     Kein Match → BuildSubstitution                  │
+  │     ("no matching hardware class")             ─────┤
+  │     ↓                                               │
+  │  5. Modell in Klasse.Models + PeakRamMb > 0?        │
+  │     Nein → BuildSubstitution                        │
+  │     ("no validated footprint")                 ─────┤
+  │     ↓                                               │
+  │  6. Live-Ressourcen messen (RAM/CPU)                │
+  │     freeRam ≥ PeakRamMb + Buffer                    │
+  │     AND CpuLoad ≤ CpuMaxLoadPercent?                │
+  │                                                     │
+  │     Ja → Proceed (local-admitted)             ──────┼──► OllamaProvider
+  │     Nein → BuildSubstitution                  ──────┤
+  │     ("free XMB/NMB, CPU n%")                        │
+  │                                                     │
+  │  BuildSubstitution:                                  │
+  │    a) FallbackChain vorhanden? → Proceed mit         │
+  │       chain[0], Header: "<lokal> -> <ziel>           │
+  │       (deferred: <grund>)"                    ──────┼──► FallbackService / Upstream
+  │    b) LocalModelTiers + TierSubstitutions?           │
+  │       → Proceed mit Claude-Modell, Header:           │
+  │       "<claude> (local <lokal> not viable            │
+  │       — <grund>)"                             ──────┼──► AnthropicProvider
+  │    c) Kein Fallback, kein Substitut → 503     ──────┼──► Client (HTTP 503)
+  │                                                     │
+  │  Monitor-Fehler (ex) → fail-open: Proceed      ─────┼──► FallbackService / Upstream
+  │  (resource-monitor-error)                           │
+  └─────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Die zwei Datenspeicher
+
+ResourceGate kombiniert zwei getrennte Datenquellen:
+
+### 3.1 Datenspeicher A — HW-Profil (`hw-profile.json`)
+
+- **Was:** Maschinenspezifisches Hardware-Profil (RAM, Cores, GPU, VRAM, Zeitpunkt)
+- **Ort:** `%APPDATA%\K.Switchboard\hw-profile.json` (Windows) / `~/.config/K.Switchboard/hw-profile.json` (Linux/macOS)
+- **Herkunft:** Automatisch erkannt beim ersten Request; 1× pro Kalendermonat erneuert
+- **Committed:** Nein — maschinenspezifisch, per `.gitignore` ausgeschlossen
+- **Felder:** `TotalRamMb`, `Cores`, `GpuVendor`, `GpuModel`, `VramMb`, `DetectedOn`
+
+### 3.2 Datenspeicher B — HardwareClasses (`config.json`)
+
+- **Was:** Committedes Mapping: HW-Klassen → validierte lokale Modelle + empirische Messdaten
+- **Ort:** `%APPDATA%\K.Switchboard\config.json` › `HardwareClasses`
+- **Herkunft:** Team-kuratiert; basiert auf Evals (siehe [eval-measurement.md](eval-measurement.md))
+- **Committed:** Ja — ist Teil der Anwendungskonfiguration
+- **Felder pro Modell:** `PeakRamMb`, `ValidatedOn`, `LatencyP50Ms`, `Score`
+
+Die Trennung ist bewusst: Datenspeicher A beschreibt *diese* Maschine (dynamisch, lokal),
+Datenspeicher B beschreibt, was auf welcher Klasse *funktioniert* (statisch, shared).
+
+---
+
+## 4. Substitutions-Logik (Tier-basiert)
+
+Kann ein lokales Modell nicht ausgeführt werden, sucht ResourceGate ein Claude-Substitut
+in zwei Schritten:
+
+1. **FallbackChain** (höhere Priorität): Ist für das angefragte Modell eine explizite
+   `FallbackChains`-Kette konfiguriert, wird `chain[0]` verwendet.
+2. **Tier-Substitution**: Das Modell wird via `LocalModelTiers` einem Tier (`S`/`M`/`L`)
+   zugeordnet, und `TierSubstitutions[tier]` liefert das Claude-Modell.
+
+Das Tier beschreibt die **Aufgabengröße**, keine Qualitätsäquivalenz. Die Entscheidung,
+`claude-sonnet-4-6` als Default für Tier M und L zu nutzen, ist empirisch begründet:
+Spike #251 zeigte 0 % A/B-Score für alle lokalen Modelle auf cpu-only-Hardware.
+
+Gibt es weder FallbackChain noch Tier-Substitut, antwortet K.Switchboard mit HTTP 503.
+
+---
+
+## 5. Maschinen-Schutz (Blast-Radius)
+
+Zwei Mechanismen begrenzen die Auswirkung lokaler Inferenz auf das System:
+
+**`num_thread`-Drosselung:**  
+Ollama-Requests erhalten `options.num_thread = max(2, Kerne - 2)`. Auf einer 12-Kern-Maschine
+laufen maximal 10 Threads für Ollama; 2 Kerne bleiben für OS und andere Prozesse reserviert.
+Der Floor von 2 stellt sicher, dass auch auf Maschinen mit sehr wenigen Kernen ein Minimum an
+Parallelität erhalten bleibt.
+
+**Single-Inference-Serialisierung:**  
+Ein interner `LocalInferenceGate`-Lock serialisiert alle Ollama-Requests — es läuft stets
+nur eine Inferenz gleichzeitig. Parallele Requests blockieren und warten auf Freigabe.
+
+---
+
+## 6. Transparenz
+
+### 6.1 Serilog-Logging
+
+ResourceGate schreibt für jede Entscheidung einen Serilog-Eintrag:
+
+| Situation | Log-Level | Nachricht (Muster) |
+| --- | --- | --- |
+| Zugelassen | Information | `ResourceGate: lokal zugelassen {Model} (frei {Free}MB ≥ {Need}MB, CPU {Cpu}%, warm={Warm})` |
+| FallbackChain | Information | `ResourceGate: defer-to-fallback {Header}` |
+| Tier-Substitution | Information | `ResourceGate: substitution {Header}` |
+| Tier ohne Substitut | Warning | `ResourceGate: Tier '{Tier}' für {Model} ist nicht in TierSubstitutions konfiguriert.` |
+| 503 | Warning | `ResourceGate: kein Fallback/Substitut für {Model} ({Reason}) → 503` |
+| Monitor-Fehler (fail-open) | Warning | `ResourceGate: Ressourcen-Check fehlgeschlagen für {Model} → fail-open (Proceed).` |
+
+**Hinweis:** `warm` im Log-Eintrag (ob das Modell bereits geladen ist) ist ein reiner
+Informationswert — er beeinflusst die Zulassungs-Entscheidung nicht.
+
+### 6.2 Response-Header
+
+Bei jeder Substitution setzt K.Switchboard den Header `X-K-Switchboard-Substitution` in der
+HTTP-Antwort. Clients können ihn auslesen, um zu erkennen, ob und warum umgeleitet wurde.
+
+**FallbackChain-Format:**
+
+```text
+<lokalesModell> -> <zielModell> (deferred: <grund>)
+```
+
+**Tier-Substitutions-Format:**
+
+```text
+<claudeModell> (local <lokalesModell> not viable — <grund>)
+```
+
+Mögliche `<grund>`-Werte: `free <X>MB/<N>MB, CPU <n>%` · `no matching hardware class` ·
+`no validated footprint`
+
+---
+
+## 7. Fail-Open bei Monitor-Fehlern
+
+Tritt beim Ressourcen-Check ein interner Fehler auf (z.B. `hw-profile.json` unlesbar,
+Prozess-Abbruch beim GPU-Tool-Start), gibt ResourceGate mit Grund `resource-monitor-error`
+grünes Licht (Proceed). Der Request wird unverändert an den FallbackService übergeben.
+
+Begründung: Ein defekter Ressourcen-Monitor darf nicht jeden lokalen Request mit HTTP 500
+killen. Der FallbackService übernimmt die reaktive Fehlerbehandlung. `OperationCanceledException`
+(Client-Abbruch) wird hingegen bewusst durchgereicht und nicht als fail-open behandelt.
