@@ -116,6 +116,7 @@ try
         client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
     });
 
+    builder.Services.AddSingleton<LocalInferenceGate>();
     builder.Services.AddSingleton<IProvider, AnthropicProvider>();
     builder.Services.AddSingleton<IProvider, OllamaProvider>();
     builder.Services.AddSingleton<ProviderRegistry>();

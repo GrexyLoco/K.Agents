@@ -7,7 +7,8 @@ namespace K.Switchboard.Providers;
 public sealed class OllamaProvider(
     IHttpClientFactory httpClientFactory,
     IOptionsMonitor<SwitchboardOptions> options,
-    ILogger<OllamaProvider> logger) : IProvider
+    ILogger<OllamaProvider> logger,
+    LocalInferenceGate localGate) : IProvider
 {
     /// <inheritdoc />
     public string Name => "ollama";
@@ -23,7 +24,8 @@ public sealed class OllamaProvider(
         var opts = options.CurrentValue;
         var upstreamUrl = opts.OllamaBaseUrl.TrimEnd('/') + "/api/chat";
 
-        var (ollamaBody, isStreaming) = await BuildOllamaBodyAsync(context.Request.Body, resolvedModel, opts.OllamaKeepAlive, cancellationToken);
+        var numThread = Math.Max(2, Environment.ProcessorCount - 2);
+        var (ollamaBody, isStreaming) = await BuildOllamaBodyAsync(context.Request.Body, resolvedModel, opts.OllamaKeepAlive, numThread, cancellationToken);
 
         logger.LogDebug("Forwarding {Method} to Ollama: {Url} (model: {Model})",
             context.Request.Method, upstreamUrl, resolvedModel);
@@ -40,6 +42,7 @@ public sealed class OllamaProvider(
                 upstreamRequest.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
         }
 
+        using var _ = await localGate.AcquireAsync(cancellationToken);
         using var response = await client.SendAsync(
             upstreamRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
@@ -58,7 +61,7 @@ public sealed class OllamaProvider(
         await WriteJsonAnthropicResponseAsync(context, response, cancellationToken);
     }
 
-    private static async Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyAsync(Stream body, string resolvedModel, string keepAlive, CancellationToken ct)
+    private static async Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyAsync(Stream body, string resolvedModel, string keepAlive, int numThread, CancellationToken ct)
     {
         using var reader = new StreamReader(body, Encoding.UTF8, leaveOpen: true);
         var json = await reader.ReadToEndAsync(ct);
@@ -93,10 +96,10 @@ public sealed class OllamaProvider(
             ["keep_alive"] = keepAlive
         };
 
+        var optionsObj = new JsonObject { ["num_thread"] = numThread };
         if (request["max_tokens"]?.GetValue<int?>() is int maxTokens)
-        {
-            ollamaBody["options"] = new JsonObject { ["num_predict"] = maxTokens };
-        }
+            optionsObj["num_predict"] = maxTokens;
+        ollamaBody["options"] = optionsObj;
 
         return (ollamaBody, isStreaming);
     }
@@ -307,4 +310,9 @@ public sealed class OllamaProvider(
 
     private static bool ShouldPassThrough(string headerName) =>
         headerName.Equals("authorization", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Nur für Tests: macht den privaten Body-Builder zugänglich.</summary>
+    internal static Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyForTest(
+        Stream body, string resolvedModel, string keepAlive, int numThread, CancellationToken ct)
+        => BuildOllamaBodyAsync(body, resolvedModel, keepAlive, numThread, ct);
 }

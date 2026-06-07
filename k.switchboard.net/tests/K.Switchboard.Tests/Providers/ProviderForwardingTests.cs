@@ -276,7 +276,7 @@ public sealed class ProviderForwardingTests
             OllamaBaseUrl = baseUrl,
             OllamaKeepAlive = keepAlive
         });
-        return (new OllamaProvider(factory, opts, NullLogger<OllamaProvider>.Instance), handler);
+        return (new OllamaProvider(factory, opts, NullLogger<OllamaProvider>.Instance, new LocalInferenceGate()), handler);
     }
 
     private static DefaultHttpContext BuildContext(string jsonBody)
