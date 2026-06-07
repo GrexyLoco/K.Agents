@@ -85,6 +85,13 @@ try
         .Configure<SwitchboardOptions>(builder.Configuration)
         .AddHealthChecks();
 
+    // IConfiguration behandelt ':' als Sektions-Trenner → Dictionary-Keys wie "qwen2.5-coder:14b"
+    // gehen beim Binden verloren. PostConfigure liest config.json zusätzlich direkt via source-gen
+    // STJ und ersetzt die betroffenen Collections in-place. Der Action-Delegate wird bei jedem
+    // IOptionsMonitor-Rebuild (Hot-Reload) neu ausgeführt → Datei wird bei jeder Änderung neu gelesen.
+    builder.Services.PostConfigure<SwitchboardOptions>(opts =>
+        SwitchboardOptionsColonKeyLoader.ApplyFromFile(opts, appDataConfig));
+
     builder.Services.AddRateLimiter(_ =>
     {
         var opts = builder.Configuration.Get<SwitchboardOptions>() ?? new SwitchboardOptions();

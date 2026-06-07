@@ -14,7 +14,11 @@ namespace K.Switchboard.Tests.Integration;
 /// HardwareClasses leer → Probe nie aufgerufen (kein nvidia-smi/Ollama-Bedarf).
 /// IHardwareProfileDetector gefakt → kein ProcessRunner-Aufruf.
 /// "anthropic" HttpClient mit Stub-Handler → kontrollierte Upstream-Antwort in Scenario 1.
+/// [NotInParallel] serialisiert gegen StatsEndpointTests (gleiche Gruppe): beide Klassen
+/// starten WebApplicationFactory{Program} und teilen den statischen Serilog-Bootstrap-Logger —
+/// parallele Initialisierung würde Freeze() doppelt auslösen.
 /// </summary>
+[NotInParallel("stats-integration")]
 public sealed class ResourceGateEndpointTests
 {
     // Minimales gültiges JSON-Body; model wird per Alias aufgelöst.
