@@ -199,7 +199,17 @@ try
 
         ctx.Request.Body.Position = 0;
 
-        var decision = await gate.EvaluateAsync(requestedModel, 0, ct);
+        int inputTokens = 0;
+        try
+        {
+            ctx.Request.Body.Position = 0;
+            using var tokenDoc = await JsonDocument.ParseAsync(ctx.Request.Body, cancellationToken: ct);
+            inputTokens = RequestTokenEstimator.EstimateInputTokens(tokenDoc.RootElement);
+            ctx.Request.Body.Position = 0;
+        }
+        catch (JsonException) { /* best-effort; 0 bleibt */ }
+
+        var decision = await gate.EvaluateAsync(requestedModel, inputTokens, ct);
         if (decision.Action == RoutingAction.Fail)
         {
             ctx.Response.StatusCode = decision.FailStatusCode;
