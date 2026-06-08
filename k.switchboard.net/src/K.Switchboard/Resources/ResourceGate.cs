@@ -64,7 +64,8 @@ public sealed class ResourceGate(
                     return BuildSubstitution(requestedModel, resolvedModel, opts, $"free {live.FreeRamMb}MB/{need}MB");
             }
 
-            // === Task 5 Einhängepunkt: Latenz-Gate (nach bestandener Ressourcen-Admission) ===
+            if (LatencyExceeded(validation, live, opts.ResourceGate, inputTokens, out var latReason))
+                return BuildSubstitution(requestedModel, resolvedModel, opts, latReason);
 
             logger.LogInformation(
                 "ResourceGate: lokal zugelassen {Model} ({Path}, CPU {Cpu}%, warm={Warm})",
@@ -108,6 +109,23 @@ public sealed class ResourceGate(
         // 3) Kein Fallback, kein Substitut → hart fehlschlagen.
         logger.LogWarning("ResourceGate: kein Fallback/Substitut für {Model} ({Reason}) → 503", localModel, reason);
         return new RoutingDecision { Action = RoutingAction.Fail, Reason = reason, FailStatusCode = StatusCodes.Status503ServiceUnavailable };
+    }
+
+    private static bool LatencyExceeded(ModelValidation validation, LiveResourceSnapshot live, ResourceGateOptions gate, int inputTokens, out string reason)
+    {
+        reason = string.Empty;
+        if (gate.MaxLatencyMs <= 0 || validation.LatencyP50Ms <= 0)
+            return false;   // Gate aus oder keine Latenz-Daten → nicht blockieren
+
+        var contextFactor = Math.Max(0.5, (double)inputTokens / Math.Max(1, gate.LatencyContextReferenceTokens));
+        var coldFactor = live.ModelWarm ? 1.0 : gate.ColdLatencyFactor;
+        var expectedMs = validation.LatencyP50Ms * coldFactor * contextFactor;
+        if (expectedMs > gate.MaxLatencyMs)
+        {
+            reason = $"latency ~{expectedMs:F0}ms > {gate.MaxLatencyMs}ms (warm={live.ModelWarm}, ctx×{contextFactor:F1})";
+            return true;
+        }
+        return false;
     }
 
     private static RoutingDecision Proceed(string model, string reason)
