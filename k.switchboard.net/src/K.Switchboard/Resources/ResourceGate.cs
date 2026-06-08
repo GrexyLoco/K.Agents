@@ -48,7 +48,8 @@ public sealed class ResourceGate(
 
             if (gpuPath)
             {
-                var usableVram = profile.VramMb - opts.ResourceGate.VramDisplayReserveMb;
+                // Math.Max(0, …): bei Fehlkonfiguration (Reserve > VRAM) nicht negativ werden (klare Meldung statt "-512MB").
+                var usableVram = Math.Max(0, profile.VramMb - opts.ResourceGate.VramDisplayReserveMb);
                 if (validation.PeakVramMb > usableVram)
                     return BuildSubstitution(requestedModel, resolvedModel, opts,
                         $"VRAM {validation.PeakVramMb}MB/{usableVram}MB");
