@@ -25,3 +25,6 @@ plugins/kagents/logs/
 
 # K.Switchboard per-install HW-Profil-Cache (maschinenspezifisch, nie committen)
 hw-profile.json
+
+# K.Switchboard per-install Live-Telemetrie (maschinenspezifisch, nie committen)
+learned-stats.json
