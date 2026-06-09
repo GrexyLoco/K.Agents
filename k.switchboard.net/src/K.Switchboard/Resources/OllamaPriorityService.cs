@@ -58,7 +58,9 @@ public sealed class OllamaPriorityService(
         }
     }
 
-    private static bool IsLocalHost(string baseUrl)
+    /// <summary>True, wenn die URL auf localhost zeigt (localhost/127.0.0.1/::1). Auch von der
+    /// Telemetrie im <see cref="K.Switchboard.Providers.OllamaProvider"/> genutzt.</summary>
+    internal static bool IsLocalHost(string baseUrl)
     {
         if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri))
             return false;

@@ -464,7 +464,7 @@ Die Datei liegt im Per-Install-Verzeichnis (analog `hw-profile.json`):
 | --- | --- |
 | Windows | `%APPDATA%\K.Switchboard\learned-stats.json` |
 | Linux | `~/.config/K.Switchboard/learned-stats.json` |
-| macOS | nicht offiziell unterstützt — bei aktivierter Telemetrie würde die Datei unter `~/Library/Application Support/K.Switchboard/learned-stats.json` geschrieben |
+| macOS | nicht offiziell unterstützt — bei aktivierter Telemetrie würde die Datei wie unter Linux nach `~/.config/K.Switchboard/learned-stats.json` geschrieben (.NET `ApplicationData` → XDG) |
 
 Die Datei ist maschinenspezifisch und wird **nicht committed** (per `.gitignore` ausgeschlossen,
 wie `hw-profile.json`). Sie enthält pro Modell folgende Felder:

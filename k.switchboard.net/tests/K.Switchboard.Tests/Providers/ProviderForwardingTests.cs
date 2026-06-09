@@ -299,6 +299,35 @@ public sealed class ProviderForwardingTests
         await Assert.That(stats.Records).IsEmpty();
     }
 
+    [Test]
+    public async Task Ollama_does_not_record_for_remote_ollama()
+    {
+        const string ollamaResponse = """
+            {
+              "model": "qwen2.5-coder:14b",
+              "created_at": "2026-06-09T10:00:00Z",
+              "message": { "role": "assistant", "content": "ok" },
+              "prompt_eval_count": 5,
+              "eval_count": 3,
+              "done": true
+            }
+            """;
+
+        // Flag aktiv, aber OllamaBaseUrl zeigt auf einen entfernten Host: die Inferenz läuft nicht
+        // auf dieser Maschine, das RAM-Delta wäre Rauschen → keine Telemetrie (Spec §3).
+        var stats = new FakeStatsStore();
+        var (provider, _) = CreateOllamaProvider(
+            baseUrl: "http://192.168.1.50:11434",
+            responseBody: ollamaResponse,
+            recordStats: true,
+            statsStore: stats);
+
+        var ctx = BuildContext("""{"model":"qwen2.5-coder:14b","messages":[]}""");
+        await provider.ForwardAsync(ctx, "qwen2.5-coder:14b", CancellationToken.None);
+
+        await Assert.That(stats.Records).IsEmpty();
+    }
+
     // --- Hilfsmethoden ---
 
     private static (AnthropicProvider Provider, MockHttpHandler Handler) CreateAnthropicProvider(

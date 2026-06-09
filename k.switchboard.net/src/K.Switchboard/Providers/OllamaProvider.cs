@@ -43,13 +43,26 @@ public sealed class OllamaProvider(
                 upstreamRequest.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
         }
 
-        var recordStats = opts.ResourceGate.RecordLocalInferenceStats;
-        var sw = recordStats ? System.Diagnostics.Stopwatch.StartNew() : null;
-        var preFreeMb = recordStats ? FreeRamMb() : 0;
+        // Telemetrie nur bei aktiviertem Flag UND lokalem Ollama: bei remote-Ollama läuft die
+        // Inferenz nicht auf diesem Host, das RAM-Delta wäre reines Rauschen (Spec §3: „nur lokales Modell").
+        var recordStats = opts.ResourceGate.RecordLocalInferenceStats
+            && OllamaPriorityService.IsLocalHost(opts.OllamaBaseUrl);
+        System.Diagnostics.Stopwatch? sw = null;
+        var preFreeMb = 0;
         var success = false;
         try
         {
             using var _ = await localGate.AcquireAsync(cancellationToken);
+
+            // Messung erst NACH dem serialisierenden LocalInferenceGate starten (Spec §3: „Start vor
+            // SendAsync"). Davor würde die Queue-Wartezeit in die Latenz und ein konkurrierender Lauf
+            // ins RAM-Delta einfließen — genau die Werte, die der PO manuell auswertet.
+            if (recordStats)
+            {
+                preFreeMb = FreeRamMb();
+                sw = System.Diagnostics.Stopwatch.StartNew();
+            }
+
             using var response = await client.SendAsync(
                 upstreamRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
@@ -59,11 +72,14 @@ public sealed class OllamaProvider(
                 return;
             }
 
-            success = true;
             if (isStreaming)
                 await WriteStreamingAnthropicResponseAsync(context, response, resolvedModel, cancellationToken);
             else
                 await WriteJsonAnthropicResponseAsync(context, response, cancellationToken);
+
+            // Erst nach vollständigem Response-Schreiben als Erfolg werten — ein Client-Disconnect
+            // mitten im Streaming soll nicht als erfolgreiche Inferenz mit (zu kurzer) Latenz zählen.
+            success = true;
         }
         finally
         {
