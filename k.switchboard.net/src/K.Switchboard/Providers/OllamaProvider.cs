@@ -7,7 +7,9 @@ namespace K.Switchboard.Providers;
 public sealed class OllamaProvider(
     IHttpClientFactory httpClientFactory,
     IOptionsMonitor<SwitchboardOptions> options,
-    ILogger<OllamaProvider> logger) : IProvider
+    ILogger<OllamaProvider> logger,
+    LocalInferenceGate localGate,
+    ILocalStatsStore statsStore) : IProvider
 {
     /// <inheritdoc />
     public string Name => "ollama";
@@ -23,7 +25,8 @@ public sealed class OllamaProvider(
         var opts = options.CurrentValue;
         var upstreamUrl = opts.OllamaBaseUrl.TrimEnd('/') + "/api/chat";
 
-        var (ollamaBody, isStreaming) = await BuildOllamaBodyAsync(context.Request.Body, resolvedModel, opts.OllamaKeepAlive, cancellationToken);
+        var numThread = Math.Max(2, Environment.ProcessorCount - 2);
+        var (ollamaBody, isStreaming) = await BuildOllamaBodyAsync(context.Request.Body, resolvedModel, opts.OllamaKeepAlive, numThread, cancellationToken);
 
         logger.LogDebug("Forwarding {Method} to Ollama: {Url} (model: {Model})",
             context.Request.Method, upstreamUrl, resolvedModel);
@@ -40,25 +43,64 @@ public sealed class OllamaProvider(
                 upstreamRequest.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
         }
 
-        using var response = await client.SendAsync(
-            upstreamRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
+        // Telemetrie nur bei aktiviertem Flag UND lokalem Ollama: bei remote-Ollama läuft die
+        // Inferenz nicht auf diesem Host, das RAM-Delta wäre reines Rauschen (Spec §3: „nur lokales Modell").
+        var recordStats = opts.ResourceGate.RecordLocalInferenceStats
+            && OllamaPriorityService.IsLocalHost(opts.OllamaBaseUrl);
+        System.Diagnostics.Stopwatch? sw = null;
+        var preFreeMb = 0;
+        var success = false;
+        try
         {
-            await CopyRawResponseAsync(context, response, cancellationToken);
-            return;
-        }
+            using var _ = await localGate.AcquireAsync(cancellationToken);
 
-        if (isStreaming)
+            // Messung erst NACH dem serialisierenden LocalInferenceGate starten (Spec §3: „Start vor
+            // SendAsync"). Davor würde die Queue-Wartezeit in die Latenz und ein konkurrierender Lauf
+            // ins RAM-Delta einfließen — genau die Werte, die der PO manuell auswertet.
+            if (recordStats)
+            {
+                preFreeMb = FreeRamMb();
+                sw = System.Diagnostics.Stopwatch.StartNew();
+            }
+
+            using var response = await client.SendAsync(
+                upstreamRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                await CopyRawResponseAsync(context, response, cancellationToken);
+                return;
+            }
+
+            if (isStreaming)
+                await WriteStreamingAnthropicResponseAsync(context, response, resolvedModel, cancellationToken);
+            else
+                await WriteJsonAnthropicResponseAsync(context, response, cancellationToken);
+
+            // Erst nach vollständigem Response-Schreiben als Erfolg werten — ein Client-Disconnect
+            // mitten im Streaming soll nicht als erfolgreiche Inferenz mit (zu kurzer) Latenz zählen.
+            success = true;
+        }
+        finally
         {
-            await WriteStreamingAnthropicResponseAsync(context, response, resolvedModel, cancellationToken);
-            return;
+            if (recordStats && success && sw is not null)
+            {
+                sw.Stop();
+                try
+                {
+                    var ramDeltaMb = Math.Max(0, preFreeMb - FreeRamMb());
+                    statsStore.Record(resolvedModel, sw.ElapsedMilliseconds, ramDeltaMb, 0);
+                }
+                catch (Exception ex)
+                {
+                    // Telemetrie ist read-only/best-effort — darf den Request NIE killen.
+                    logger.LogWarning(ex, "Live-Telemetrie-Erfassung für {Model} fehlgeschlagen (ignoriert).", resolvedModel);
+                }
+            }
         }
-
-        await WriteJsonAnthropicResponseAsync(context, response, cancellationToken);
     }
 
-    private static async Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyAsync(Stream body, string resolvedModel, string keepAlive, CancellationToken ct)
+    private static async Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyAsync(Stream body, string resolvedModel, string keepAlive, int numThread, CancellationToken ct)
     {
         using var reader = new StreamReader(body, Encoding.UTF8, leaveOpen: true);
         var json = await reader.ReadToEndAsync(ct);
@@ -93,10 +135,10 @@ public sealed class OllamaProvider(
             ["keep_alive"] = keepAlive
         };
 
+        var optionsObj = new JsonObject { ["num_thread"] = numThread };
         if (request["max_tokens"]?.GetValue<int?>() is int maxTokens)
-        {
-            ollamaBody["options"] = new JsonObject { ["num_predict"] = maxTokens };
-        }
+            optionsObj["num_predict"] = maxTokens;
+        ollamaBody["options"] = optionsObj;
 
         return (ollamaBody, isStreaming);
     }
@@ -307,4 +349,16 @@ public sealed class OllamaProvider(
 
     private static bool ShouldPassThrough(string headerName) =>
         headerName.Equals("authorization", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Aktuell freier System-RAM in MB (GC-MemoryInfo, billig — wie LiveResourceProbe).</summary>
+    private static int FreeRamMb()
+    {
+        var info = GC.GetGCMemoryInfo();
+        return (int)(Math.Max(0, info.TotalAvailableMemoryBytes - info.MemoryLoadBytes) / (1024 * 1024));
+    }
+
+    /// <summary>Nur für Tests: macht den privaten Body-Builder zugänglich.</summary>
+    internal static Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyForTest(
+        Stream body, string resolvedModel, string keepAlive, int numThread, CancellationToken ct)
+        => BuildOllamaBodyAsync(body, resolvedModel, keepAlive, numThread, ct);
 }
