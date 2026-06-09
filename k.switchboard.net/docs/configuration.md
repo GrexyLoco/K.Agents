@@ -464,34 +464,37 @@ Die Datei liegt im Per-Install-Verzeichnis (analog `hw-profile.json`):
 | --- | --- |
 | Windows | `%APPDATA%\K.Switchboard\learned-stats.json` |
 | Linux | `~/.config/K.Switchboard/learned-stats.json` |
-| macOS | nicht unterstützt |
+| macOS | nicht offiziell unterstützt — bei aktivierter Telemetrie würde die Datei unter `~/Library/Application Support/K.Switchboard/learned-stats.json` geschrieben |
 
 Die Datei ist maschinenspezifisch und wird **nicht committed** (per `.gitignore` ausgeschlossen,
 wie `hw-profile.json`). Sie enthält pro Modell folgende Felder:
 
+Die Property-Namen werden in **camelCase** serialisiert (der Modell-Schlüssel — z. B.
+`qwen2.5-coder:7b` — bleibt unverändert):
+
 ```json
 {
   "qwen2.5-coder:7b": {
-    "Count": 12,
-    "LastLatencyMs": 1840,
-    "AvgLatencyMs": 1920.5,
-    "MaxLatencyMs": 3100,
-    "LastRamDeltaMb": 5100,
-    "LastSizeMb": 0,
-    "UpdatedOn": "2026-06-09T09:00:00+00:00"
+    "count": 12,
+    "lastLatencyMs": 1840,
+    "avgLatencyMs": 1920.5,
+    "maxLatencyMs": 3100,
+    "lastRamDeltaMb": 5100,
+    "lastSizeMb": 0,
+    "updatedOn": "2026-06-09T09:00:00+00:00"
   }
 }
 ```
 
 | Feld | Beschreibung |
 | --- | --- |
-| `Count` | Anzahl der erfassten Inferenzen für dieses Modell |
-| `LastLatencyMs` | Zuletzt gemessene End-to-End-Latenz (ms) |
-| `AvgLatencyMs` | Laufender Mittelwert der Latenz (ms, running mean) |
-| `MaxLatencyMs` | Höchste gemessene Latenz (ms) |
-| `LastRamDeltaMb` | Letztes RAM-Delta (MB, 2-Punkt-GC-Approximation — verrauschbar durch Fremdprozesse) |
-| `LastSizeMb` | Zuletzt gemeldete Modellgröße (MB) oder `0`, falls nicht billig erreichbar |
-| `UpdatedOn` | UTC-Zeitpunkt der letzten Aktualisierung |
+| `count` | Anzahl der erfassten Inferenzen für dieses Modell |
+| `lastLatencyMs` | Zuletzt gemessene End-to-End-Latenz (ms) |
+| `avgLatencyMs` | Laufender Mittelwert der Latenz (ms, running mean) |
+| `maxLatencyMs` | Höchste gemessene Latenz (ms) |
+| `lastRamDeltaMb` | Letztes RAM-Delta (MB, 2-Punkt-GC-Approximation — verrauschbar durch Fremdprozesse) |
+| `lastSizeMb` | Zuletzt gemeldete Modellgröße (MB) oder `0`, falls nicht billig erreichbar |
+| `updatedOn` | UTC-Zeitpunkt der letzten Aktualisierung |
 
 **Zweck:** Die Datei liefert reale Betriebsdaten als Hilfe für die **manuelle** Pflege der
 committed `ModelValidation`-Werte (`LatencyP50Ms`, `PeakRamMb`) in `HardwareClasses`. Sie wird

@@ -328,16 +328,16 @@ Die Live-Daten sind eine **ergänzende** Hilfe, um die committed `ModelValidatio
 
 | Feld in `learned-stats.json` | Verfeinert | Verwendung |
 | --- | --- | --- |
-| `AvgLatencyMs` (laufender Mittelwert über reale Läufe) | `LatencyP50Ms` | Driftet die reale Latenz deutlich vom committed `LatencyP50Ms` ab, ist ein neuer dedizierter Eval-Lauf angezeigt. Der Live-Wert ist ein Mittelwert über reale Kontexte, kein sauberer Median über die fünf festen Fixtures. |
-| `LastRamDeltaMb` (2-Punkt-GC-Approximation) | `PeakRamMb` | Dient als **Plausibilitätscheck** gegen den committed `PeakRamMb`. Liegt das Live-Delta dauerhaft weit über dem hinterlegten Wert, lohnt sich eine erneute `/api/ps`-Messung (§ 3.3). |
+| `avgLatencyMs` (laufender Mittelwert über reale Läufe) | `LatencyP50Ms` | Driftet die reale Latenz deutlich vom committed `LatencyP50Ms` ab, ist ein neuer dedizierter Eval-Lauf angezeigt. Der Live-Wert ist ein Mittelwert über reale Kontexte, kein sauberer Median über die fünf festen Fixtures. |
+| `lastRamDeltaMb` (2-Punkt-GC-Approximation) | `PeakRamMb` | Dient als **Plausibilitätscheck** gegen den committed `PeakRamMb`. Liegt das Live-Delta dauerhaft weit über dem hinterlegten Wert, lohnt sich eine erneute `/api/ps`-Messung (§ 3.3). |
 
 ### 9.2 Klarstellung: Approximation vs. präzise Quelle
 
 Die Live-Telemetrie ist bewusst eine **Approximation**:
 
-- `AvgLatencyMs` ist ein laufender Mittelwert über reale, variabel große Kontexte — kein über
+- `avgLatencyMs` ist ein laufender Mittelwert über reale, variabel große Kontexte — kein über
   fixe Fixtures berechneter Median wie `LatencyP50Ms` (§ 4).
-- `LastRamDeltaMb` ist ein systemweites GC-Delta (durch Fremdprozesse verrauschbar) — kein
+- `lastRamDeltaMb` ist ein systemweites GC-Delta (durch Fremdprozesse verrauschbar) — kein
   authoritativer Footprint wie der `/api/ps`-`size`-Wert (§ 3.3).
 
 **Die dedizierten Eval-Läufe (§ 2–5) bleiben die präzise Quelle** für die committed Werte. Die
