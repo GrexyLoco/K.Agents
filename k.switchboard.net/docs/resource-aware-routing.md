@@ -142,7 +142,7 @@ Gibt es weder FallbackChain noch Tier-Substitut, antwortet K.Switchboard mit HTT
 
 ## 5. Maschinen-Schutz (Blast-Radius)
 
-Zwei Mechanismen begrenzen die Auswirkung lokaler Inferenz auf das System:
+Drei Mechanismen begrenzen die Auswirkung lokaler Inferenz auf das System:
 
 **`num_thread`-Drosselung:**  
 Ollama-Requests erhalten `options.num_thread = max(2, Kerne - 2)`. Auf einer 12-Kern-Maschine
@@ -154,11 +154,34 @@ Parallelität erhalten bleibt.
 Ein interner `LocalInferenceGate`-Lock serialisiert alle Ollama-Requests — es läuft stets
 nur eine Inferenz gleichzeitig. Parallele Requests blockieren und warten auf Freigabe.
 
+**Ollama-Prozess-Priorität (opt-in):**  
+Ist `LowerOllamaPriority` aktiv, senkt K.Switchboard beim Start die Prozess-Priorität des lokalen
+Ollama-Prozesses auf below-normal. Damit verdrängt lokale Inferenz interaktive Prozesse (IDE,
+Browser) nicht, wenn die CPU unter Last steht. Greift nur bei lokalem Ollama (localhost) und ist
+best-effort (ein Fehler bricht den Start nicht ab); die Priorität wird einmalig beim Start gesetzt.
+macOS wird nicht unterstützt. Details und Default siehe
+[ResourceGate § 1.10.1](configuration.md#resource-gate).
+
 ---
 
-## 6. Transparenz
+## 6. Live-Telemetrie (read-only)
 
-### 6.1 Serilog-Logging
+Ist `RecordLocalInferenceStats` aktiv, beobachtet K.Switchboard pro erfolgreicher lokaler Inferenz
+die tatsächlich gemessene End-to-End-Latenz und ein RAM-Delta (2-Punkt-GC-Approximation) und
+schreibt sie aggregiert pro Modell nach `learned-stats.json` (per-install, nicht committed).
+
+Diese Telemetrie ist ein reiner **Beobachtungs-Seitenkanal**: sie **beeinflusst den Datenfluss aus
+Abschnitt 2 und die Admission-Entscheidung des ResourceGate NICHT**. Die committed
+`ModelValidation`-Werte (`PeakRamMb`, `LatencyP50Ms`) werden zur Laufzeit nicht überschrieben — es
+gibt keinen Drift und keine automatische Selbst-Nachpflege. Die erfassten Werte dienen
+ausschließlich als Datenquelle für die **manuelle** Verfeinerung des Mappings (siehe
+[eval-measurement.md](eval-measurement.md) und [configuration.md § 1.10.4](configuration.md#learned-stats)).
+
+---
+
+## 7. Transparenz
+
+### 7.1 Serilog-Logging
 
 ResourceGate schreibt für jede Entscheidung einen Serilog-Eintrag:
 
@@ -174,7 +197,7 @@ ResourceGate schreibt für jede Entscheidung einen Serilog-Eintrag:
 **Hinweis:** `warm` im Log-Eintrag (ob das Modell bereits geladen ist) ist ein reiner
 Informationswert — er beeinflusst die Zulassungs-Entscheidung nicht.
 
-### 6.2 Response-Header
+### 7.2 Response-Header
 
 Bei jeder Substitution setzt K.Switchboard den Header `X-K-Switchboard-Substitution` in der
 HTTP-Antwort. Clients können ihn auslesen, um zu erkennen, ob und warum umgeleitet wurde.
@@ -197,7 +220,7 @@ Mögliche `<grund>`-Werte: `free <X>MB/<N>MB` · `CPU <n>%` · `VRAM <P>MB/<U>MB
 
 ---
 
-## 7. Fail-Open bei Monitor-Fehlern
+## 8. Fail-Open bei Monitor-Fehlern
 
 Tritt beim Ressourcen-Check ein interner Fehler auf (z.B. `hw-profile.json` unlesbar,
 Prozess-Abbruch beim GPU-Tool-Start), gibt ResourceGate mit Grund `resource-monitor-error`

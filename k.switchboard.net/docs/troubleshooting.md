@@ -433,3 +433,74 @@ anpassen oder `rocm-smi` installieren.
 ```pwsh
 Remove-Item "$env:APPDATA\K.Switchboard\hw-profile.json" -Force
 ```
+
+---
+
+<a id="ollama-prioritaet-nicht-gesenkt"></a>
+
+## 1.15 Ollama-Priorität wird nicht gesenkt
+
+**Symptom:** Trotz `LowerOllamaPriority: true` läuft der lokale Ollama-Prozess weiterhin auf
+Default-Priorität (normal), und lokale Inferenz verdrängt andere Prozesse auf der Maschine.
+
+**Ursache 1: Flag nicht gesetzt**
+
+Prüfe in `config.json`, dass `ResourceGate.LowerOllamaPriority` tatsächlich auf `true` steht.
+Das Feature ist opt-in und standardmäßig deaktiviert.
+
+**Ursache 2: `OllamaBaseUrl` zeigt nicht auf localhost**
+
+Die Priorität lässt sich nur für einen **lokalen** Ollama-Prozess setzen. `OllamaPriorityService`
+greift nur, wenn der Host von `OllamaBaseUrl` einer von `localhost`, `127.0.0.1` oder `::1` ist.
+Zeigt `OllamaBaseUrl` auf einen remote-Host, ist die Priorität nicht beeinflussbar (no-op) — im Log
+erscheint `Ollama-Priorität: OllamaBaseUrl '...' ist nicht localhost`.
+
+**Ursache 3: Fehlende Rechte / kein Prozess gefunden**
+
+Das Setzen der Priorität ist best-effort. Schlägt es fehl (z.B. fehlende Rechte) oder wird kein
+`ollama`-Prozess gefunden, erscheint im Log eine Warnung (`Ollama-Priorität: PID ... konnte nicht
+gesetzt werden (Rechte?)` bzw. `kein 'ollama'-Prozess gefunden`). Der App-Start wird dadurch
+nicht abgebrochen.
+
+**Ursache 4: Ollama wurde nach dem K.Switchboard-Start neu gestartet**
+
+Die Priorität wird **einmalig beim Start** von K.Switchboard gesetzt. Wird Ollama danach neu
+gestartet, läuft der neue Prozess wieder mit Default-Priorität — bis zum nächsten
+K.Switchboard-Start.
+
+**Lösung:** K.Switchboard neu starten, nachdem Ollama läuft.
+
+**Plattform-Hinweis:** macOS wird nicht unterstützt — die Priorität wird dort übersprungen
+(`Ollama-Priorität: macOS nicht unterstützt — übersprungen`).
+
+---
+
+<a id="learned-stats-telemetrie"></a>
+
+## 1.16 learned-stats.json / Telemetrie deaktivieren
+
+**Symptom:** Die Datei `learned-stats.json` im Per-Install-Verzeichnis wächst, oder pro lokalem
+Request erscheint ein zusätzlicher Serilog-Eintrag mit Latenz/RAM-Delta.
+
+**Ursache:** `RecordLocalInferenceStats: true` ist gesetzt. Die Live-Telemetrie erfasst pro
+erfolgreicher lokaler Inferenz Latenz und RAM-Delta und schreibt sie aggregiert nach
+`learned-stats.json`.
+
+**Hinweis:** Die Telemetrie ist **read-only** — sie beeinflusst die Routing-/Admission-Entscheidung
+nicht. Das Deaktivieren ändert nichts am Routing-Verhalten, nur an der Datenerfassung.
+
+**Lösung: Telemetrie deaktivieren**
+
+In `config.json`:
+
+```json
+"ResourceGate": {
+  "RecordLocalInferenceStats": false
+}
+```
+
+Die Datei kann anschließend gefahrlos gelöscht werden:
+
+```pwsh
+Remove-Item "$env:APPDATA\K.Switchboard\learned-stats.json" -Force
+```

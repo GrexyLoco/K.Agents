@@ -310,3 +310,37 @@ wird immer substituiert, unabhängig vom RAM-Check.
 - **GPU-VRAM-Messung:** Alle GPU-Klassen-Werte (`PeakVramMb`) sind auf dieser
   Entwicklungsmaschine (CPU-only) ausstehend. Der GPU-Pfad ist im Code mock-verifiziert;
   reale Werte müssen auf der Ziel-GPU-Hardware erhoben werden.
+
+---
+
+## 9. Live-Betriebsdaten (`learned-stats.json`)
+
+Ergänzend zu den dedizierten Eval-Läufen (§ 2–5) liefert K.Switchboard im laufenden Betrieb eine
+**Live-Datenquelle**, wenn `RecordLocalInferenceStats: true` gesetzt ist (opt-in, siehe
+[configuration.md § 1.10.4](configuration.md#learned-stats)). Pro erfolgreicher lokaler Inferenz
+werden Latenz und ein RAM-Delta erfasst und aggregiert pro Modell nach `learned-stats.json`
+geschrieben (per-install, nicht committed).
+
+### 9.1 Verwendung für die manuelle Mapping-Pflege
+
+Die Live-Daten sind eine **ergänzende** Hilfe, um die committed `ModelValidation`-Werte in
+`HardwareClasses[*].Models[*]` zwischen den Eval-Läufen plausibel zu halten:
+
+| Feld in `learned-stats.json` | Verfeinert | Verwendung |
+| --- | --- | --- |
+| `AvgLatencyMs` (laufender Mittelwert über reale Läufe) | `LatencyP50Ms` | Driftet die reale Latenz deutlich vom committed `LatencyP50Ms` ab, ist ein neuer dedizierter Eval-Lauf angezeigt. Der Live-Wert ist ein Mittelwert über reale Kontexte, kein sauberer Median über die fünf festen Fixtures. |
+| `LastRamDeltaMb` (2-Punkt-GC-Approximation) | `PeakRamMb` | Dient als **Plausibilitätscheck** gegen den committed `PeakRamMb`. Liegt das Live-Delta dauerhaft weit über dem hinterlegten Wert, lohnt sich eine erneute `/api/ps`-Messung (§ 3.3). |
+
+### 9.2 Klarstellung: Approximation vs. präzise Quelle
+
+Die Live-Telemetrie ist bewusst eine **Approximation**:
+
+- `AvgLatencyMs` ist ein laufender Mittelwert über reale, variabel große Kontexte — kein über
+  fixe Fixtures berechneter Median wie `LatencyP50Ms` (§ 4).
+- `LastRamDeltaMb` ist ein systemweites GC-Delta (durch Fremdprozesse verrauschbar) — kein
+  authoritativer Footprint wie der `/api/ps`-`size`-Wert (§ 3.3).
+
+**Die dedizierten Eval-Läufe (§ 2–5) bleiben die präzise Quelle** für die committed Werte. Die
+Live-Daten zeigen lediglich an, *wann* ein erneuter Eval-Lauf sinnvoll ist. Es findet **keine**
+automatische Laufzeit-Nachpflege statt — `learned-stats.json` wird ausschließlich gelesen und
+manuell ausgewertet (read-only, siehe [resource-aware-routing.md § 6](resource-aware-routing.md)).
