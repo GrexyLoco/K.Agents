@@ -85,7 +85,9 @@ public sealed record SwitchboardOptions
             VramDisplayReserveMb = 2048,
             MaxLatencyMs = 0,
             ColdLatencyFactor = 2.0,
-            LatencyContextReferenceTokens = 4000
+            LatencyContextReferenceTokens = 4000,
+            LowerOllamaPriority = false,
+            RecordLocalInferenceStats = false
         },
         HardwareClasses =
         [
@@ -193,4 +195,12 @@ public sealed record ResourceGateOptions
 
     /// <summary>Referenz-Kontextlänge (Tokens) für die Latenz-Skalierung (≈ reales Headless-Payload).</summary>
     public int LatencyContextReferenceTokens { get; init; } = 4000;
+
+    /// <summary>Lokalen Ollama-Prozess beim Start auf below-normal Priorität setzen
+    /// (nur localhost, best-effort). Default false (opt-in).</summary>
+    public bool LowerOllamaPriority { get; init; }
+
+    /// <summary>Live-Inferenz-Telemetrie (Latenz + RAM-Delta) in learned-stats.json erfassen.
+    /// Read-only — ändert die Admission NICHT. Default false (opt-in).</summary>
+    public bool RecordLocalInferenceStats { get; init; }
 }
