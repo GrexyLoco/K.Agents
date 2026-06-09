@@ -175,7 +175,7 @@ K.Switchboard erkennt beim ersten Start das lokale Hardware-Profil und speichert
 | --- | --- |
 | Windows | `%APPDATA%\K.Switchboard\hw-profile.json` |
 | Linux | `~/.config/K.Switchboard/hw-profile.json` |
-| macOS | `~/Library/Application Support/K.Switchboard/hw-profile.json` |
+| macOS | nicht unterstützt (CPU-Sampler liefert 0, GPU-Pfad nie aktiv) |
 
 Die Datei ist maschinenspezifisch und wird **nicht committed**. Sie enthält folgende Felder:
 
@@ -209,9 +209,10 @@ GPU-Wechsel), die Datei löschen und K.Switchboard neu starten oder den nächste
 Remove-Item "$env:APPDATA\K.Switchboard\hw-profile.json" -Force
 ```
 
-**GPU-Erkennung:** Reihenfolge — `nvidia-smi` (cross-platform), dann `wmic` (Windows-Fallback),
-dann `system_profiler` (macOS). Steht kein Tool zur Verfügung oder gibt es Exit-Code ≠ 0,
-wird `GpuVendor="none"` gesetzt und der CPU-Pfad genutzt. Siehe auch
+**GPU-Erkennung:** Reihenfolge — `nvidia-smi` (cross-platform), dann `rocm-smi` (AMD, Linux +
+Windows, falls ROCm installiert), dann `wmic` (Windows-Fallback), dann `system_profiler`
+(macOS — liefert immer `VramMb=0`, kein GPU-Pfad möglich). Steht kein Tool zur Verfügung oder
+gibt es Exit-Code ≠ 0, wird `GpuVendor="none"` gesetzt und der CPU-Pfad genutzt. Siehe auch
 [GPU wird nicht erkannt](troubleshooting.md#gpu-nicht-erkannt).
 
 ---
@@ -271,6 +272,7 @@ HW-Klasse validiert sind. Es wird einmalig vom Team gepflegt und liegt in `confi
 | Feld | Typ | Beschreibung |
 | --- | --- | --- |
 | `PeakRamMb` | int | Beobachteter Peak-RAM (MB) bei realistischem Max-Kontext. **0 = nicht validiert → lokale Ausführung gesperrt** |
+| `PeakVramMb` | int | Beobachteter Peak-VRAM (MB) beim Laden auf der GPU. **0 = nicht GPU-validiert → CPU-Pfad gilt** (Admission via RAM-Check) |
 | `ValidatedOn` | string | Setup-Beschreibung für Reproduzierbarkeit |
 | `LatencyP50Ms` | int | Median-Latenz (ms) aus dem Eval. 0 = nicht gemessen |
 | `Score` | string | Qualitäts-Score aus dem Eval (`A`/`B`/`C`/`F`). Leer = nicht bewertet |
@@ -357,15 +359,19 @@ aktivieren, `TierSubstitutions["L"]` in `config.json` überschreiben:
 ## 1.10 ResourceGate
 
 `ResourceGate` ist ein Pre-flight-Check: Bevor K.Switchboard einen lokalen Ollama-Request
-weiterleitet, prüft er ob RAM und CPU die Ausführung erlauben. Schlägt der Check fehl,
-wird auf die FallbackChain oder Tier-Substitution ausgewichen.
+weiterleitet, prüft er ob die Ressourcen (RAM/VRAM und CPU) die Ausführung erlauben. Schlägt
+der Check fehl, wird auf die FallbackChain oder Tier-Substitution ausgewichen.
 
 ```json
 "ResourceGate": {
   "Enabled": true,
   "RamBufferMb": 0,
   "CpuLoadWindowSeconds": 4,
-  "CpuMaxLoadPercent": 85
+  "CpuMaxLoadPercent": 85,
+  "VramDisplayReserveMb": 2048,
+  "MaxLatencyMs": 0,
+  "ColdLatencyFactor": 2.0,
+  "LatencyContextReferenceTokens": 4000
 }
 ```
 
@@ -377,18 +383,66 @@ wird auf die FallbackChain oder Tier-Substitution ausgewichen.
 | `RamBufferMb` | int | `0` | Zusätzlicher Sicherheitspuffer über `PeakRamMb`. `0` = Code-hergeleiteter Default: `max(1024, PeakRamMb / 4)`. Siehe [eval-measurement.md § 7](eval-measurement.md#7-rambuffermb-herleitung). |
 | `CpuLoadWindowSeconds` | int | `4` | Fenster (s) für den rollenden CPU-Last-Mittelwert. |
 | `CpuMaxLoadPercent` | int | `85` | CPU-Last-Schwelle (%). Lokale Inferenz wird blockiert, wenn die CPU-Last diesen Wert überschreitet. |
+| `VramDisplayReserveMb` | int | `2048` | VRAM (MB), der für Display/Compositor reserviert bleibt und nicht für lokale Inferenz zählt. GPU-Admission: `PeakVramMb ≤ Gesamt-VRAM − VramDisplayReserveMb`. Auf Headless-Servern ohne angeschlossenen Monitor → `0` setzen. |
+| `MaxLatencyMs` | int | `0` | Latenz-Schwelle (ms): Ist die erwartete lokale Latenz höher, wird substituiert. **0 = Latenz-Gate aus** (Opt-in, backward-safe). Empfohlener Einstiegswert: `100000` (= 100 s). Das Gate greift nur, wenn zusätzlich `LatencyP50Ms > 0` im Modell-Eintrag vorhanden ist. |
+| `ColdLatencyFactor` | double | `2.0` | Multiplikator für Cold-Load-Latenz (Modell noch nicht geladen). Erwartete Latenz = `P50 × ColdLatencyFactor`. Ist das Modell warm, wird Faktor 1,0 verwendet. |
+| `LatencyContextReferenceTokens` | int | `4000` | Referenz-Kontextlänge (Tokens) für die Latenz-Skalierung. Entspricht einem typischen realen Payload. Die Latenz skaliert linear mit dem Verhältnis `inputTokens / LatencyContextReferenceTokens`, Untergrenze 0,5. |
 
-### 1.10.2 Zulassungs-Bedingung
+### 1.10.2 GPU-Pfad vs. CPU-Pfad
 
-K.Switchboard lässt einen lokalen Request durch, wenn **beide** Bedingungen erfüllt sind:
+ResourceGate wählt den Admission-Pfad anhand dreier Bedingungen:
 
 ```text
-freier_RAM ≥ PeakRamMb + RamBuffer
-CPU-Last   ≤ CpuMaxLoadPercent
+GPU-Pfad aktiv, wenn:
+  PeakVramMb > 0                 (Modell GPU-validiert)
+  UND GpuVendor ≠ "none"         (GPU erkannt)
+  UND VramMb > 0                 (VRAM bekannt)
+
+GPU-Admission:
+  nutzbarer VRAM = max(0, VramMb − VramDisplayReserveMb)
+  zulässig ↔ PeakVramMb ≤ nutzbarer VRAM
+
+CPU-Pfad (fallback):
+  freier RAM ≥ PeakRamMb + RamBuffer
 ```
 
-Fehlt das validierte Footprint (`PeakRamMb = 0` oder kein `hwClass`-Match), erzwingt das Gate
-immer die Substitution — fail-safe, kein Fehler.
+In beiden Fällen gilt zusätzlich:
+
+```text
+CPU-Last ≤ CpuMaxLoadPercent
+```
+
+Der CPU-Sampler liefert auf Linux (`/proc/stat`) und Windows (`GetSystemTimes`) echte Werte.
+Auf macOS gibt er immer 0 zurück — die CPU-Last-Prüfung blockiert dort nie; macOS wird daher
+als nicht unterstützte Plattform eingestuft.
+
+Fehlt das validierte Footprint (`PeakRamMb = 0` und `PeakVramMb = 0`, oder kein
+`hwClass`-Match), erzwingt das Gate immer die Substitution — fail-safe, kein Fehler.
+
+### 1.10.3 Latenz-Gate
+
+Nach dem Ressourcen-Check (RAM/VRAM) prüft das Gate zusätzlich die erwartete Latenz:
+
+```text
+contextFactor = max(0.5, inputTokens / LatencyContextReferenceTokens)
+coldFactor    = ColdLatencyFactor  (wenn Modell nicht warm)
+               1.0                 (wenn Modell warm)
+expectedMs    = LatencyP50Ms × coldFactor × contextFactor
+
+Substitution, wenn: MaxLatencyMs > 0
+                UND LatencyP50Ms > 0
+                UND expectedMs > MaxLatencyMs
+```
+
+Das Gate ist standardmäßig **deaktiviert** (`MaxLatencyMs = 0`). Ist `LatencyP50Ms` nicht
+gemessen (= 0), greift das Latenz-Gate ebenfalls nie — kein gemessener Wert bedeutet kein
+Blocking.
+
+**Reason-String im `X-K-Switchboard-Substitution`-Header:**
+
+```text
+latency ~{expectedMs}ms > {MaxLatencyMs}ms (warm={ModelWarm}, ctx×{contextFactor})
+```
 
 ---
 
@@ -444,9 +498,12 @@ claude-sonnet-4-6 (local qwen2.5-coder:14b not viable — no matching hardware c
 
 | Grund | Bedeutung |
 | --- | --- |
-| `free <X>MB/<N>MB, CPU <n>%` | Zu wenig freier RAM oder CPU-Last zu hoch |
+| `free <X>MB/<N>MB` | Zu wenig freier RAM |
+| `CPU <n>%` | CPU-Last überschreitet `CpuMaxLoadPercent` |
+| `VRAM <P>MB/<U>MB` | GPU-Pfad: `PeakVramMb` überschreitet nutzbaren VRAM |
+| `latency ~<e>ms > <m>ms (warm=<b>, ctx×<f>)` | Erwartete Latenz überschreitet `MaxLatencyMs` |
 | `no matching hardware class` | Kein HW-Klassen-Match für dieses Gerät |
-| `no validated footprint` | `PeakRamMb = 0` oder Modell fehlt in der Klasse |
+| `no validated footprint` | `PeakRamMb = 0` und `PeakVramMb = 0`, oder Modell fehlt in der Klasse |
 
 ---
 
@@ -496,7 +553,11 @@ claude-sonnet-4-6 (local qwen2.5-coder:14b not viable — no matching hardware c
     "Enabled": true,
     "RamBufferMb": 0,
     "CpuLoadWindowSeconds": 4,
-    "CpuMaxLoadPercent": 85
+    "CpuMaxLoadPercent": 85,
+    "VramDisplayReserveMb": 2048,
+    "MaxLatencyMs": 0,
+    "ColdLatencyFactor": 2.0,
+    "LatencyContextReferenceTokens": 4000
   },
   "HardwareClasses": [
     {
@@ -510,6 +571,7 @@ claude-sonnet-4-6 (local qwen2.5-coder:14b not viable — no matching hardware c
       "Models": {
         "qwen2.5-coder:7b": {
           "PeakRamMb": 5200,
+          "PeakVramMb": 0,
           "ValidatedOn": "gpu-7b, RTX 3060 12GB, 2026-06-01",
           "LatencyP50Ms": 1800,
           "Score": "B"

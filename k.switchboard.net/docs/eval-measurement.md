@@ -121,6 +121,24 @@ Nach jedem Call wird `GET http://localhost:11434/api/ps` abgefragt:
 - **`size_vram`** = davon auf GPU-VRAM; `0` bei reiner CPU-Inferenz.
 - Umrechnung: `SizeMb = size / 1_048_576`.
 
+### 3.4 Peak-VRAM-Erhebung via `/api/ps` (`PeakVramMb`)
+
+Für GPU-Pfad-Evals wird `size_vram` aus `/api/ps` direkt als `PeakVramMb` verwendet:
+
+```powershell
+$ps = Invoke-RestMethod http://localhost:11434/api/ps
+$model = $ps.models | Where-Object { $_.name -eq $targetModel } | Select-Object -First 1
+$peakVramMb = [int][math]::Ceiling($model.size_vram / 1MB)
+```
+
+Der Wert sollte bei einem **GPU Cold-Load** erhoben werden (Modell vorher entladen:
+`ollama stop <modell>`), da Ollama bei warmem Modell keinen neuen VRAM-Allokations-Peak
+erzeugt. `size_vram = 0` bedeutet reiner CPU-Pfad — für GPU-Klassen muss ein positiver
+Wert vorhanden sein, damit ResourceGate den GPU-Pfad aktiviert.
+
+Als `PeakVramMb` in `HardwareClasses[*].Models[*]` wird der `/api/ps`-`size_vram`-Wert
+(aufgerundet auf volle 100 MB) eingetragen, gemessen auf der Ziel-GPU-Klasse.
+
 **Warum `/api/ps` zuverlässiger ist als das Delta:**  
 Das Free-RAM-Delta misst systemweiten Speicher — andere Prozesse (IDE, Browser)
 können das Ergebnis verfälschen, insbesondere auf einer 15-GB-Workstation.
@@ -128,11 +146,15 @@ Ab dem zweiten Input desselben Modells ist der Delta zudem ~0, weil
 `keep_alive=10m` das Modell warm hält. `/api/ps` liefert den tatsächlichen
 Footprint unabhängig vom Messzeitpunkt.
 
-### 3.4 Welcher Wert in die Konfiguration?
+### 3.5 Welcher Wert in die Konfiguration?
 
 Als `PeakRamMb` in `HardwareClasses[*].Models[*]` wird der **`/api/ps`-SizeMb**
 (aufgerundet auf volle 100 MB) eingetragen, gemessen bei einem Cold-Load (Modell
 vor dem Eval nicht im Speicher). Der Free-RAM-Delta dient als Plausibilitätscheck.
+
+Als `PeakVramMb` wird der `/api/ps`-`size_vram`-Wert (aufgerundet auf volle 100 MB)
+eingetragen, gemessen bei einem GPU Cold-Load. Ist `size_vram = 0`, bleibt `PeakVramMb = 0`
+und ResourceGate nutzt den CPU-Pfad für dieses Modell.
 
 ---
 
@@ -147,6 +169,30 @@ $totalS = [math]::Round($resp.total_duration / 1e9, 1)
 `total_duration` (Nanosekunden) umfasst Tokenisierung + Inferenz + Dekodierung.
 **P50-Latenz** wird über die fünf Inputs pro Modell manuell berechnet und in
 `results.md` eingetragen.
+
+### 4.1 Cold-Load-Kalibrierung (`ColdLatencyFactor`)
+
+`ColdLatencyFactor` (Default: `2.0`) skaliert die erwartete Latenz, wenn das Modell nicht
+geladen ist. Um den Faktor zu kalibrieren:
+
+1. **Warm-Lauf:** Modell bereits geladen (via `keep_alive`). Eval mit 5 Inputs, P50 notieren.
+2. **Cold-Lauf:** `ollama stop <modell>` → Eval mit 5 Inputs, P50 notieren.
+3. **Faktor:** `ColdLatencyFactor = ColdP50 / WarmP50`
+
+```powershell
+# Warm-P50 und Cold-P50 aus den Ergebnissen:
+$warmP50  = 15700   # ms, Beispielwert
+$coldP50  = 32000   # ms, Beispielwert (Cold-Load dauert ~2× länger)
+$factor   = [math]::Round($coldP50 / $warmP50, 1)
+Write-Host "ColdLatencyFactor: $factor"
+```
+
+Für CPU-only-Hardware lag der Faktor in Vorversuchen bei ca. 2,0 (Default). Auf GPU-Hardware
+ist der Wert tendenziell niedriger (GPU-Laden ist schneller), muss aber empirisch bestimmt
+werden.
+
+**Status:** GPU-Cold-Load-Kalibrierung ausstehend — diese Entwicklungsmaschine ist
+CPU-only; GPU-Pfad ist mock-verifiziert, nicht auf echter GPU-Hardware gemessen.
 
 ---
 
@@ -184,20 +230,21 @@ Ergebnisse landen in `runs/<yyyy-MM-dd>/`. Scores und P50-Latenz manuell in
 > **Interpretation:**
 >
 > - **PeakRamMb** = `/api/ps` `size` (MB) beim Cold-Load; freier-RAM-Delta als Quervergleich.
+> - **PeakVramMb** = `/api/ps` `size_vram` (MB) beim GPU Cold-Load. `0` = CPU-Pfad / nicht gemessen.
 > - **LatenzP50Ms** = Median der `total_duration`-Werte über alle Inputs (ms).
 > - **Score** = Anteil A/B aus Spike #251 (Quality-Eval gegen Claude-Baseline).
 > - **Status** = `gemessen` (auf dieser HW real erhoben) | `ausstehend`.
 
-| Modell | HW-Klasse | PeakRamMb | LatenzP50Ms | Score (A/B) | Status |
-| --- | --- | ---: | ---: | :---: | --- |
-| `llama3.2:3b` | cpu-low | 3887 | 15 700 ¹ | 0 % | gemessen (2026-06-07, warm; /api/ps-Footprint; Latenz aus #251) |
-| `qwen2.5-coder:1.5b` | cpu-low | — | 7 400 | 0 % | ausstehend — konservativer Default |
-| `qwen2.5-coder:7b` | cpu-low | — | 34 800 | 0 % | ausstehend — konservativer Default |
-| `qwen2.5-coder:14b` | cpu-low | — | n/a | n/a | nicht testbar (RAM-Limit, #251) |
-| *(alle Modelle)* | gpu-7b | — | — | — | ausstehend — vom PO auf Ziel-HW zu erheben |
-| *(alle Modelle)* | gpu-14b | — | — | — | ausstehend — vom PO auf Ziel-HW zu erheben |
-| *(alle Modelle)* | gpu-14b-plus | — | — | — | ausstehend — vom PO auf Ziel-HW zu erheben |
-| *(alle Modelle)* | cpu-32 | — | — | — | ausstehend — vom PO auf Ziel-HW zu erheben |
+| Modell | HW-Klasse | PeakRamMb | PeakVramMb | LatenzP50Ms | Score (A/B) | Status |
+| --- | --- | ---: | ---: | ---: | :---: | --- |
+| `llama3.2:3b` | cpu-low | 3887 | 0 | 15 700 ¹ | 0 % | gemessen (2026-06-07, warm; /api/ps-Footprint; Latenz aus #251) |
+| `qwen2.5-coder:1.5b` | cpu-low | — | 0 | 7 400 | 0 % | ausstehend — konservativer Default |
+| `qwen2.5-coder:7b` | cpu-low | — | 0 | 34 800 | 0 % | ausstehend — konservativer Default |
+| `qwen2.5-coder:14b` | cpu-low | — | 0 | n/a | n/a | nicht testbar (RAM-Limit, #251) |
+| *(alle Modelle)* | gpu-7b | — | ausstehend | — | — | ausstehend — vom PO auf Ziel-HW zu erheben |
+| *(alle Modelle)* | gpu-14b | — | ausstehend | — | — | ausstehend — vom PO auf Ziel-HW zu erheben |
+| *(alle Modelle)* | gpu-14b-plus | — | ausstehend | — | — | ausstehend — vom PO auf Ziel-HW zu erheben |
+| *(alle Modelle)* | cpu-32 | — | 0 | — | — | ausstehend — vom PO auf Ziel-HW zu erheben |
 
 **Hinweis zur cpu-low-Messung (2026-06-07):**  
 Das Modell `llama3.2:3b` war beim Messlauf bereits warm geladen (PeakRamDelta = 0 MB).
@@ -256,6 +303,10 @@ wird immer substituiert, unabhängig vom RAM-Check.
   Delta während der Messung verfälschen. Mehrere Läufe auf derselben HW empfohlen.
 - **macOS:** `Get-FreeRamMb` gibt auf macOS immer 0 zurück (vm_stat-Parsing nicht
   implementiert). `/api/ps`-Werte bleiben korrekt. Delta-Spalte ignorieren.
-- **PeakRamMb = 0 in der Konfiguration** → ResourceGate sperrt lokale Ausführung
-  für dieses Modell (fail-safe). Fehlende Messwerte führen also zur sicheren
-  Substitution, nicht zu Fehlern.
+  macOS ist nicht unterstützt (CPU-Sampler = 0, GPU-Pfad nie aktiv).
+- **PeakRamMb = 0 und PeakVramMb = 0 in der Konfiguration** → ResourceGate sperrt
+  lokale Ausführung für dieses Modell (fail-safe). Fehlende Messwerte führen zur
+  sicheren Substitution, nicht zu Fehlern.
+- **GPU-VRAM-Messung:** Alle GPU-Klassen-Werte (`PeakVramMb`) sind auf dieser
+  Entwicklungsmaschine (CPU-only) ausstehend. Der GPU-Pfad ist im Code mock-verifiziert;
+  reale Werte müssen auf der Ziel-GPU-Hardware erhoben werden.

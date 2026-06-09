@@ -32,48 +32,68 @@ lokaler oder Cloud-Upstream trotzdem mit einem Fehler antwortet.
 Client-Request (model: "qwen2.5-coder:14b")
         │
         ▼
-  ┌─────────────────────────────────────────────────────┐
-  │                    ResourceGate                     │
-  │                                                     │
-  │  1. Gate aktiv? (Enabled=true)                      │
-  │     Nein → Proceed (gate-disabled)            ──────┼──► FallbackService / Upstream
-  │                                                     │
-  │  2. Ziel-Provider = Ollama?                         │
-  │     Nein (Anthropic, etc.) → Proceed          ──────┼──► FallbackService / Upstream
-  │     (non-local-provider)                            │
-  │                                                     │
-  │  3. HW-Profil laden (hw-profile.json / Cache)       │
-  │     ↓                                               │
-  │  4. HW-Klassen-Match (erste passende Klasse)        │
-  │     Kein Match → BuildSubstitution                  │
-  │     ("no matching hardware class")             ─────┤
-  │     ↓                                               │
-  │  5. Modell in Klasse.Models + PeakRamMb > 0?        │
-  │     Nein → BuildSubstitution                        │
-  │     ("no validated footprint")                 ─────┤
-  │     ↓                                               │
-  │  6. Live-Ressourcen messen (RAM/CPU)                │
-  │     freeRam ≥ PeakRamMb + Buffer                    │
-  │     AND CpuLoad ≤ CpuMaxLoadPercent?                │
-  │                                                     │
-  │     Ja → Proceed (local-admitted)             ──────┼──► OllamaProvider
-  │     Nein → BuildSubstitution                  ──────┤
-  │     ("free XMB/NMB, CPU n%")                        │
-  │                                                     │
-  │  BuildSubstitution:                                  │
-  │    a) FallbackChain vorhanden? → Proceed mit         │
-  │       chain[0], Header: "<lokal> -> <ziel>           │
-  │       (deferred: <grund>)"                    ──────┼──► FallbackService / Upstream
-  │    b) LocalModelTiers + TierSubstitutions?           │
-  │       → Proceed mit Claude-Modell, Header:           │
-  │       "<claude> (local <lokal> not viable            │
-  │       — <grund>)"                             ──────┼──► AnthropicProvider
-  │    c) Kein Fallback, kein Substitut → 503     ──────┼──► Client (HTTP 503)
-  │                                                     │
-  │  Monitor-Fehler (ex) → fail-open: Proceed      ─────┼──► FallbackService / Upstream
-  │  (resource-monitor-error)                           │
-  └─────────────────────────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────┐
+  │                      ResourceGate                        │
+  │                                                          │
+  │  1. Gate aktiv? (Enabled=true)                           │
+  │     Nein → Proceed (gate-disabled)               ────────┼──► FallbackService / Upstream
+  │                                                          │
+  │  2. Ziel-Provider = Ollama?                              │
+  │     Nein (Anthropic, etc.) → Proceed             ────────┼──► FallbackService / Upstream
+  │     (non-local-provider)                                 │
+  │                                                          │
+  │  3. HW-Profil laden (hw-profile.json / Cache)            │
+  │     ↓                                                    │
+  │  4. HW-Klassen-Match (erste passende Klasse)             │
+  │     Kein Match → BuildSubstitution                       │
+  │     ("no matching hardware class")                  ─────┤
+  │     ↓                                                    │
+  │  5. Modell in Klasse.Models?                             │
+  │     PeakVramMb=0 und PeakRamMb=0 → BuildSubstitution    │
+  │     ("no validated footprint")                      ─────┤
+  │     ↓                                                    │
+  │  6. CPU-Last prüfen (alle Pfade)                         │
+  │     CpuLoad > CpuMaxLoadPercent → BuildSubstitution ─────┤
+  │     ("CPU n%")                                           │
+  │     ↓                                                    │
+  │  7. Ressourcen-Admission (GPU- oder CPU-Pfad)            │
+  │                                                          │
+  │     GPU-Pfad (PeakVramMb>0 AND GpuVendor≠"none"         │
+  │               AND VramMb>0):                             │
+  │       usableVram = max(0, VramMb−VramDisplayReserveMb)   │
+  │       PeakVramMb > usableVram → BuildSubstitution   ─────┤
+  │       ("VRAM PeakMB/usableMB")                           │
+  │                                                          │
+  │     CPU-Pfad (sonst):                                    │
+  │       freeRam < PeakRamMb+Buffer → BuildSubstitution ────┤
+  │       ("free XMB/NMB")                                   │
+  │     ↓                                                    │
+  │  8. Latenz-Gate (optional, MaxLatencyMs>0                │
+  │                  AND LatencyP50Ms>0)                     │
+  │     expectedMs = P50 × coldFactor × contextFactor        │
+  │     expectedMs > MaxLatencyMs → BuildSubstitution   ─────┤
+  │     ("latency ~Xms > Yms (warm=…, ctx×…)")               │
+  │     ↓                                                    │
+  │     Proceed (local-admitted gpu|cpu)             ────────┼──► OllamaProvider
+  │                                                          │
+  │  BuildSubstitution:                                       │
+  │    a) FallbackChain vorhanden? → Proceed mit              │
+  │       chain[0], Header: "<lokal> -> <ziel>                │
+  │       (deferred: <grund>)"                       ────────┼──► FallbackService / Upstream
+  │    b) LocalModelTiers + TierSubstitutions?                │
+  │       → Proceed mit Claude-Modell, Header:                │
+  │       "<claude> (local <lokal> not viable                 │
+  │       — <grund>)"                                ────────┼──► AnthropicProvider
+  │    c) Kein Fallback, kein Substitut → 503        ────────┼──► Client (HTTP 503)
+  │                                                          │
+  │  Monitor-Fehler (ex) → fail-open: Proceed          ──────┼──► FallbackService / Upstream
+  │  (resource-monitor-error)                               │
+  └──────────────────────────────────────────────────────────┘
 ```
+
+**Hinweis macOS:** Der CPU-Sampler gibt auf macOS immer 0 % zurück (Schritt 6 blockiert nie),
+und der GPU-Detektor liefert immer `VramMb=0` (kein GPU-Pfad). macOS ist daher nicht
+unterstützt — nur Linux und Windows sind vollständig funktionsfähig.
 
 ---
 
@@ -84,7 +104,7 @@ ResourceGate kombiniert zwei getrennte Datenquellen:
 ### 3.1 Datenspeicher A — HW-Profil (`hw-profile.json`)
 
 - **Was:** Maschinenspezifisches Hardware-Profil (RAM, Cores, GPU, VRAM, Zeitpunkt)
-- **Ort:** `%APPDATA%\K.Switchboard\hw-profile.json` (Windows) / `~/.config/K.Switchboard/hw-profile.json` (Linux) / `~/Library/Application Support/K.Switchboard/hw-profile.json` (macOS)
+- **Ort:** `%APPDATA%\K.Switchboard\hw-profile.json` (Windows) / `~/.config/K.Switchboard/hw-profile.json` (Linux); macOS nicht unterstützt
 - **Herkunft:** Automatisch erkannt beim ersten Request; 1× pro Kalendermonat erneuert
 - **Committed:** Nein — maschinenspezifisch, per `.gitignore` ausgeschlossen
 - **Felder:** `TotalRamMb`, `Cores`, `GpuVendor`, `GpuModel`, `VramMb`, `DetectedOn`
@@ -95,7 +115,7 @@ ResourceGate kombiniert zwei getrennte Datenquellen:
 - **Ort:** `%APPDATA%\K.Switchboard\config.json` › `HardwareClasses`
 - **Herkunft:** Team-kuratiert; basiert auf Evals (siehe [eval-measurement.md](eval-measurement.md))
 - **Committed:** Ja — ist Teil der Anwendungskonfiguration
-- **Felder pro Modell:** `PeakRamMb`, `ValidatedOn`, `LatencyP50Ms`, `Score`
+- **Felder pro Modell:** `PeakRamMb`, `PeakVramMb`, `ValidatedOn`, `LatencyP50Ms`, `Score`
 
 Die Trennung ist bewusst: Datenspeicher A beschreibt *diese* Maschine (dynamisch, lokal),
 Datenspeicher B beschreibt, was auf welcher Klasse *funktioniert* (statisch, shared).
@@ -144,7 +164,7 @@ ResourceGate schreibt für jede Entscheidung einen Serilog-Eintrag:
 
 | Situation | Log-Level | Nachricht (Muster) |
 | --- | --- | --- |
-| Zugelassen | Information | `ResourceGate: lokal zugelassen {Model} (frei {Free}MB ≥ {Need}MB, CPU {Cpu}%, warm={Warm})` |
+| Zugelassen | Information | `ResourceGate: lokal zugelassen {Model} ({Path}, CPU {Cpu}%, warm={Warm})` — `{Path}` = `GPU` oder `CPU` |
 | FallbackChain | Information | `ResourceGate: defer-to-fallback {Header}` |
 | Tier-Substitution | Information | `ResourceGate: substitution {Header}` |
 | Tier ohne Substitut | Warning | `ResourceGate: Tier '{Tier}' für {Model} ist nicht in TierSubstitutions konfiguriert.` |
@@ -171,7 +191,8 @@ HTTP-Antwort. Clients können ihn auslesen, um zu erkennen, ob und warum umgelei
 <claudeModell> (local <lokalesModell> not viable — <grund>)
 ```
 
-Mögliche `<grund>`-Werte: `free <X>MB/<N>MB, CPU <n>%` · `no matching hardware class` ·
+Mögliche `<grund>`-Werte: `free <X>MB/<N>MB` · `CPU <n>%` · `VRAM <P>MB/<U>MB` ·
+`latency ~<e>ms > <m>ms (warm=<b>, ctx×<f>)` · `no matching hardware class` ·
 `no validated footprint`
 
 ---

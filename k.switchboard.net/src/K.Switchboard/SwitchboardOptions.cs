@@ -76,7 +76,17 @@ public sealed record SwitchboardOptions
             ["M"] = "claude-sonnet-4-6",
             ["L"] = "claude-sonnet-4-6"
         },
-        ResourceGate = new ResourceGateOptions { Enabled = true, RamBufferMb = 0, CpuLoadWindowSeconds = 4, CpuMaxLoadPercent = 85 },
+        ResourceGate = new ResourceGateOptions
+        {
+            Enabled = true,
+            RamBufferMb = 0,
+            CpuLoadWindowSeconds = 4,
+            CpuMaxLoadPercent = 85,
+            VramDisplayReserveMb = 2048,
+            MaxLatencyMs = 0,
+            ColdLatencyFactor = 2.0,
+            LatencyContextReferenceTokens = 4000
+        },
         HardwareClasses =
         [
             new() { Name = "cpu-low",      Match = new() { MaxRamMb = 16384 } },
@@ -141,6 +151,10 @@ public sealed record ModelValidation
     /// 0 = nicht validiert → lokale Ausführung gesperrt (ResourceGate erzwingt Substitution).</summary>
     public int PeakRamMb { get; init; }
 
+    /// <summary>Beobachteter Peak-VRAM (MB) beim Laden auf der GPU.
+    /// 0 = nicht GPU-validiert → kein GPU-Pfad für dieses Modell (CPU-Admission gilt).</summary>
+    public int PeakVramMb { get; init; }
+
     /// <summary>Setup-Beschreibung, auf dem gemessen wurde (Reproduzierbarkeit, siehe eval-measurement.md).</summary>
     public string ValidatedOn { get; init; } = string.Empty;
 
@@ -165,4 +179,18 @@ public sealed record ResourceGateOptions
 
     /// <summary>CPU-Last-Schwelle (%), oberhalb derer lokale Inferenz blockiert wird.</summary>
     public int CpuMaxLoadPercent { get; init; } = 85;
+
+    /// <summary>VRAM-Reserve (MB) für Display/Compositor, die NICHT für lokale Inferenz zählt.
+    /// GPU-Admission: PeakVramMb ≤ (Gesamt-VRAM − Reserve). Headless-Server → 0.</summary>
+    public int VramDisplayReserveMb { get; init; } = 2048;
+
+    /// <summary>Latenz-Schwelle (ms): erwartete lokale Latenz darüber → substituieren.
+    /// 0 = Latenz-Gate aus (Opt-in, backward-safe).</summary>
+    public int MaxLatencyMs { get; init; }
+
+    /// <summary>Faktor für Cold-Load-Latenz (Modell nicht warm): erwartete Latenz = P50 × Faktor.</summary>
+    public double ColdLatencyFactor { get; init; } = 2.0;
+
+    /// <summary>Referenz-Kontextlänge (Tokens) für die Latenz-Skalierung (≈ reales Headless-Payload).</summary>
+    public int LatencyContextReferenceTokens { get; init; } = 4000;
 }

@@ -262,18 +262,24 @@ Gibt dieser Befehl eine Zeile mit GPU-Name und VRAM-MB aus, ist das Tool verfüg
 `nvidia-smi` zum PATH hinzufügen (typischerweise `C:\Windows\System32\DriverStore\FileRepository\...`
 oder `C:\Program Files\NVIDIA Corporation\NVSMI\`).
 
-**Ursache 2: AMD-GPU auf Windows (wmic-Fallback)**
+**Ursache 2: AMD-GPU — rocm-smi nicht installiert**
 
-`wmic path win32_VideoController` meldet AMD-GPUs oft mit `AdapterRAM: 0` oder falschen
-Bytes-Werten. Das führt zu `VramMb: 0`. Workaround: VRAM in der HW-Klasse manuell setzen,
-indem `hw-profile.json` direkt bearbeitet wird (Wert wird beim nächsten Monats-Refresh
-überschrieben → Profil-Datei monatlich anpassen oder Refresh mit VRAM-Korrektur skripten).
+Für AMD-GPUs greift `rocm-smi` (ROCm-Toolchain). Ist `rocm-smi` nicht im PATH, fällt der
+Detektor auf `wmic` (Windows) zurück. `wmic path win32_VideoController` meldet AMD-GPUs oft
+mit `AdapterRAM: 0` oder falschen Bytes-Werten, was zu `VramMb: 0` führt.
 
-**Ursache 3: macOS**
+Lösung: ROCm-Toolchain installieren, damit `rocm-smi --showmeminfo vram --csv` einen korrekten
+Wert liefert. Alternativ `hw-profile.json` direkt mit dem korrekten VRAM-Wert bearbeiten
+(Wert wird beim nächsten Monats-Refresh überschrieben → bei manuellem Eingriff monatlich
+wiederholen oder Profil-Refresh skripten).
 
-Auf macOS ist VRAM via `system_profiler` nicht zuverlässig parsebar — ResourceGate setzt immer
-`VramMb: 0`. GPU-basierte Klassen sind auf macOS nicht nutzbar; CPU-Klassen (`cpu-low`, `cpu-32`)
-stehen weiterhin zur Verfügung.
+**Ursache 3: macOS (nicht unterstützt)**
+
+Auf macOS liefert `system_profiler` zwar einen GPU-Eintrag, aber immer `VramMb=0`. Da der
+GPU-Pfad `VramMb > 0` voraussetzt, ist der GPU-Pfad auf macOS nie aktiv. Zudem gibt der
+CPU-Sampler auf macOS immer 0 % zurück — die CPU-Last-Prüfung blockiert damit nie.
+macOS wird daher als nicht unterstützte Plattform eingestuft. Nur Linux und Windows sind
+vollständig unterstützt.
 
 ---
 
@@ -322,3 +328,108 @@ Claude ist für cpu-low die vorgesehene Betriebsart.
 Wenn `Enabled: false` (oder die Sektion fehlt), ist der ResourceGate out-of-play. Ein dennoch
 erscheinender `X-K-Switchboard-Substitution`-Header deutet auf eine FallbackChain-Reaktion auf
 HTTP-Fehler hin (reaktiv, nicht proaktiv). Ursache: Ollama antwortet mit 4xx/5xx.
+
+---
+
+<a id="gpu-modell-trotz-gpu-substituiert"></a>
+
+## 1.12 GPU-Modell wird trotz GPU substituiert
+
+**Symptom:** Eine GPU ist erkannt (`hw-profile.json` enthält `GpuVendor ≠ "none"` und
+`VramMb > 0`), dennoch substituiert ResourceGate das Modell. Der Header
+`X-K-Switchboard-Substitution` enthält `VRAM ...`.
+
+**Ursache: `PeakVramMb` überschreitet den nutzbaren VRAM**
+
+```text
+nutzbarer VRAM = VramMb − VramDisplayReserveMb
+```
+
+Liegt `PeakVramMb` des Modells darüber, schlägt die GPU-Admission fehl. Header-Beispiel:
+
+```text
+claude-sonnet-4-6 (local qwen2.5-coder:14b not viable — VRAM 12000MB/6144MB)
+```
+
+Hier bedeutet `VRAM 12000MB/6144MB`: Peak-VRAM 12000 MB, nutzbarer VRAM 6144 MB.
+
+**Lösungen:**
+
+- **`VramDisplayReserveMb` reduzieren:** Auf einem Headless-Server ohne angeschlossenen
+  Monitor kann die Reserve auf `0` gesetzt werden.
+- **`VramDisplayReserveMb` auf den tatsächlichen Compositor-Bedarf anpassen:** Prüfe in
+  `nvidia-smi` oder `rocm-smi`, wie viel VRAM der Display-Stack tatsächlich belegt, und trage
+  diesen Wert ein.
+- **Logs und Header prüfen:**
+
+```pwsh
+$response = Invoke-WebRequest -Uri "http://localhost:3456/v1/messages" `
+    -Method Post -Headers $headers -Body $body
+$response.Headers["X-K-Switchboard-Substitution"]
+```
+
+---
+
+<a id="request-wegen-latenz-substituiert"></a>
+
+## 1.13 Request wegen Latenz substituiert
+
+**Symptom:** ResourceGate substituiert, obwohl genug RAM/VRAM vorhanden ist. Der Header
+`X-K-Switchboard-Substitution` enthält `latency ...`.
+
+**Ursache: `MaxLatencyMs` ist gesetzt und die erwartete Latenz überschreitet die Schwelle**
+
+Header-Beispiel:
+
+```text
+claude-sonnet-4-6 (local qwen2.5-coder:14b not viable — latency ~62000ms > 30000ms (warm=False, ctx×2.5))
+```
+
+Das bedeutet: erwartete Latenz ~62 s, Schwelle 30 s, Modell war kalt, Kontext-Faktor 2,5.
+
+**Lösungen:**
+
+- **`MaxLatencyMs` erhöhen** oder auf `0` setzen, um das Latenz-Gate zu deaktivieren.
+- **Cold-Load-Faktor reduzieren:** `ColdLatencyFactor` auf einen kleineren Wert setzen (z.B.
+  `1.5`), wenn die gemessene Cold-Latenz weniger stark vom P50 abweicht.
+- **`LatencyP50Ms` nachmessen:** Ist der Wert veraltet oder zu konservativ, ein neues Eval
+  durchführen (siehe [eval-measurement.md](eval-measurement.md)).
+
+**Hinweis:** Das Latenz-Gate greift nur, wenn **beide** Bedingungen erfüllt sind:
+`MaxLatencyMs > 0` und `LatencyP50Ms > 0` im Modell-Eintrag. Fehlt `LatencyP50Ms` (= 0),
+blockiert das Gate nie — auch dann nicht, wenn `MaxLatencyMs` gesetzt ist.
+
+---
+
+<a id="amd-gpu-nicht-erkannt"></a>
+
+## 1.14 AMD-GPU nicht erkannt
+
+**Symptom:** `hw-profile.json` enthält `"GpuVendor": "none"` oder `"VramMb": 0`, obwohl eine
+AMD-GPU vorhanden ist.
+
+**Ursache 1: `rocm-smi` nicht installiert oder nicht im PATH**
+
+K.Switchboard erkennt AMD-GPUs primär über `rocm-smi`. Prüfung:
+
+```pwsh
+rocm-smi --showmeminfo vram --csv
+```
+
+Gibt das Kommando eine CSV-Zeile mit `VRAM Total Memory`-Spalte aus, ist das Tool verfügbar.
+Andernfalls ROCm-Toolchain installieren (siehe [ROCm-Dokumentation](https://rocm.docs.amd.com/)).
+
+Ist `rocm-smi` nicht verfügbar, fällt der Detektor auf `wmic` (Windows) zurück. Da `wmic`
+AMD-VRAM häufig mit `0` meldet, ergibt sich `VramMb: 0` → CPU-Pfad.
+
+**Ursache 2: `wmic`-Fallback meldet 0 MB (Windows)**
+
+Auf Windows ohne ROCm: `hw-profile.json` direkt bearbeiten und `VramMb` auf den tatsächlichen
+Wert setzen. Der Wert wird beim nächsten Monats-Refresh überschrieben — Datei dann erneut
+anpassen oder `rocm-smi` installieren.
+
+**Profil nach Korrektur neu laden:**
+
+```pwsh
+Remove-Item "$env:APPDATA\K.Switchboard\hw-profile.json" -Force
+```

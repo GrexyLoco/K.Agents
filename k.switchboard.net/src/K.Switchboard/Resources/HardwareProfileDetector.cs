@@ -46,7 +46,30 @@ public sealed class HardwareProfileDetector(
                 return ("NVIDIA", parts[0], mb);
         }
 
-        // 2) Windows-Fallback: wmic VideoController (AdapterRAM in Bytes)
+        // 2) AMD via rocm-smi (Linux + Windows, falls ROCm installiert)
+        var (rexit, rout) = await runner.RunAsync("rocm-smi", "--showmeminfo vram --csv", ct);
+        if (rexit == 0 && !string.IsNullOrWhiteSpace(rout))
+        {
+            // CSV: Header + Datenzeilen; eine Spalte enthält "VRAM Total Memory (B)" in Bytes.
+            var lines = rout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var header = lines.FirstOrDefault()?.Split(',', StringSplitOptions.TrimEntries) ?? [];
+            var vramCol = Array.FindIndex(header, h => h.Contains("VRAM Total Memory", StringComparison.OrdinalIgnoreCase));
+            if (vramCol >= 0)
+            {
+                foreach (var dataLine in lines.Skip(1))
+                {
+                    var cols = dataLine.Split(',', StringSplitOptions.TrimEntries);
+                    if (cols.Length > vramCol
+                        && long.TryParse(cols[vramCol], NumberStyles.Integer, CultureInfo.InvariantCulture, out var bytes)
+                        && bytes > 0)
+                    {
+                        return ("AMD", "amd-rocm-gpu", (int)(bytes / (1024 * 1024)));
+                    }
+                }
+            }
+        }
+
+        // 3) Windows-Fallback: wmic VideoController (AdapterRAM in Bytes)
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             var (wexit, wout) = await runner.RunAsync(
@@ -59,7 +82,7 @@ public sealed class HardwareProfileDetector(
             }
         }
 
-        // 3) macOS-Fallback: system_profiler (VRAM nicht zuverlässig parsebar → 0, CPU-Pfad)
+        // 4) macOS-Fallback: system_profiler (VRAM nicht zuverlässig parsebar → 0, CPU-Pfad)
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             var (mexit, mout) = await runner.RunAsync("system_profiler", "SPDisplaysDataType", ct);

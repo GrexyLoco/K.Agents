@@ -199,7 +199,20 @@ try
 
         ctx.Request.Body.Position = 0;
 
-        var decision = await gate.EvaluateAsync(requestedModel, ct);
+        int inputTokens = 0;
+        try
+        {
+            ctx.Request.Body.Position = 0;
+            using var tokenDoc = await JsonDocument.ParseAsync(ctx.Request.Body, cancellationToken: ct);
+            inputTokens = RequestTokenEstimator.EstimateInputTokens(tokenDoc.RootElement);
+        }
+        catch (JsonException) { /* best-effort; 0 bleibt */ }
+        finally
+        {
+            ctx.Request.Body.Position = 0;   // Body IMMER zurückspulen (auch bei Parse-Fehler), damit der Forward ihn liest.
+        }
+
+        var decision = await gate.EvaluateAsync(requestedModel, inputTokens, ct);
         if (decision.Action == RoutingAction.Fail)
         {
             ctx.Response.StatusCode = decision.FailStatusCode;

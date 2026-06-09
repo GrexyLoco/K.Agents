@@ -4,26 +4,37 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 
 /// <summary>
-/// MVP-CPU-Last: Linux via zwei /proc/stat-Snapshots (Delta); andere Plattformen
-/// liefern 0 (nicht-blockierend) — robustere Messung folgt in Ausbau +1.
+/// System-CPU-Last (%): Linux via zwei /proc/stat-Snapshots, Windows via GetSystemTimes
+/// (source-generated P/Invoke, trim-safe). macOS/andere liefern 0 (nicht unterstützt).
 /// </summary>
-public sealed class CpuLoadSampler : ICpuLoadSampler
+public sealed partial class CpuLoadSampler : ICpuLoadSampler
 {
     public async Task<double> SampleAsync(int windowSeconds, CancellationToken ct)
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            return 0.0;
+        var sampleMs = Math.Min(Math.Clamp(windowSeconds, 1, 10) * 1000, 1000);
 
-        var sampleMs = Math.Clamp(windowSeconds, 1, 10) * 1000;
-        var (idle1, total1) = ReadProcStat();
-        await Task.Delay(Math.Min(sampleMs, 1000), ct);   // kurzes Fenster, max 1s Blockade
-        var (idle2, total2) = ReadProcStat();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            var (idle1, total1) = ReadProcStat();
+            await Task.Delay(sampleMs, ct);
+            var (idle2, total2) = ReadProcStat();
+            return BusyPercent(total2 - total1, idle2 - idle1);
+        }
 
-        var totalDelta = total2 - total1;
-        var idleDelta = idle2 - idle1;
-        if (totalDelta <= 0) return 0.0;
-        return Math.Clamp(100.0 * (totalDelta - idleDelta) / totalDelta, 0, 100);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            if (!TryReadWindowsTimes(out var idle1, out var total1)) return 0.0;
+            await Task.Delay(sampleMs, ct);
+            if (!TryReadWindowsTimes(out var idle2, out var total2)) return 0.0;
+            return BusyPercent(total2 - total1, idle2 - idle1);
+        }
+
+        return 0.0;   // macOS/andere — nicht unterstützt
     }
+
+    /// <summary>busy% aus Delta. Internal für deterministischen Unit-Test (InternalsVisibleTo).</summary>
+    internal static double BusyPercent(long totalDelta, long idleDelta)
+        => totalDelta <= 0 ? 0.0 : Math.Clamp(100.0 * (totalDelta - idleDelta) / totalDelta, 0, 100);
 
     private static (long Idle, long Total) ReadProcStat()
     {
@@ -43,4 +54,20 @@ public sealed class CpuLoadSampler : ICpuLoadSampler
             return (0, 0);
         }
     }
+
+    private static bool TryReadWindowsTimes(out long idle, out long total)
+    {
+        idle = 0;
+        total = 0;
+        if (!GetSystemTimes(out var idleTime, out var kernelTime, out var userTime))
+            return false;
+        // Windows: kernelTime ENTHÄLT idleTime. total = kernel + user; busy = total − idle.
+        idle = idleTime;
+        total = kernelTime + userTime;
+        return true;
+    }
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool GetSystemTimes(out long lpIdleTime, out long lpKernelTime, out long lpUserTime);
 }
