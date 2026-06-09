@@ -70,8 +70,16 @@ public sealed class OllamaProvider(
             if (recordStats && success && sw is not null)
             {
                 sw.Stop();
-                var ramDeltaMb = Math.Max(0, preFreeMb - FreeRamMb());
-                statsStore.Record(resolvedModel, sw.ElapsedMilliseconds, ramDeltaMb, 0);
+                try
+                {
+                    var ramDeltaMb = Math.Max(0, preFreeMb - FreeRamMb());
+                    statsStore.Record(resolvedModel, sw.ElapsedMilliseconds, ramDeltaMb, 0);
+                }
+                catch (Exception ex)
+                {
+                    // Telemetrie ist read-only/best-effort — darf den Request NIE killen.
+                    logger.LogWarning(ex, "Live-Telemetrie-Erfassung für {Model} fehlgeschlagen (ignoriert).", resolvedModel);
+                }
             }
         }
     }
