@@ -8,7 +8,8 @@ public sealed class OllamaProvider(
     IHttpClientFactory httpClientFactory,
     IOptionsMonitor<SwitchboardOptions> options,
     ILogger<OllamaProvider> logger,
-    LocalInferenceGate localGate) : IProvider
+    LocalInferenceGate localGate,
+    ILocalStatsStore statsStore) : IProvider
 {
     /// <inheritdoc />
     public string Name => "ollama";
@@ -42,23 +43,37 @@ public sealed class OllamaProvider(
                 upstreamRequest.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
         }
 
-        using var _ = await localGate.AcquireAsync(cancellationToken);
-        using var response = await client.SendAsync(
-            upstreamRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
+        var recordStats = opts.ResourceGate.RecordLocalInferenceStats;
+        var sw = recordStats ? System.Diagnostics.Stopwatch.StartNew() : null;
+        var preFreeMb = recordStats ? FreeRamMb() : 0;
+        var success = false;
+        try
         {
-            await CopyRawResponseAsync(context, response, cancellationToken);
-            return;
-        }
+            using var _ = await localGate.AcquireAsync(cancellationToken);
+            using var response = await client.SendAsync(
+                upstreamRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
-        if (isStreaming)
+            if (!response.IsSuccessStatusCode)
+            {
+                await CopyRawResponseAsync(context, response, cancellationToken);
+                return;
+            }
+
+            success = true;
+            if (isStreaming)
+                await WriteStreamingAnthropicResponseAsync(context, response, resolvedModel, cancellationToken);
+            else
+                await WriteJsonAnthropicResponseAsync(context, response, cancellationToken);
+        }
+        finally
         {
-            await WriteStreamingAnthropicResponseAsync(context, response, resolvedModel, cancellationToken);
-            return;
+            if (recordStats && success && sw is not null)
+            {
+                sw.Stop();
+                var ramDeltaMb = Math.Max(0, preFreeMb - FreeRamMb());
+                statsStore.Record(resolvedModel, sw.ElapsedMilliseconds, ramDeltaMb, 0);
+            }
         }
-
-        await WriteJsonAnthropicResponseAsync(context, response, cancellationToken);
     }
 
     private static async Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyAsync(Stream body, string resolvedModel, string keepAlive, int numThread, CancellationToken ct)
@@ -310,6 +325,13 @@ public sealed class OllamaProvider(
 
     private static bool ShouldPassThrough(string headerName) =>
         headerName.Equals("authorization", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Aktuell freier System-RAM in MB (GC-MemoryInfo, billig — wie LiveResourceProbe).</summary>
+    private static int FreeRamMb()
+    {
+        var info = GC.GetGCMemoryInfo();
+        return (int)(Math.Max(0, info.TotalAvailableMemoryBytes - info.MemoryLoadBytes) / (1024 * 1024));
+    }
 
     /// <summary>Nur für Tests: macht den privaten Body-Builder zugänglich.</summary>
     internal static Task<(JsonObject Body, bool IsStreaming)> BuildOllamaBodyForTest(

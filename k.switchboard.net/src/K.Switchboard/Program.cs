@@ -131,6 +131,9 @@ try
     builder.Services.AddSingleton<ILiveResourceProbe, LiveResourceProbe>();
     builder.Services.AddSingleton<ResourceGate>();
     builder.Services.AddSingleton<LocalInferenceGate>();
+    builder.Services.AddSingleton<K.Switchboard.Resources.IProcessController, K.Switchboard.Resources.ProcessController>();
+    builder.Services.AddSingleton<K.Switchboard.Resources.ILocalStatsStore, K.Switchboard.Resources.LocalStatsStore>();
+    builder.Services.AddHostedService<K.Switchboard.Resources.OllamaPriorityService>();
     builder.Services.AddSingleton<IProvider, AnthropicProvider>();
     builder.Services.AddSingleton<IProvider, OllamaProvider>();
     builder.Services.AddSingleton<ProviderRegistry>();
