@@ -246,6 +246,88 @@ public sealed class ProviderForwardingTests
         await Assert.That(options.OllamaKeepAlive).IsEqualTo("30m");
     }
 
+    [Test]
+    public async Task Ollama_records_telemetry_when_enabled()
+    {
+        const string ollamaResponse = """
+            {
+              "model": "qwen2.5-coder:14b",
+              "created_at": "2026-06-09T10:00:00Z",
+              "message": { "role": "assistant", "content": "ok" },
+              "prompt_eval_count": 5,
+              "eval_count": 3,
+              "done": true
+            }
+            """;
+
+        var stats = new FakeStatsStore();
+        var (provider, _) = CreateOllamaProvider(
+            responseBody: ollamaResponse,
+            recordStats: true,
+            statsStore: stats);
+
+        var ctx = BuildContext("""{"model":"qwen2.5-coder:14b","messages":[]}""");
+        await provider.ForwardAsync(ctx, "qwen2.5-coder:14b", CancellationToken.None);
+
+        await Assert.That(stats.Records.Count).IsEqualTo(1);
+        await Assert.That(stats.Records[0].Model).IsEqualTo("qwen2.5-coder:14b");
+    }
+
+    [Test]
+    public async Task Ollama_does_not_record_when_disabled()
+    {
+        const string ollamaResponse = """
+            {
+              "model": "qwen2.5-coder:14b",
+              "created_at": "2026-06-09T10:00:00Z",
+              "message": { "role": "assistant", "content": "ok" },
+              "prompt_eval_count": 5,
+              "eval_count": 3,
+              "done": true
+            }
+            """;
+
+        var stats = new FakeStatsStore();
+        var (provider, _) = CreateOllamaProvider(
+            responseBody: ollamaResponse,
+            recordStats: false,
+            statsStore: stats);
+
+        var ctx = BuildContext("""{"model":"qwen2.5-coder:14b","messages":[]}""");
+        await provider.ForwardAsync(ctx, "qwen2.5-coder:14b", CancellationToken.None);
+
+        await Assert.That(stats.Records).IsEmpty();
+    }
+
+    [Test]
+    public async Task Ollama_does_not_record_for_remote_ollama()
+    {
+        const string ollamaResponse = """
+            {
+              "model": "qwen2.5-coder:14b",
+              "created_at": "2026-06-09T10:00:00Z",
+              "message": { "role": "assistant", "content": "ok" },
+              "prompt_eval_count": 5,
+              "eval_count": 3,
+              "done": true
+            }
+            """;
+
+        // Flag aktiv, aber OllamaBaseUrl zeigt auf einen entfernten Host: die Inferenz läuft nicht
+        // auf dieser Maschine, das RAM-Delta wäre Rauschen → keine Telemetrie (Spec §3).
+        var stats = new FakeStatsStore();
+        var (provider, _) = CreateOllamaProvider(
+            baseUrl: "http://192.168.1.50:11434",
+            responseBody: ollamaResponse,
+            recordStats: true,
+            statsStore: stats);
+
+        var ctx = BuildContext("""{"model":"qwen2.5-coder:14b","messages":[]}""");
+        await provider.ForwardAsync(ctx, "qwen2.5-coder:14b", CancellationToken.None);
+
+        await Assert.That(stats.Records).IsEmpty();
+    }
+
     // --- Hilfsmethoden ---
 
     private static (AnthropicProvider Provider, MockHttpHandler Handler) CreateAnthropicProvider(
@@ -267,16 +349,26 @@ public sealed class ProviderForwardingTests
         Action<HttpRequestMessage>? onRequest = null,
         HttpStatusCode responseCode = HttpStatusCode.OK,
         string responseBody = "{}",
-        string keepAlive = "30m")
+        string keepAlive = "30m",
+        bool recordStats = false,
+        ILocalStatsStore? statsStore = null)
     {
         var handler = new MockHttpHandler(onRequest, responseCode, responseBody);
         var factory = new SingleClientFactory(new HttpClient(handler));
         var opts = new FakeOptionsMonitor<SwitchboardOptions>(new SwitchboardOptions
         {
             OllamaBaseUrl = baseUrl,
-            OllamaKeepAlive = keepAlive
+            OllamaKeepAlive = keepAlive,
+            ResourceGate = new ResourceGateOptions { RecordLocalInferenceStats = recordStats }
         });
-        return (new OllamaProvider(factory, opts, NullLogger<OllamaProvider>.Instance, new LocalInferenceGate()), handler);
+        return (new OllamaProvider(factory, opts, NullLogger<OllamaProvider>.Instance, new LocalInferenceGate(), statsStore ?? new FakeStatsStore()), handler);
+    }
+
+    private sealed class FakeStatsStore : K.Switchboard.Resources.ILocalStatsStore
+    {
+        public List<(string Model, long Ms)> Records { get; } = [];
+        public void Record(string model, long elapsedMs, int ramDeltaMb, int sizeMb) => Records.Add((model, elapsedMs));
+        public K.Switchboard.Resources.LocalInferenceStats? Get(string model) => null;
     }
 
     private static DefaultHttpContext BuildContext(string jsonBody)

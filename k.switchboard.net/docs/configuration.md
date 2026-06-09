@@ -371,7 +371,9 @@ der Check fehl, wird auf die FallbackChain oder Tier-Substitution ausgewichen.
   "VramDisplayReserveMb": 2048,
   "MaxLatencyMs": 0,
   "ColdLatencyFactor": 2.0,
-  "LatencyContextReferenceTokens": 4000
+  "LatencyContextReferenceTokens": 4000,
+  "LowerOllamaPriority": false,
+  "RecordLocalInferenceStats": false
 }
 ```
 
@@ -387,6 +389,8 @@ der Check fehl, wird auf die FallbackChain oder Tier-Substitution ausgewichen.
 | `MaxLatencyMs` | int | `0` | Latenz-Schwelle (ms): Ist die erwartete lokale Latenz höher, wird substituiert. **0 = Latenz-Gate aus** (Opt-in, backward-safe). Empfohlener Einstiegswert: `100000` (= 100 s). Das Gate greift nur, wenn zusätzlich `LatencyP50Ms > 0` im Modell-Eintrag vorhanden ist. |
 | `ColdLatencyFactor` | double | `2.0` | Multiplikator für Cold-Load-Latenz (Modell noch nicht geladen). Erwartete Latenz = `P50 × ColdLatencyFactor`. Ist das Modell warm, wird Faktor 1,0 verwendet. |
 | `LatencyContextReferenceTokens` | int | `4000` | Referenz-Kontextlänge (Tokens) für die Latenz-Skalierung. Entspricht einem typischen realen Payload. Die Latenz skaliert linear mit dem Verhältnis `inputTokens / LatencyContextReferenceTokens`, Untergrenze 0,5. |
+| `LowerOllamaPriority` | bool | `false` | Opt-in. Senkt beim Start die Prozess-Priorität des lokalen Ollama-Prozesses auf below-normal, damit lokale Inferenz die Maschine nicht verdrängt. Greift nur, wenn `OllamaBaseUrl` auf localhost zeigt (`localhost`/`127.0.0.1`/`::1`) — bei remote-Ollama no-op. Best-effort: ein Fehler bricht den Start nicht ab. Einmalig beim Start (siehe [Blast-Radius](#blast-radius)). **macOS nicht unterstützt.** |
+| `RecordLocalInferenceStats` | bool | `false` | Opt-in. Erfasst pro erfolgreicher lokaler Inferenz Live-Telemetrie (Latenz + RAM-Delta) und persistiert sie aggregiert in `learned-stats.json` (siehe [§ 1.10.4](#learned-stats)). **Read-only — ändert die Routing-/Admission-Entscheidung NICHT.** |
 
 ### 1.10.2 GPU-Pfad vs. CPU-Pfad
 
@@ -443,6 +447,59 @@ Blocking.
 ```text
 latency ~{expectedMs}ms > {MaxLatencyMs}ms (warm={ModelWarm}, ctx×{contextFactor})
 ```
+
+<a id="learned-stats"></a>
+
+### 1.10.4 Live-Telemetrie (`learned-stats.json`)
+
+Ist `RecordLocalInferenceStats: true` gesetzt, erfasst K.Switchboard pro erfolgreicher lokaler
+Inferenz die tatsächlich gemessene Latenz und ein RAM-Delta (2-Punkt-GC-Approximation) und
+persistiert sie aggregiert pro Modell in `learned-stats.json`. Die Telemetrie ist **read-only**:
+sie beobachtet nur und beeinflusst die Routing-/Admission-Entscheidung des ResourceGate **nicht**
+(siehe [resource-aware-routing.md](resource-aware-routing.md)).
+
+Die Datei liegt im Per-Install-Verzeichnis (analog `hw-profile.json`):
+
+| Betriebssystem | Pfad |
+| --- | --- |
+| Windows | `%APPDATA%\K.Switchboard\learned-stats.json` |
+| Linux | `~/.config/K.Switchboard/learned-stats.json` |
+| macOS | nicht offiziell unterstützt — bei aktivierter Telemetrie würde die Datei wie unter Linux nach `~/.config/K.Switchboard/learned-stats.json` geschrieben (.NET `ApplicationData` → XDG) |
+
+Die Datei ist maschinenspezifisch und wird **nicht committed** (per `.gitignore` ausgeschlossen,
+wie `hw-profile.json`). Sie enthält pro Modell folgende Felder:
+
+Die Property-Namen werden in **camelCase** serialisiert (der Modell-Schlüssel — z. B.
+`qwen2.5-coder:7b` — bleibt unverändert):
+
+```json
+{
+  "qwen2.5-coder:7b": {
+    "count": 12,
+    "lastLatencyMs": 1840,
+    "avgLatencyMs": 1920.5,
+    "maxLatencyMs": 3100,
+    "lastRamDeltaMb": 5100,
+    "lastSizeMb": 0,
+    "updatedOn": "2026-06-09T09:00:00+00:00"
+  }
+}
+```
+
+| Feld | Beschreibung |
+| --- | --- |
+| `count` | Anzahl der erfassten Inferenzen für dieses Modell |
+| `lastLatencyMs` | Zuletzt gemessene End-to-End-Latenz (ms) |
+| `avgLatencyMs` | Laufender Mittelwert der Latenz (ms, running mean) |
+| `maxLatencyMs` | Höchste gemessene Latenz (ms) |
+| `lastRamDeltaMb` | Letztes RAM-Delta (MB, 2-Punkt-GC-Approximation — verrauschbar durch Fremdprozesse) |
+| `lastSizeMb` | Zuletzt gemeldete Modellgröße (MB) oder `0`, falls nicht billig erreichbar |
+| `updatedOn` | UTC-Zeitpunkt der letzten Aktualisierung |
+
+**Zweck:** Die Datei liefert reale Betriebsdaten als Hilfe für die **manuelle** Pflege der
+committed `ModelValidation`-Werte (`LatencyP50Ms`, `PeakRamMb`) in `HardwareClasses`. Sie wird
+**nicht** zur Laufzeit zurückgeschrieben — kein automatischer Eingriff in die Admission. Details
+zur Auswertung siehe [eval-measurement.md](eval-measurement.md).
 
 ---
 
@@ -557,7 +614,9 @@ claude-sonnet-4-6 (local qwen2.5-coder:14b not viable — no matching hardware c
     "VramDisplayReserveMb": 2048,
     "MaxLatencyMs": 0,
     "ColdLatencyFactor": 2.0,
-    "LatencyContextReferenceTokens": 4000
+    "LatencyContextReferenceTokens": 4000,
+    "LowerOllamaPriority": false,
+    "RecordLocalInferenceStats": false
   },
   "HardwareClasses": [
     {
