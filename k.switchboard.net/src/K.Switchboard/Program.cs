@@ -34,7 +34,7 @@ try
             ? JsonSerializer.Serialize(
                 builder.Configuration.GetSection("Switchboard").Get<SwitchboardOptions>() ?? new SwitchboardOptions(),
                 SwitchboardJsonContext.Default.SwitchboardOptions)
-            : JsonSerializer.Serialize(new SwitchboardOptions(),
+            : JsonSerializer.Serialize(SwitchboardOptions.CreateDefault(),
                 SwitchboardJsonContext.Default.SwitchboardOptions);
         File.WriteAllText(appDataConfig, defaultConfig);
         Log.Information("[Bootstrap] Default-Config erstellt: {Path}", appDataConfig);
@@ -85,6 +85,13 @@ try
         .Configure<SwitchboardOptions>(builder.Configuration)
         .AddHealthChecks();
 
+    // IConfiguration behandelt ':' als Sektions-Trenner → Dictionary-Keys wie "qwen2.5-coder:14b"
+    // gehen beim Binden verloren. PostConfigure liest config.json zusätzlich direkt via source-gen
+    // STJ und ersetzt die betroffenen Collections in-place. Der Action-Delegate wird bei jedem
+    // IOptionsMonitor-Rebuild (Hot-Reload) neu ausgeführt → Datei wird bei jeder Änderung neu gelesen.
+    builder.Services.PostConfigure<SwitchboardOptions>(opts =>
+        SwitchboardOptionsColonKeyLoader.ApplyFromFile(opts, appDataConfig));
+
     builder.Services.AddRateLimiter(_ =>
     {
         var opts = builder.Configuration.Get<SwitchboardOptions>() ?? new SwitchboardOptions();
@@ -116,6 +123,17 @@ try
         client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
     });
 
+    builder.Services.AddSingleton<IProcessRunner, ProcessRunner>();
+    builder.Services.AddSingleton<IHardwareProfileDetector, HardwareProfileDetector>();
+    builder.Services.AddSingleton<HardwareProfileCache>();
+    builder.Services.AddSingleton<HardwareClassifier>();
+    builder.Services.AddSingleton<ICpuLoadSampler, CpuLoadSampler>();
+    builder.Services.AddSingleton<ILiveResourceProbe, LiveResourceProbe>();
+    builder.Services.AddSingleton<ResourceGate>();
+    builder.Services.AddSingleton<LocalInferenceGate>();
+    builder.Services.AddSingleton<IProcessController, ProcessController>();
+    builder.Services.AddSingleton<ILocalStatsStore, LocalStatsStore>();
+    builder.Services.AddHostedService<OllamaPriorityService>();
     builder.Services.AddSingleton<IProvider, AnthropicProvider>();
     builder.Services.AddSingleton<IProvider, OllamaProvider>();
     builder.Services.AddSingleton<ProviderRegistry>();
@@ -140,7 +158,7 @@ try
     }
 
     // --- Proxy-Endpoint: POST /v1/messages ---
-    app.MapPost("/v1/messages", async (HttpContext ctx, ModelRouter router, FallbackService fallback, IOptionsSnapshot<SwitchboardOptions> options, CancellationToken ct) =>
+    app.MapPost("/v1/messages", async (HttpContext ctx, ModelRouter router, FallbackService fallback, ResourceGate gate, IOptionsSnapshot<SwitchboardOptions> options, CancellationToken ct) =>
     {
         if (!string.IsNullOrWhiteSpace(options.Value.ApiKey))
         {
@@ -184,7 +202,35 @@ try
 
         ctx.Request.Body.Position = 0;
 
-        await fallback.ForwardWithFallbackAsync(ctx, requestedModel, ct);
+        int inputTokens = 0;
+        try
+        {
+            ctx.Request.Body.Position = 0;
+            using var tokenDoc = await JsonDocument.ParseAsync(ctx.Request.Body, cancellationToken: ct);
+            inputTokens = RequestTokenEstimator.EstimateInputTokens(tokenDoc.RootElement);
+        }
+        catch (JsonException) { /* best-effort; 0 bleibt */ }
+        finally
+        {
+            ctx.Request.Body.Position = 0;   // Body IMMER zurückspulen (auch bei Parse-Fehler), damit der Forward ihn liest.
+        }
+
+        var decision = await gate.EvaluateAsync(requestedModel, inputTokens, ct);
+        if (decision.Action == RoutingAction.Fail)
+        {
+            ctx.Response.StatusCode = decision.FailStatusCode;
+            await ctx.Response.WriteAsJsonAsync(new ProblemDetails
+            {
+                Title = "Local model not viable",
+                Detail = $"No fallback or substitute available — {decision.Reason}."
+            },
+            SwitchboardJsonContext.Default.ProblemDetails, cancellationToken: ct);
+            return;
+        }
+        if (decision.SubstitutionHeader is { } sub)
+            ctx.Response.Headers["X-K-Switchboard-Substitution"] = sub;
+
+        await fallback.ForwardWithFallbackAsync(ctx, decision.EffectiveModel, ct);
     }).RequireRateLimiting("proxy");
 
     // --- Statistik-Endpoint: GET /stats ---
