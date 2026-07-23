@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Alpha Release Pipeline
-# version: v1.11.5
-# commit: 3ce3b41
-# updated: 2026-07-23
-# content-hash: 2BE7C4DA
+# version: v1.9.16
+# commit: 7c5a9ef
+# updated: 2026-04-29
+# content-hash: A82C3005
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -92,19 +92,12 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         shell: bash
         run: |
-          # Keyword list: closes/closed/close, fixes/fixed/fix, resolves/resolved/resolve, refs/ref
-          # followed by optional ' '/':' and '#N', plus optional comma-separated
-          # enumeration ', #M' / ', and #M' after the first hit (#531):
-          #   Refs #1, #2, #3   /   Closes #1, and #2
-          ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+([[:space:]]*,[[:space:]]*(and[[:space:]]+)?#[0-9]+)*' | grep -oE '#[0-9]+' | tr -d '#' | sort -u || true)
-          # Warn about #N references not covered by a keyword (#531)
-          ALL_REFS=$(printf '%s' "$PR_BODY" | grep -oE '#[0-9]+' | tr -d '#' | sort -u || true)
-          # Set difference: refs present in ALL_REFS but missing from ISSUE_NUMBERS
-          UNMATCHED=$(comm -23 <(printf '%s\n' "$ALL_REFS") <(printf '%s\n' "$ISSUE_NUMBERS") | sed '/^$/d' | paste -sd ' ' -)
-          if [ -n "$UNMATCHED" ]; then
-            UNMATCHED_LIST=$(printf '#%s ' $UNMATCHED)
-            echo "::warning::PR-Body enthält Issue-Referenzen ohne Schlüsselwort — diese werden NICHT mit 'phase:in-alpha' gelabelt: ${UNMATCHED_LIST% }. Pro Referenz ein Schlüsselwort (Closes/Fixes/Refs #N) verwenden oder eine Aufzählung direkt hinter dem Schlüsselwort (Refs #1, #2, #3)."
-          fi
+          # grep liefert exit code 1 wenn keine Treffer gefunden werden — das ist normales
+          # POSIX-Verhalten und kein Fehler. Ohne "|| true" würde GitHub Actions' Shell-Option
+          # "-eo pipefail" (bash --noprofile --norc -eo pipefail) die Pipeline als Fehler werten
+          # und das Script hier abbrechen, bevor "if [ -z ... ]" überhaupt läuft.
+          # Quelle: BashFAQ/105 — echte Assignments propagieren den Exit-Code der Subshell.
+          ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u || true)
           if [ -z "$ISSUE_NUMBERS" ]; then
             echo "No closing keywords found — no issues to label."
             exit 0

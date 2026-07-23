@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Release Pipeline (Stable)
-# version: v1.9.16
-# commit: 7c5a9ef
-# updated: 2026-04-29
-# content-hash: 726A30A4
+# version: v1.11.5
+# commit: 3ce3b41
+# updated: 2026-07-23
+# content-hash: 1F46C194
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -17,7 +17,7 @@
 #
 # Architektur: Option A — Getrennte Workflows (#407)
 #   alpha-release.yml → PR-close auf dev/v*      → Alpha
-#   beta-release.yml  → push auf release/v*      → Beta
+#   beta-release.yml  → PR-close auf release/v*  → Beta
 #   release.yml       → PR-close auf main/master → Stable
 #                        oder dev/v* → release/v* (Freeze)
 #

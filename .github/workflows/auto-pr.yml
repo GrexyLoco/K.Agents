@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Auto-PR Pipeline
-# version: v1.9.16
-# commit: 7c5a9ef
-# updated: 2026-04-29
-# content-hash: 148F7DD6
+# version: v1.11.5
+# commit: 3ce3b41
+# updated: 2026-07-23
+# content-hash: E5DD38D9
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -202,28 +202,46 @@ jobs:
             PR_BODY="*Kein Issue im Branch-Namen — bitte manuell verknuepfen.*"
           fi
 
-          # PR-Titel: TYPE: IssueTitle (#IssueId) — Konvention #250
+          # PR-Titel: <type>: IssueTitle (#IssueId) — Conventional Commits (#250, #529)
+          # Lowercase-Typen (feat/fix/docs/...), damit amannn/action-semantic-pull-request
+          # in Consumer-Repos gruen ist.
           SLUG="${HEAD_BRANCH#*/}"
 
-          # SolutionType Mapping: fix→FIX, feature→FEAT
-          TYPE_UPPER=$(echo "$BRANCH_TYPE" | tr '[:lower:]' '[:upper:]')
-          if [ "$TYPE_UPPER" = "FEATURE" ]; then TYPE_UPPER="FEAT"; fi
+          # Conventional-Commit-Typen (amannn Standard-Liste)
+          CONVENTIONAL_TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+
+          # Branch-Typ → Default conventional type (lowercase)
+          case "$BRANCH_TYPE" in
+            feature) DEFAULT_TYPE="feat" ;;
+            fix)     DEFAULT_TYPE="fix" ;;
+            *)       DEFAULT_TYPE="chore" ;;
+          esac
 
           if [ "$HAS_ISSUE" = "true" ]; then
             ISSUE_TITLE=$(gh issue view "$ISSUE_NR" --repo "$REPO" --json title --jq '.title' 2>/dev/null || echo "$SLUG")
             if [ ${#ISSUE_TITLE} -gt 60 ]; then
               ISSUE_TITLE="${ISSUE_TITLE:0:57}..."
             fi
-            # Duplicate-Prefix-Schutz (#377): wenn Issue-Titel bereits einen
-            # Konventions-Prefix (FIX/FEAT/DOC/REFACTOR:) traegt, Prefix nicht
-            # erneut voranstellen — sonst entsteht "FIX: FIX: ...".
-            if [[ "$ISSUE_TITLE" =~ ^(FIX|FEAT|DOC|REFACTOR):[[:space:]] ]]; then
-              PR_TITLE="$ISSUE_TITLE (#$ISSUE_NR)"
+            # Duplicate-Prefix-Schutz (#377) + lowercase-Normalisierung (#529):
+            # Traegt der Issue-Titel bereits einen (ggf. gescopten/breaking)
+            # Conventional-Prefix, wird dessen Typ auf lowercase normalisiert und
+            # der Titel unveraendert uebernommen — kein Doppel-Prefix ('feat: docs: ...').
+            # Ein 'docs:'-Issue auf feature/* bleibt so 'docs:', ein Legacy 'FIX:'
+            # wird zu 'fix:'. Sonst wird der Branch-Typ als lowercase-Typ vorangestellt.
+            if [[ "$ISSUE_TITLE" =~ ^([A-Za-z]+)(\([^\)]*\))?(!)?:[[:space:]] ]]; then
+              ETYPE=$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')
+              if echo "$ETYPE" | grep -qiE "^($CONVENTIONAL_TYPES)$"; then
+                REST="${ISSUE_TITLE#*:}"; REST="${REST# }"
+                SCOPE="${BASH_REMATCH[2]}${BASH_REMATCH[3]}"
+                PR_TITLE="${ETYPE}${SCOPE}: ${REST} (#$ISSUE_NR)"
+              else
+                PR_TITLE="$DEFAULT_TYPE: $ISSUE_TITLE (#$ISSUE_NR)"
+              fi
             else
-              PR_TITLE="$TYPE_UPPER: $ISSUE_TITLE (#$ISSUE_NR)"
+              PR_TITLE="$DEFAULT_TYPE: $ISSUE_TITLE (#$ISSUE_NR)"
             fi
           else
-            PR_TITLE="$TYPE_UPPER: $SLUG"
+            PR_TITLE="$DEFAULT_TYPE: $SLUG"
           fi
 
           PR_URL=$(gh pr create --repo "$REPO" \
@@ -243,6 +261,58 @@ jobs:
             -f "client_payload[pr-url]=${{ steps.pr.outputs.pr_url }}" \
             -f "client_payload[branch]=${{ steps.branch.outputs.branch }}" \
             -f "client_payload[phase]=auto-pr"
+
+      # #513: Consumer Repos erhalten frühzeitig (bei PR-Erstellung) die Chance,
+      # einen Manifest-Bump-Commit auf den PR-Branch zu pushen, bevor der PR
+      # gemergt wird. So ist der Bump im Merge-Commit enthalten — Tag und
+      # Manifest landen auf dem gleichen Commit-Subgraph.
+      - name: Prepare-Promotion Event auslösen
+        if: success() && steps.pr.outputs.pr_created == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.train.outputs.tag || format('v{0}', steps.train.outputs.version) }}
+          BRANCH_TYPE: ${{ steps.branch.outputs.type }}
+          PHASE: ${{ steps.train.outputs.phase }}
+          HEAD_BRANCH: ${{ steps.branch.outputs.branch }}
+          BASE_BRANCH: ${{ steps.target.outputs.base }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+        shell: bash
+        run: |
+          # Phase-Bestimmung: feature/* immer alpha, fix/* folgt der Train-Phase
+          if [ "$BRANCH_TYPE" = "feature" ]; then
+            EVENT_PHASE="alpha"
+          elif [ "$BRANCH_TYPE" = "fix" ] && [ "$PHASE" = "beta" ]; then
+            EVENT_PHASE="beta"
+          else
+            EVENT_PHASE="alpha"
+          fi
+
+          # PR-Nummer aus der URL extrahieren (z.B. .../pull/123)
+          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$' || true)
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::warning::PR_NUMBER nicht ermittelbar ('$PR_URL') — Prepare-Promotion Event übersprungen."
+            exit 0
+          fi
+
+          # v-Prefix aus Version entfernen für Payload-Feld 'version'
+          VERSION_NO_V="${VERSION#v}"
+          # Payload injection-sicher via jq aufbauen
+          PAYLOAD=$(jq -n \
+            --arg version    "$VERSION_NO_V" \
+            --arg tag        "$VERSION" \
+            --arg phase      "$EVENT_PHASE" \
+            --arg pr_num     "$PR_NUMBER" \
+            --arg pr_branch  "$HEAD_BRANCH" \
+            --arg tgt_branch "$BASE_BRANCH" \
+            '{version: $version, tag: $tag, phase: $phase, pr_number: ($pr_num | tonumber), pr_branch: $pr_branch, target_branch: $tgt_branch}')
+
+          if gh api --method POST "repos/${{ github.repository }}/dispatches" \
+            -f "event_type=releaseflow-prepare-promotion" \
+            -f "client_payload=$PAYLOAD" 2>/dev/null; then
+            echo "::notice::releaseflow-prepare-promotion gefeuert (Phase: $EVENT_PHASE, PR: #$PR_NUMBER)"
+          else
+            echo "::warning::releaseflow-prepare-promotion konnte nicht gefeuert werden — kein Fehler, Release-Flow läuft weiter."
+          fi
 
       - name: Summary
         if: always()

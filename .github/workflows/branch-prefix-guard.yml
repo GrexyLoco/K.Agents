@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Branch-Prefix Guard
-# version: v1.9.16
-# commit: 7c5a9ef
-# updated: 2026-04-29
-# content-hash: A2155F72
+# version: v1.11.5
+# commit: 3ce3b41
+# updated: 2026-07-23
+# content-hash: BE46EA08
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -67,6 +67,26 @@ jobs:
             echo "✅ Backflow-PR erkannt (master → dev/release). Erlaubt."
             echo "allowed=true" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+
+          # Spezialfall: Fehlgetargeteter Promotion-PR (dev/v* → master/main)
+          if [[ "$HEAD_REF" =~ ^dev/v([0-9]+\.[0-9]+\.[0-9]+)$ ]] && [[ "$BASE_REF" =~ ^(master|main)$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+
+            echo "::error::❌ Falsches Target für Promotion-PR erkannt: '$HEAD_REF' → '$BASE_REF'."
+            echo ""
+            echo "Warum blockiert:"
+            echo "  • Ein dev/v* Branch darf nicht direkt nach master/main promoted werden."
+            echo ""
+            echo "Korrektes Target:"
+            echo "  • release/v$VERSION"
+            echo ""
+            echo "Nächster Schritt:"
+            echo "  • PR auf base 'release/v$VERSION' retargeten"
+            echo "  • oder den falschen PR schließen und korrekt neu erstellen"
+
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
 
           # Alles andere ist verboten

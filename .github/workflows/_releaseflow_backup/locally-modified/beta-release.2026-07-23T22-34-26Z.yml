@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Beta Release Pipeline
-# version: v1.11.5
-# commit: 3ce3b41
-# updated: 2026-07-23
-# content-hash: 05541C2D
+# version: v1.9.17
+# commit: 0f0f46a
+# updated: 2026-05-01
+# content-hash: 00000000
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -20,15 +20,14 @@ name: "RF: Beta Release Pipeline"
 #   alpha-release.yml → PR-close auf dev/v*      → Alpha
 #   beta-release.yml  → PR-close auf release/v*  → Beta
 #   release.yml       → PR-close auf main/master → Stable
+#
+# Wichtig: pull_request:closed (nicht push!) damit GITHUB_EVENT_PATH
+# das pull_request-Objekt enthält, das Get-ReleaseContext benötigt.
+# Siehe Issue #119.
 on:
   pull_request:
     types: [closed]
     branches: ['release/v*']
-  # Break-Glass (#552): Freeze nachholen, wenn der pull_request:closed-Event
-  # des Promotion-Merges verloren ging (z.B. GitHub-Incident). Dispatch auf
-  # dem release/v*-Branch selbst; Version wird aus dem Ref abgeleitet:
-  #   gh workflow run beta-release.yml --ref release/vX.Y.Z
-  workflow_dispatch:
 
 # Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
 # Action selbst.
@@ -43,11 +42,7 @@ jobs:
   beta-release:
     name: Beta Release
     runs-on: ubuntu-latest
-    # Regulaer: gemergter PR. Break-Glass (#552): workflow_dispatch auf dem
-    # release/v*-Ref — die Action erkennt den Freeze-Kontext selbst.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true
     steps:
       # GitHub App Token ZUERST (#406) — siehe Kommentar in basic.yml
       - name: 🔑 GitHub App Token generieren
@@ -110,6 +105,11 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         shell: bash
         run: |
+          # grep liefert exit code 1 wenn keine Treffer gefunden werden — das ist normales
+          # POSIX-Verhalten und kein Fehler. Ohne "|| true" wuerde GitHub Actions' Shell-Option
+          # "-eo pipefail" (bash --noprofile --norc -eo pipefail) die Pipeline als Fehler werten
+          # und das Script hier abbrechen, bevor "if [ -z ... ]" ueberhaupt laeuft.
+          # Quelle: BashFAQ/105 — echte Assignments propagieren den Exit-Code der Subshell.
           ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u || true)
 
           if [ -z "$ISSUE_NUMBERS" ]; then
