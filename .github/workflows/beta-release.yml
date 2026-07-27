@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Beta Release Pipeline
-# version: untagged@f3f8389
-# commit: f3f8389
-# updated: 2026-04-20
-# content-hash: 61DBE731
+# version: v1.12.0
+# commit: 84b4015
+# updated: 2026-07-27
+# content-hash: ED613081
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -11,24 +11,24 @@
 #   → Eigenen Workflow mit repository_dispatch erstellen.
 #   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
 # ═══════════════════════════════════════════════════════════════
-name: Beta Release Pipeline
+name: "RF: Beta Release Pipeline"
 
-# Trigger: Push auf release/v* Branches (Fix-PR oder Promotion-PR gemerged)
+# Trigger: PR-Merge auf release/v* Branches (Fix-PR oder Promotion-PR gemerged)
 # Erzeugt vX.Y.Z-beta.N Tag + GitHub Pre-release
 #
 # Architektur: Option A — Getrennte Workflows (empfohlen)
-#   alpha-release.yml → dev/v*    → Alpha
-#   beta-release.yml  → release/v* → Beta
-#   release.yml       → master     → Stable
+#   alpha-release.yml → PR-close auf dev/v*      → Alpha
+#   beta-release.yml  → PR-close auf release/v*  → Beta
+#   release.yml       → PR-close auf main/master → Stable
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: ['release/v*']
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-
-# Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
-# Action selbst.
+  # Break-Glass (#552): Freeze nachholen, wenn der pull_request:closed-Event
+  # des Promotion-Merges verloren ging (z.B. GitHub-Incident). Dispatch auf
+  # dem release/v*-Branch selbst; Version wird aus dem Ref abgeleitet:
+  #   gh workflow run beta-release.yml --ref release/vX.Y.Z
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -40,12 +40,38 @@ jobs:
   beta-release:
     name: Beta Release
     runs-on: ubuntu-latest
+    # PR-Pfad: NUR gemergte fix/*-PRs (Beta-Fix). Der reguläre Freeze-Promo-
+    # Merge (dev/v* → release/v*) wird exklusiv von basic.yml (= Consumer-
+    # release.yml) verarbeitet — ohne den head-ref-Filter würden beide
+    # Templates auf denselben Merge-Event reagieren und um denselben Tag
+    # konkurrieren (#523).
+    # Dispatch-Pfad (unverändert): bleibt weiterhin der Break-Glass-Freeze-
+    # Pfad aus #552 — wird genutzt, wenn der pull_request:closed-Event des
+    # Freeze-Promo-Merges verloren ging. basic.yml hat keinen workflow_dispatch-
+    # Trigger, deshalb lebt die Freeze-Wiederholung hier, getrennt vom
+    # regulären Freeze-Promo-Merge-Pfad in basic.yml. Die Action erkennt den
+    # Freeze-Kontext selbst aus dem release/v*-Ref (Get-ReleaseContext).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'fix/'))
+    # Concurrency backstop (#523): serializes runs per target branch in addition
+    # to the API-based tag reservation (New-PreReleaseTag / New-FreezeRelease).
+    # GitHub keeps at most ONE pending run queued per group — if a third rapid
+    # merge arrives while one run is active and another already queued, the
+    # queued middle run is displaced by the newest one. That is acceptable here
+    # because tags are cumulative: the newest run still picks up all merged
+    # changes. cancel-in-progress MUST stay false — cancelling an in-flight run
+    # would destroy that release.
+    # Job-level (not workflow-level): a run skipped by this job's `if:` (e.g.
+    # a PR close that is neither the promo-merge nor a fix/* merge) never
+    # enters the group, so it cannot displace a queued genuine release run
+    # and cause silent alpha/beta loss.
+    concurrency:
+      group: releaseflow-prerelease-${{ github.event.pull_request.base.ref || github.ref_name }}
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
+      # GitHub App Token ZUERST (#406) — siehe Kommentar in basic.yml
       - name: 🔑 GitHub App Token generieren
         id: app-token
         uses: actions/create-github-app-token@v3
@@ -55,6 +81,12 @@ jobs:
           owner: GrexyLoco
           repositories: >
             ${{ github.event.repository.name }},K.Actions.ReleaseFlow
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app-token.outputs.token }}
 
       # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
       # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar.
@@ -94,13 +126,13 @@ jobs:
       # Label integrierte Issues mit phase:in-beta (#287)
       # Parst Closing-Keywords aus dem PR-Body und labelt referenzierte Issues.
       - name: Label integrated issues with phase:in-beta
-        if: steps.release.outcome == 'success'
+        if: steps.release.outcome == 'success' && startsWith(github.event.pull_request.head.ref, 'fix/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_BODY: ${{ github.event.pull_request.body }}
         shell: bash
         run: |
-          ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+          ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u || true)
 
           if [ -z "$ISSUE_NUMBERS" ]; then
             echo "No closing keywords found — no issues to label."

@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Push Sentinel (Audit)
-# version: untagged@f3f8389
-# commit: f3f8389
-# updated: 2026-04-20
-# content-hash: 69E9E855
+# version: v1.12.0
+# commit: 84b4015
+# updated: 2026-07-27
+# content-hash: 81A14CBA
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -23,7 +23,7 @@
 # Issue: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/issues/178
 # ═══════════════════════════════════════════════════════════════════════════════
 
-name: Push Sentinel
+name: "RF: Push Sentinel"
 
 on:
   push:
@@ -153,6 +153,8 @@ jobs:
 
           > Der **Push Sentinel** ist eine Detective-Control (Layer 2), die jeden Push auf geschuetzte Branches klassifiziert.
           > PR-Merges und Bot-Commits werden erwartet und nur protokolliert. Unerwartete Pushes erzeugen ein Audit-Issue.
+          >
+          > 📖 [Zur Dokumentation](https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/ARCHITECTURE.md#push-sentinel)
 
           | Feld | Wert |
           |------|------|

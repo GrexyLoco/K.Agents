@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Auto-PR Pipeline
-# version: untagged@f3f8389
-# commit: f3f8389
-# updated: 2026-04-20
-# content-hash: AE53BADF
+# version: v1.12.0
+# commit: 84b4015
+# updated: 2026-07-27
+# content-hash: 94B13AFE
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -11,11 +11,17 @@
 #   → Eigenen Workflow mit repository_dispatch erstellen.
 #   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
 # ═══════════════════════════════════════════════════════════════
-name: Auto-PR
+name: "RF: 🔧 Auto-PR"
 
-# Trigger: Push auf fix/* oder feature/* Branches.
-# Legt automatisch einen PR gegen den aktiven Train-Branch an.
-# KEIN workflow_dispatch — nicht manuell auslösbar.
+# Trigger:
+#   - Push auf fix/* oder feature/* Branches (primär)
+#   - workflow_dispatch als Retry-Workaround (#408)
+#
+# Hintergrund zu workflow_dispatch (#408): In K.Agents Train 1.12 wurde
+# beobachtet, dass der push-Trigger beim *ersten* Push eines Branches
+# sporadisch silent ausfällt (~28%, vermutlich Webhook-Propagation-Race).
+# workflow_dispatch erlaubt Consumer/Maintainer das manuelle Nachtriggern
+# per 'gh workflow run auto-pr.yml --ref <branch>' ohne weiteren Push.
 #
 # Voraussetzungen:
 #   vars.RELEASEFLOW_APP_ID            — GitHub App ID
@@ -25,10 +31,11 @@ on:
     branches:
       - 'fix/**'
       - 'feature/**'
+  workflow_dispatch:
 
 jobs:
   auto-pr:
-    name: Auto-PR erstellen
+    name: 🤖 Auto-PR erstellen
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -46,6 +53,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          fetch-tags: true  # (#410) Tag-basierte Beta-Detection braucht lokale Tags
 
       # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
       # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar.
@@ -125,11 +133,17 @@ jobs:
           echo "rel_branch=$REL_BRANCH" >> "$GITHUB_OUTPUT"
           echo "found=true"             >> "$GITHUB_OUTPUT"
 
-          # Beta-Erkennung
+          # Beta-Erkennung (#410): Tag-basiert, nicht Branch-basiert.
+          # Branch release/vX.Y.Z kann durch Legacy-Setup oder manuellen Anlage
+          # existieren, OHNE dass jemals ein Freeze-Dispatch lief — dann wäre
+          # eine Branch-basierte Phase-Detection ein false positive (Beta ohne
+          # echten Freeze). Der Freeze-Tag vX.Y.Z-freeze wird dagegen nur durch
+          # erfolgreichen Freeze-Dispatch gesetzt — Tag-Präsenz ist das echte
+          # Beta-Signal.
+          FREEZE_TAG=$(git tag -l "${TAG}-freeze" 2>/dev/null)
           BETA_TAGS=$(git tag -l "${TAG}-beta.*" 2>/dev/null)
-          REL_EXISTS=$(gh api "repos/$REPO/branches/$REL_BRANCH" --jq '.name' 2>/dev/null || true)
 
-          if [ -n "$BETA_TAGS" ] || [ -n "$REL_EXISTS" ]; then
+          if [ -n "$FREEZE_TAG" ] || [ -n "$BETA_TAGS" ]; then
             echo "phase=beta" >> "$GITHUB_OUTPUT"
           else
             echo "phase=alpha" >> "$GITHUB_OUTPUT"
@@ -188,28 +202,71 @@ jobs:
             PR_BODY="*Kein Issue im Branch-Namen — bitte manuell verknuepfen.*"
           fi
 
-          # PR-Titel: TYPE: IssueTitle (#IssueId) — Konvention #250
+          # PR-Titel: <type>: IssueTitle (#IssueId) — Conventional Commits (#250, #529)
+          # Lowercase-Typen (feat/fix/docs/...), damit amannn/action-semantic-pull-request
+          # in Consumer-Repos gruen ist.
           SLUG="${HEAD_BRANCH#*/}"
 
-          # SolutionType Mapping: fix→FIX, feature→FEAT
-          TYPE_UPPER=$(echo "$BRANCH_TYPE" | tr '[:lower:]' '[:upper:]')
-          if [ "$TYPE_UPPER" = "FEATURE" ]; then TYPE_UPPER="FEAT"; fi
+          # Conventional-Commit-Typen (amannn Standard-Liste)
+          CONVENTIONAL_TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+
+          # Branch-Typ → Default conventional type (lowercase)
+          case "$BRANCH_TYPE" in
+            feature) DEFAULT_TYPE="feat" ;;
+            fix)     DEFAULT_TYPE="fix" ;;
+            *)       DEFAULT_TYPE="chore" ;;
+          esac
 
           if [ "$HAS_ISSUE" = "true" ]; then
             ISSUE_TITLE=$(gh issue view "$ISSUE_NR" --repo "$REPO" --json title --jq '.title' 2>/dev/null || echo "$SLUG")
-            if [ ${#ISSUE_TITLE} -gt 60 ]; then
-              ISSUE_TITLE="${ISSUE_TITLE:0:57}..."
-            fi
-            # Duplicate-Prefix-Schutz (#377): wenn Issue-Titel bereits einen
-            # Konventions-Prefix (FIX/FEAT/DOC/REFACTOR:) traegt, Prefix nicht
-            # erneut voranstellen — sonst entsteht "FIX: FIX: ...".
-            if [[ "$ISSUE_TITLE" =~ ^(FIX|FEAT|DOC|REFACTOR):[[:space:]] ]]; then
-              PR_TITLE="$ISSUE_TITLE (#$ISSUE_NR)"
+            # Duplicate-prefix guard (#377) + lowercase normalization (#529) +
+            # truncation-order fix (#560): prefix detection runs FIRST against the
+            # FULL (untruncated) issue title — otherwise a 60-char truncation could
+            # cut a scope parenthesis mid-way and break the regex (-> doubled
+            # prefix, e.g. 'fix: feat(a-long-scope...'). Only the description
+            # remainder (REST) is truncated afterwards; type+scope+bang always
+            # stay fully intact. A colon without a trailing space ('feat:Title')
+            # is accepted; assembly always inserts exactly one space.
+            # If the issue title already carries a (optionally scoped/breaking)
+            # Conventional-Commit prefix, its type is lowercase-normalized and the
+            # remainder is kept — no doubled prefix ('feat: docs: ...'). A 'docs:'
+            # issue on feature/* stays 'docs:', a legacy 'FIX:' becomes 'fix:'.
+            # Otherwise the branch type is prepended as the lowercase default type.
+            if [[ "$ISSUE_TITLE" =~ ^([A-Za-z]+)(\([^\)]*\))?(!)?:[[:space:]]*(.*)$ ]]; then
+              ETYPE=$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')
+              if echo "$ETYPE" | grep -qiE "^($CONVENTIONAL_TYPES)$"; then
+                SCOPE="${BASH_REMATCH[2]}${BASH_REMATCH[3]}"
+                REST="${BASH_REMATCH[4]}"
+                PREFIX="${ETYPE}${SCOPE}: "
+                # REST budget = 60 minus the assembled prefix length, floored at
+                # 10 chars. In normal cases (short/moderate scope) the assembled
+                # title (prefix+REST) stays <=60 chars before the '(#N)' suffix,
+                # same as before the fix. Only a pathological long scope hits the
+                # 10-char floor and may push the total over 60 — an accepted
+                # trade-off, since never cutting mid-scope is the actual #560 fix.
+                REST_BUDGET=$((60 - ${#PREFIX}))
+                MIN_REST_BUDGET=10
+                if [ "$REST_BUDGET" -lt "$MIN_REST_BUDGET" ]; then
+                  REST_BUDGET=$MIN_REST_BUDGET
+                fi
+                if [ ${#REST} -gt "$REST_BUDGET" ]; then
+                  REST="${REST:0:$((REST_BUDGET - 3))}..."
+                fi
+                PR_TITLE="${PREFIX}${REST} (#$ISSUE_NR)"
+              else
+                if [ ${#ISSUE_TITLE} -gt 60 ]; then
+                  ISSUE_TITLE="${ISSUE_TITLE:0:57}..."
+                fi
+                PR_TITLE="$DEFAULT_TYPE: $ISSUE_TITLE (#$ISSUE_NR)"
+              fi
             else
-              PR_TITLE="$TYPE_UPPER: $ISSUE_TITLE (#$ISSUE_NR)"
+              if [ ${#ISSUE_TITLE} -gt 60 ]; then
+                ISSUE_TITLE="${ISSUE_TITLE:0:57}..."
+              fi
+              PR_TITLE="$DEFAULT_TYPE: $ISSUE_TITLE (#$ISSUE_NR)"
             fi
           else
-            PR_TITLE="$TYPE_UPPER: $SLUG"
+            PR_TITLE="$DEFAULT_TYPE: $SLUG"
           fi
 
           PR_URL=$(gh pr create --repo "$REPO" \
@@ -229,3 +286,109 @@ jobs:
             -f "client_payload[pr-url]=${{ steps.pr.outputs.pr_url }}" \
             -f "client_payload[branch]=${{ steps.branch.outputs.branch }}" \
             -f "client_payload[phase]=auto-pr"
+
+      # #513: Consumer Repos erhalten frühzeitig (bei PR-Erstellung) die Chance,
+      # einen Manifest-Bump-Commit auf den PR-Branch zu pushen, bevor der PR
+      # gemergt wird. So ist der Bump im Merge-Commit enthalten — Tag und
+      # Manifest landen auf dem gleichen Commit-Subgraph.
+      - name: Prepare-Promotion Event auslösen
+        if: success() && steps.pr.outputs.pr_created == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.train.outputs.tag || format('v{0}', steps.train.outputs.version) }}
+          BRANCH_TYPE: ${{ steps.branch.outputs.type }}
+          PHASE: ${{ steps.train.outputs.phase }}
+          HEAD_BRANCH: ${{ steps.branch.outputs.branch }}
+          BASE_BRANCH: ${{ steps.target.outputs.base }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+        shell: bash
+        run: |
+          # Phase-Bestimmung: feature/* immer alpha, fix/* folgt der Train-Phase
+          if [ "$BRANCH_TYPE" = "feature" ]; then
+            EVENT_PHASE="alpha"
+          elif [ "$BRANCH_TYPE" = "fix" ] && [ "$PHASE" = "beta" ]; then
+            EVENT_PHASE="beta"
+          else
+            EVENT_PHASE="alpha"
+          fi
+
+          # PR-Nummer aus der URL extrahieren (z.B. .../pull/123)
+          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$' || true)
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "::warning::PR_NUMBER nicht ermittelbar ('$PR_URL') — Prepare-Promotion Event übersprungen."
+            exit 0
+          fi
+
+          # v-Prefix aus Version entfernen für Payload-Feld 'version'
+          VERSION_NO_V="${VERSION#v}"
+          # Payload injection-sicher via jq aufbauen
+          PAYLOAD=$(jq -n \
+            --arg version    "$VERSION_NO_V" \
+            --arg tag        "$VERSION" \
+            --arg phase      "$EVENT_PHASE" \
+            --arg pr_num     "$PR_NUMBER" \
+            --arg pr_branch  "$HEAD_BRANCH" \
+            --arg tgt_branch "$BASE_BRANCH" \
+            '{version: $version, tag: $tag, phase: $phase, pr_number: ($pr_num | tonumber), pr_branch: $pr_branch, target_branch: $tgt_branch}')
+
+          if gh api --method POST "repos/${{ github.repository }}/dispatches" \
+            -f "event_type=releaseflow-prepare-promotion" \
+            -f "client_payload=$PAYLOAD" 2>/dev/null; then
+            echo "::notice::releaseflow-prepare-promotion gefeuert (Phase: $EVENT_PHASE, PR: #$PR_NUMBER)"
+          else
+            echo "::warning::releaseflow-prepare-promotion konnte nicht gefeuert werden — kein Fehler, Release-Flow läuft weiter."
+          fi
+
+      - name: Summary
+        if: always()
+        env:
+          HEAD_BRANCH: ${{ steps.branch.outputs.branch }}
+          BASE_BRANCH: ${{ steps.target.outputs.base }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+          PR_CREATED: ${{ steps.pr.outputs.pr_created }}
+          ISSUE_NR: ${{ steps.branch.outputs.issue }}
+          HAS_ISSUE: ${{ steps.branch.outputs.has_issue }}
+          TRAIN_FOUND: ${{ steps.train.outputs.found }}
+          PHASE: ${{ steps.train.outputs.phase }}
+          VERSION: ${{ steps.train.outputs.version }}
+        shell: bash
+        run: |
+          REPO_URL="https://github.com/${{ github.repository }}"
+
+          echo "## 🤖 Auto-PR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> 💡 Branch `$HEAD_BRANCH` wurde gepusht — PR wird automatisch auf den aktiven Release-Train erstellt." >> $GITHUB_STEP_SUMMARY
+          echo ">" >> $GITHUB_STEP_SUMMARY
+          echo "> 📖 [Zur Dokumentation](https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#auto-pr-auto-pryml)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Feld | Wert |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Source** | [\`$HEAD_BRANCH\`]($REPO_URL/tree/$HEAD_BRANCH) |" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "$BASE_BRANCH" ]; then
+            echo "| **Target** | [\`$BASE_BRANCH\`]($REPO_URL/tree/$BASE_BRANCH) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Target** | — |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$TRAIN_FOUND" = "true" ]; then
+            echo "| **Train** | v$VERSION ($PHASE) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Train** | ❌ Kein aktiver Train gefunden |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$HAS_ISSUE" = "true" ]; then
+            echo "| **Issue** | [#$ISSUE_NR]($REPO_URL/issues/$ISSUE_NR) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Issue** | ⚠️ Keine Issue-Nummer im Branch-Namen |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -n "$PR_URL" ]; then
+            if [ "$PR_CREATED" = "true" ]; then
+              echo "| **PR** | [PR öffnen]($PR_URL) *(neu erstellt)* |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| **PR** | [PR öffnen]($PR_URL) *(existiert bereits)* |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "| **PR** | — |" >> $GITHUB_STEP_SUMMARY
+          fi
