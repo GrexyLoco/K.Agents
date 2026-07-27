@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Auto-PR Pipeline
-# version: v1.11.5
-# commit: 3ce3b41
-# updated: 2026-07-23
-# content-hash: E5DD38D9
+# version: v1.12.0
+# commit: 84b4015
+# updated: 2026-07-27
+# content-hash: 94B13AFE
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -219,25 +219,50 @@ jobs:
 
           if [ "$HAS_ISSUE" = "true" ]; then
             ISSUE_TITLE=$(gh issue view "$ISSUE_NR" --repo "$REPO" --json title --jq '.title' 2>/dev/null || echo "$SLUG")
-            if [ ${#ISSUE_TITLE} -gt 60 ]; then
-              ISSUE_TITLE="${ISSUE_TITLE:0:57}..."
-            fi
-            # Duplicate-Prefix-Schutz (#377) + lowercase-Normalisierung (#529):
-            # Traegt der Issue-Titel bereits einen (ggf. gescopten/breaking)
-            # Conventional-Prefix, wird dessen Typ auf lowercase normalisiert und
-            # der Titel unveraendert uebernommen — kein Doppel-Prefix ('feat: docs: ...').
-            # Ein 'docs:'-Issue auf feature/* bleibt so 'docs:', ein Legacy 'FIX:'
-            # wird zu 'fix:'. Sonst wird der Branch-Typ als lowercase-Typ vorangestellt.
-            if [[ "$ISSUE_TITLE" =~ ^([A-Za-z]+)(\([^\)]*\))?(!)?:[[:space:]] ]]; then
+            # Duplicate-prefix guard (#377) + lowercase normalization (#529) +
+            # truncation-order fix (#560): prefix detection runs FIRST against the
+            # FULL (untruncated) issue title — otherwise a 60-char truncation could
+            # cut a scope parenthesis mid-way and break the regex (-> doubled
+            # prefix, e.g. 'fix: feat(a-long-scope...'). Only the description
+            # remainder (REST) is truncated afterwards; type+scope+bang always
+            # stay fully intact. A colon without a trailing space ('feat:Title')
+            # is accepted; assembly always inserts exactly one space.
+            # If the issue title already carries a (optionally scoped/breaking)
+            # Conventional-Commit prefix, its type is lowercase-normalized and the
+            # remainder is kept — no doubled prefix ('feat: docs: ...'). A 'docs:'
+            # issue on feature/* stays 'docs:', a legacy 'FIX:' becomes 'fix:'.
+            # Otherwise the branch type is prepended as the lowercase default type.
+            if [[ "$ISSUE_TITLE" =~ ^([A-Za-z]+)(\([^\)]*\))?(!)?:[[:space:]]*(.*)$ ]]; then
               ETYPE=$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')
               if echo "$ETYPE" | grep -qiE "^($CONVENTIONAL_TYPES)$"; then
-                REST="${ISSUE_TITLE#*:}"; REST="${REST# }"
                 SCOPE="${BASH_REMATCH[2]}${BASH_REMATCH[3]}"
-                PR_TITLE="${ETYPE}${SCOPE}: ${REST} (#$ISSUE_NR)"
+                REST="${BASH_REMATCH[4]}"
+                PREFIX="${ETYPE}${SCOPE}: "
+                # REST budget = 60 minus the assembled prefix length, floored at
+                # 10 chars. In normal cases (short/moderate scope) the assembled
+                # title (prefix+REST) stays <=60 chars before the '(#N)' suffix,
+                # same as before the fix. Only a pathological long scope hits the
+                # 10-char floor and may push the total over 60 — an accepted
+                # trade-off, since never cutting mid-scope is the actual #560 fix.
+                REST_BUDGET=$((60 - ${#PREFIX}))
+                MIN_REST_BUDGET=10
+                if [ "$REST_BUDGET" -lt "$MIN_REST_BUDGET" ]; then
+                  REST_BUDGET=$MIN_REST_BUDGET
+                fi
+                if [ ${#REST} -gt "$REST_BUDGET" ]; then
+                  REST="${REST:0:$((REST_BUDGET - 3))}..."
+                fi
+                PR_TITLE="${PREFIX}${REST} (#$ISSUE_NR)"
               else
+                if [ ${#ISSUE_TITLE} -gt 60 ]; then
+                  ISSUE_TITLE="${ISSUE_TITLE:0:57}..."
+                fi
                 PR_TITLE="$DEFAULT_TYPE: $ISSUE_TITLE (#$ISSUE_NR)"
               fi
             else
+              if [ ${#ISSUE_TITLE} -gt 60 ]; then
+                ISSUE_TITLE="${ISSUE_TITLE:0:57}..."
+              fi
               PR_TITLE="$DEFAULT_TYPE: $ISSUE_TITLE (#$ISSUE_NR)"
             fi
           else

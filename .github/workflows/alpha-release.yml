@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Alpha Release Pipeline
-# version: v1.11.5
-# commit: 3ce3b41
-# updated: 2026-07-23
-# content-hash: 2BE7C4DA
+# version: v1.12.0
+# commit: 84b4015
+# updated: 2026-07-27
+# content-hash: C8285354
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -31,9 +31,6 @@ on:
     branches: ['dev/v*']
   workflow_dispatch:
 
-# Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
-# Action selbst (New-PreReleaseTag mit atomarer gh-api-Reservierung + Retry).
-
 permissions:
   contents: write
   actions: read
@@ -51,6 +48,20 @@ jobs:
        (startsWith(github.event.pull_request.head.ref, 'feature/') ||
         startsWith(github.event.pull_request.head.ref, 'fix/')))
     runs-on: ubuntu-latest
+    # Concurrency backstop (#523): serializes runs per target branch in addition
+    # to the API-based tag reservation in New-PreReleaseTag (atomare gh-api-
+    # Reservierung + Retry). GitHub keeps at most ONE pending run queued per
+    # group — if a third rapid merge arrives while one run is active and
+    # another already queued, the queued middle run is displaced by the newest
+    # one. That is acceptable here because tags are cumulative: the newest run
+    # still picks up all merged changes. cancel-in-progress MUST stay false —
+    # cancelling an in-flight run would destroy that release.
+    # Job-level (not workflow-level): a run skipped by this job's `if:` (e.g.
+    # an unmerged PR close) never enters the group, so it cannot displace a
+    # queued genuine release run and cause silent alpha loss.
+    concurrency:
+      group: releaseflow-prerelease-${{ github.event.pull_request.base.ref || github.ref_name }}
+      cancel-in-progress: false
     steps:
       # GitHub App Token ZUERST (#406) — siehe Kommentar in basic.yml
       - name: 🔑 GitHub App Token generieren

@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Release Pipeline (Stable)
-# version: v1.11.5
-# commit: 3ce3b41
-# updated: 2026-07-23
-# content-hash: 1F46C194
+# version: v1.12.0
+# commit: 84b4015
+# updated: 2026-07-27
+# content-hash: A6FE15A6
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -50,7 +50,25 @@ jobs:
          startsWith(github.event.pull_request.head.ref, 'dev/v'))
       )
     runs-on: ubuntu-latest
-    
+
+    # Concurrency backstop (#523): serializes runs per target branch in addition
+    # to the API-based tag reservation (New-PreReleaseTag / New-FreezeRelease).
+    # GitHub keeps at most ONE pending run queued per group — if a third rapid
+    # merge arrives while one run is active and another already queued, the
+    # queued middle run is displaced by the newest one. That is acceptable here
+    # because tags are cumulative: the newest run still picks up all merged
+    # changes. cancel-in-progress MUST stay false — cancelling an in-flight run
+    # would destroy that release. IMPORTANT: the group expression must stay
+    # literally identical to the one in beta-release.yml — the Freeze-Promo
+    # handled here and the Beta-Fix path handled there both target release/v*
+    # and must be serialized against each other repo-wide.
+    # Job-level (not workflow-level): a run skipped by this job's `if:` (e.g.
+    # an unrelated PR close) never enters the group, so it cannot displace a
+    # queued genuine release run and cause silent release loss.
+    concurrency:
+      group: releaseflow-prerelease-${{ github.event.pull_request.base.ref || github.ref_name }}
+      cancel-in-progress: false
+
     permissions:
       contents: write      # For tags and releases
       pull-requests: write # For backflow PRs

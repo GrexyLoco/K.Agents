@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Beta Release Pipeline
-# version: v1.11.5
-# commit: 3ce3b41
-# updated: 2026-07-23
-# content-hash: 05541C2D
+# version: v1.12.0
+# commit: 84b4015
+# updated: 2026-07-27
+# content-hash: ED613081
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -30,9 +30,6 @@ on:
   #   gh workflow run beta-release.yml --ref release/vX.Y.Z
   workflow_dispatch:
 
-# Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
-# Action selbst.
-
 permissions:
   contents: write
   actions: read
@@ -43,11 +40,36 @@ jobs:
   beta-release:
     name: Beta Release
     runs-on: ubuntu-latest
-    # Regulaer: gemergter PR. Break-Glass (#552): workflow_dispatch auf dem
-    # release/v*-Ref — die Action erkennt den Freeze-Kontext selbst.
+    # PR-Pfad: NUR gemergte fix/*-PRs (Beta-Fix). Der reguläre Freeze-Promo-
+    # Merge (dev/v* → release/v*) wird exklusiv von basic.yml (= Consumer-
+    # release.yml) verarbeitet — ohne den head-ref-Filter würden beide
+    # Templates auf denselben Merge-Event reagieren und um denselben Tag
+    # konkurrieren (#523).
+    # Dispatch-Pfad (unverändert): bleibt weiterhin der Break-Glass-Freeze-
+    # Pfad aus #552 — wird genutzt, wenn der pull_request:closed-Event des
+    # Freeze-Promo-Merges verloren ging. basic.yml hat keinen workflow_dispatch-
+    # Trigger, deshalb lebt die Freeze-Wiederholung hier, getrennt vom
+    # regulären Freeze-Promo-Merge-Pfad in basic.yml. Die Action erkennt den
+    # Freeze-Kontext selbst aus dem release/v*-Ref (Get-ReleaseContext).
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.merged == true
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'fix/'))
+    # Concurrency backstop (#523): serializes runs per target branch in addition
+    # to the API-based tag reservation (New-PreReleaseTag / New-FreezeRelease).
+    # GitHub keeps at most ONE pending run queued per group — if a third rapid
+    # merge arrives while one run is active and another already queued, the
+    # queued middle run is displaced by the newest one. That is acceptable here
+    # because tags are cumulative: the newest run still picks up all merged
+    # changes. cancel-in-progress MUST stay false — cancelling an in-flight run
+    # would destroy that release.
+    # Job-level (not workflow-level): a run skipped by this job's `if:` (e.g.
+    # a PR close that is neither the promo-merge nor a fix/* merge) never
+    # enters the group, so it cannot displace a queued genuine release run
+    # and cause silent alpha/beta loss.
+    concurrency:
+      group: releaseflow-prerelease-${{ github.event.pull_request.base.ref || github.ref_name }}
+      cancel-in-progress: false
     steps:
       # GitHub App Token ZUERST (#406) — siehe Kommentar in basic.yml
       - name: 🔑 GitHub App Token generieren
