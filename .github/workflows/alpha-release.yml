@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Alpha Release Pipeline
-# version: untagged@f3f8389
-# commit: f3f8389
-# updated: 2026-04-20
-# content-hash: 49F1BA49
+# version: v1.12.0
+# commit: 84b4015
+# updated: 2026-07-27
+# content-hash: C8285354
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -11,7 +11,7 @@
 #   → Eigenen Workflow mit repository_dispatch erstellen.
 #   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
 # ═══════════════════════════════════════════════════════════════
-name: Alpha Release Pipeline
+name: "RF: 🔧 Alpha Release Pipeline"
 
 # Trigger: PR merged in dev/v* Branches (Feature-/Fix-PR)
 # Erzeugt vX.Y.Z-alpha.N Tag + GitHub Pre-release
@@ -31,9 +31,6 @@ on:
     branches: ['dev/v*']
   workflow_dispatch:
 
-# Keine concurrency-group — Race-Schutz ist in #320 strukturell in der
-# Action selbst (New-PreReleaseTag mit atomarer gh-api-Reservierung + Retry).
-
 permissions:
   contents: write
   actions: read
@@ -51,12 +48,22 @@ jobs:
        (startsWith(github.event.pull_request.head.ref, 'feature/') ||
         startsWith(github.event.pull_request.head.ref, 'fix/')))
     runs-on: ubuntu-latest
+    # Concurrency backstop (#523): serializes runs per target branch in addition
+    # to the API-based tag reservation in New-PreReleaseTag (atomare gh-api-
+    # Reservierung + Retry). GitHub keeps at most ONE pending run queued per
+    # group — if a third rapid merge arrives while one run is active and
+    # another already queued, the queued middle run is displaced by the newest
+    # one. That is acceptable here because tags are cumulative: the newest run
+    # still picks up all merged changes. cancel-in-progress MUST stay false —
+    # cancelling an in-flight run would destroy that release.
+    # Job-level (not workflow-level): a run skipped by this job's `if:` (e.g.
+    # an unmerged PR close) never enters the group, so it cannot displace a
+    # queued genuine release run and cause silent alpha loss.
+    concurrency:
+      group: releaseflow-prerelease-${{ github.event.pull_request.base.ref || github.ref_name }}
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
+      # GitHub App Token ZUERST (#406) — siehe Kommentar in basic.yml
       - name: 🔑 GitHub App Token generieren
         id: app-token
         uses: actions/create-github-app-token@v3
@@ -66,6 +73,12 @@ jobs:
           owner: GrexyLoco
           repositories: >
             ${{ github.event.repository.name }},K.Actions.ReleaseFlow
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app-token.outputs.token }}
 
       # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
       # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar — wir holen
@@ -90,7 +103,19 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         shell: bash
         run: |
-          ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+' | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+          # Keyword list: closes/closed/close, fixes/fixed/fix, resolves/resolved/resolve, refs/ref
+          # followed by optional ' '/':' and '#N', plus optional comma-separated
+          # enumeration ', #M' / ', and #M' after the first hit (#531):
+          #   Refs #1, #2, #3   /   Closes #1, and #2
+          ISSUE_NUMBERS=$(printf '%s' "$PR_BODY" | grep -oiE '(closes?|closed|fix(es|ed)?|resolves?|resolved|refs?)[ :]*#[0-9]+([[:space:]]*,[[:space:]]*(and[[:space:]]+)?#[0-9]+)*' | grep -oE '#[0-9]+' | tr -d '#' | sort -u || true)
+          # Warn about #N references not covered by a keyword (#531)
+          ALL_REFS=$(printf '%s' "$PR_BODY" | grep -oE '#[0-9]+' | tr -d '#' | sort -u || true)
+          # Set difference: refs present in ALL_REFS but missing from ISSUE_NUMBERS
+          UNMATCHED=$(comm -23 <(printf '%s\n' "$ALL_REFS") <(printf '%s\n' "$ISSUE_NUMBERS") | sed '/^$/d' | paste -sd ' ' -)
+          if [ -n "$UNMATCHED" ]; then
+            UNMATCHED_LIST=$(printf '#%s ' $UNMATCHED)
+            echo "::warning::PR-Body enthält Issue-Referenzen ohne Schlüsselwort — diese werden NICHT mit 'phase:in-alpha' gelabelt: ${UNMATCHED_LIST% }. Pro Referenz ein Schlüsselwort (Closes/Fixes/Refs #N) verwenden oder eine Aufzählung direkt hinter dem Schlüsselwort (Refs #1, #2, #3)."
+          fi
           if [ -z "$ISSUE_NUMBERS" ]; then
             echo "No closing keywords found — no issues to label."
             exit 0
