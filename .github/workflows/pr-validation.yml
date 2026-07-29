@@ -1,0 +1,67 @@
+# ═══════════════════════════════════════════════════════════════
+# K.Actions.ReleaseFlow — PR Validation (Conventional Commits)
+# version: v1.13.0
+# commit: 2ebe546
+# installed: 2026-07-29
+# content-hash: 5911E2A6
+#
+# ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
+# Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
+# Für eigene Logik (Deployments, Notifications):
+#   → Eigenen Workflow mit repository_dispatch erstellen.
+#   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
+# ═══════════════════════════════════════════════════════════════
+# PR Validation — Conventional Commit Titel-Check (#567)
+#
+# Purpose: Validates PR titles against Conventional Commits so
+# amannn/action-semantic-pull-request stays green in consumer repos.
+#
+# Contract with examples/auto-pr.yml (#567): the type list below MUST stay
+# byte-for-byte identical to CONVENTIONAL_TYPES in auto-pr.yml's "PR
+# erstellen (idempotent)" step. auto-pr.yml is the PR-title PRODUCER
+# (issue-driven PRs get a "<type>: <IssueTitle> (#<IssueId>)" title from
+# that list), this workflow is the VALIDATOR — if the lists drift apart,
+# a legitimately generated PR title can fail its own validation.
+#
+# RF-Auto-PRs (Promotion/Stable/Backflow) are exempt via the job `if:`
+# below — their titles ("[Promotion] …", "[Backflow] …") are not
+# Conventional Commits by design.
+#
+# The version/commit/content-hash header is injected automatically by
+# Seed-ConsumerWorkflows.ps1 on deploy — do not add one manually here.
+
+name: "RF: PR Validation"
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  conventional-commit:
+    name: PR-Titel prüfen
+    # RF-Auto-PRs ausnehmen, deren Titel NICHT Conventional sind:
+    #   dev/* , release/*  -> Promotion-/Stable-PRs ("[Promotion] …")
+    #   master, main       -> Backflow-PRs ("[Backflow] …")
+    if: "!startsWith(github.event.pull_request.head.ref, 'dev/') && !startsWith(github.event.pull_request.head.ref, 'release/') && github.event.pull_request.head.ref != 'master' && github.event.pull_request.head.ref != 'main'"
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: read
+    steps:
+      - name: PR-Titel auf Conventional Commits prüfen
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
