@@ -1,0 +1,144 @@
+# ═══════════════════════════════════════════════════════════════
+# K.Actions.ReleaseFlow — Stable-PR Closes Guard
+# version: v1.15.0
+# commit: 144325e
+# installed: 2026-08-09
+# content-hash: EDD4F87E
+#
+# ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
+# Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
+# Für eigene Logik (Deployments, Notifications):
+#   → Eigenen Workflow mit repository_dispatch erstellen.
+#   → Docs: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/blob/master/USAGE.md#consumer-hooks
+# ═══════════════════════════════════════════════════════════════
+name: "RF: Stable-PR Closes Guard"
+
+# Zweck (#585): Die Closes-Liste im Stable-Promotion-PR wird beim Freeze
+# geschrieben, wirkt aber erst beim Stable-Merge. Dazwischen liegt die
+# Beta-Phase — genau die Phase, in der neue Issues zum Milestone dazukommen
+# (Smoke-Funde, fix/*-PRs gegen release/*). Ohne Nachführung bleiben deren
+# Issues nach dem Stable offen, obwohl ihr Fix ausgeliefert wurde.
+#
+# Dieser Guard läuft am Stable-PR (release/v* → Default-Branch):
+#   1. Body neu erzeugen — Issues mit phase:in-alpha/phase:in-beta kommen dazu,
+#      bereits von GitHub aufgelöste Verknüpfungen bleiben erhalten.
+#   2. Abgleich der offenen Milestone-Issues gegen GitHubs eigene Auflösung
+#      (closingIssuesReferences — dieselbe Menge, die beim Merge wirkt).
+#      Issues ohne Phasen-Label werden nur gemeldet, nie automatisch
+#      nachgetragen: ein zu Unrecht geschlossenes Issue fällt niemandem auf.
+#
+# Hinweis: GitHub wertet Closing-Keywords NUR bei PRs gegen den Default-Branch
+# aus. Der Stable-PR ist deshalb der einzige PR im ReleaseFlow-Modell, der
+# Issues überhaupt schließen kann.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [master, main]
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'Nummer des Stable-PR'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+
+jobs:
+  closes-guard:
+    name: Closes-Liste prüfen
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'release/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: GitHub App Token generieren
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASEFLOW_APP_ID }}
+          private-key: ${{ secrets.RELEASEFLOW_APP_PRIVATE_KEY }}
+          owner: GrexyLoco
+          repositories: >
+            ${{ github.event.repository.name }},K.Actions.ReleaseFlow
+
+      # Cross-Repo-Checkout (#390): private K.Actions.ReleaseFlow ist fuer
+      # Consumer-Runner nicht ueber 'uses: <repo>@ref' aufloesbar.
+      - name: Checkout ReleaseFlow Action
+        uses: actions/checkout@v6
+        with:
+          repository: GrexyLoco/K.Actions.ReleaseFlow
+          ref: v1
+          token: ${{ steps.app-token.outputs.token }}
+          path: .releaseflow
+
+      - name: Closes-Liste nachführen und abgleichen
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.inputs.pr-number || github.event.pull_request.number }}
+        run: |
+          Import-Module (Join-Path $env:GITHUB_WORKSPACE '.releaseflow' 'K.Actions.ReleaseFlow.psd1') -Force
+
+          $repo     = '${{ github.repository }}'
+          $prNumber = [int]$env:PR_NUMBER
+
+          $prJson = & gh pr view $prNumber --repo $repo --json headRefName,baseRefName 2>$null
+          $global:LASTEXITCODE = 0
+          if (-not $prJson) {
+              Write-Host "::warning::PR #$prNumber nicht abrufbar — Guard übersprungen."
+              exit 0
+          }
+          $pr = $prJson | ConvertFrom-Json
+
+          if ($pr.headRefName -notmatch '^release/(v\d+\.\d+\.\d+)$') {
+              Write-Host "::notice::Kein Stable-PR (Head '$($pr.headRefName)') — nichts zu prüfen."
+              exit 0
+          }
+          $version = $Matches[1]
+
+          $update = Ensure-StablePR `
+              -Repository    $repo `
+              -ReleaseBranch $pr.headRefName `
+              -Version       $version `
+              -DefaultBranch $pr.baseRefName `
+              -UpdateBody
+          if ($update.Reason -eq 'body-update-skipped') {
+              # Der Body wurde bewusst NICHT geschrieben — sonst gingen bereits
+              # verknüpfte Einträge verloren, die nicht neu ermittelt werden konnten.
+              Write-Host "::warning::Stable-PR-Body NICHT nachgeführt (bestehende Verknüpfungen bleiben erhalten): $($update.Error)"
+          }
+          else {
+              Write-Host "::notice::Stable-PR-Body Update: $($update.Reason)"
+          }
+
+          $drift = Get-StablePRClosesDrift `
+              -Repository        $repo `
+              -PullRequestNumber $prNumber `
+              -MilestoneTitle    $version
+
+          $lines = @("## Closes-Abgleich $version", '')
+          switch ($drift.Status) {
+              'Error' {
+                  Write-Host "::warning::Abgleich nicht möglich: $($drift.ErrorText)"
+                  $lines += "⚠️ Abgleich nicht möglich: $($drift.ErrorText)"
+              }
+              'Ok' {
+                  $lines += "✅ Alle offenen Milestone-Issues sind mit diesem PR verknüpft ($($drift.LinkedIssues.Count) Stück)."
+              }
+              default {
+                  if ($drift.MissingLabeled.Count -gt 0) {
+                      $list = ($drift.MissingLabeled | ForEach-Object { "#$_" }) -join ', '
+                      Write-Host "::warning::Trotz Nachführung nicht verknüpft: $list"
+                      $lines += "⚠️ Trotz Nachführung nicht verknüpft: $list"
+                  }
+                  if ($drift.MissingUnlabeled.Count -gt 0) {
+                      $list = ($drift.MissingUnlabeled | ForEach-Object { "#$_" }) -join ', '
+                      Write-Host "::warning::Im Milestone, aber ohne Phasen-Label — schließen beim Stable-Merge NICHT: $list"
+                      $lines += "⚠️ Im Milestone, aber ohne Phasen-Label — sie schließen beim Stable-Merge **nicht**: $list"
+                      $lines += ''
+                      $lines += 'Bitte entscheiden: Wurde der Fix wirklich ausgeliefert? Dann Issue labeln (`phase:in-beta`) oder von Hand eine `Closes #N`-Zeile ergänzen. Wenn nicht — Milestone entfernen.'
+                  }
+              }
+          }
+          ($lines -join "`n") >> $env:GITHUB_STEP_SUMMARY
