@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — PR Validation (Conventional Commits)
-# version: v1.15.0
-# commit: 144325e
-# updated: 2026-08-09
-# content-hash: B3840216
+# version: v1.18.0
+# commit: d22c650
+# updated: 2026-08-16
+# content-hash: 8F25F81B
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -42,7 +42,12 @@ jobs:
     # RF-Auto-PRs ausnehmen, deren Titel NICHT Conventional sind:
     #   dev/* , release/*  -> Promotion-/Stable-PRs ("[Promotion] …")
     #   master, main       -> Backflow-PRs ("[Backflow] …")
-    if: "!startsWith(github.event.pull_request.head.ref, 'dev/') && !startsWith(github.event.pull_request.head.ref, 'release/') && github.event.pull_request.head.ref != 'master' && github.event.pull_request.head.ref != 'main'"
+    # Kostenbremse (#651): synchronize überspringen — ein Push ändert den
+    # PR-Titel nicht, dafür gibt es 'edited' im Trigger. Ein per if
+    # übersprungener Job kostet null Minuten, erscheint aber weiter als Check.
+    # Gemessen in K.Buddy (August 2026): 265 von 373 Läufen waren
+    # Titel-Wiederholungsprüfungen auf synchronize.
+    if: "github.event.action != 'synchronize' && !startsWith(github.event.pull_request.head.ref, 'dev/') && !startsWith(github.event.pull_request.head.ref, 'release/') && github.event.pull_request.head.ref != 'master' && github.event.pull_request.head.ref != 'main'"
     runs-on: ubuntu-24.04
     permissions:
       pull-requests: read

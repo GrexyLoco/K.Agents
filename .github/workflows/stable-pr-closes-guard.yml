@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Stable-PR Closes Guard
-# version: v1.15.0
-# commit: 144325e
-# installed: 2026-08-09
-# content-hash: EDD4F87E
+# version: v1.18.0
+# commit: d22c650
+# updated: 2026-08-16
+# content-hash: 880C3119
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.

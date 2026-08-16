@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Branch-Prefix Guard
-# version: v1.15.0
-# commit: 144325e
-# updated: 2026-08-09
-# content-hash: 78578813
+# version: v1.18.0
+# commit: d22c650
+# updated: 2026-08-16
+# content-hash: D8E74C56
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -30,6 +30,18 @@ permissions:
 jobs:
   branch-prefix-guard:
     name: Branch-Prefix prüfen
+    # Kostenbremse (#650): Geprueft wird ausschliesslich github.head_ref — eine
+    # Eigenschaft, die sich ueber die Lebensdauer eines PR nicht aendern kann.
+    # Ein synchronize-Lauf prueft denselben String erneut. Gemessen in K.Buddy
+    # (August 2026): 264 Laeufe auf 108 PRs, 262 abgerechnete Minuten bei ~4 s
+    # tatsaechlicher Laufzeit — GitHub rundet pro Job auf volle Minuten auf.
+    #
+    # Bewusst als Job-if und NICHT durch Streichen von 'synchronize' aus types:
+    # Ein per if uebersprungener Job kostet null Minuten, erscheint aber weiter
+    # als Check am PR. Fuehrt ein Consumer den Guard als Required Status Check,
+    # bleibt der Merge dadurch moeglich. Ein fehlender Trigger wuerde ihn
+    # dauerhaft und ohne erkennbare Ursache blockieren.
+    if: github.event.action != 'synchronize'
     runs-on: ubuntu-latest
     steps:
       - name: Branch-Prefix validieren
