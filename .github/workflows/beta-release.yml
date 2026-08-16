@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Beta Release Pipeline
-# version: v1.15.0
-# commit: 144325e
-# updated: 2026-08-09
-# content-hash: F050ED60
+# version: v1.18.0
+# commit: d22c650
+# updated: 2026-08-16
+# content-hash: 9BFE3C5E
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -40,6 +40,9 @@ jobs:
   beta-release:
     name: Beta Release
     runs-on: ubuntu-latest
+    # Obergrenze gegen hängende Runs (#656): längster regulärer Lauf < 5 Min
+    # gemessen — ohne Limit gilt GitHubs Default von 360 Minuten.
+    timeout-minutes: 15
     # PR-Pfad: NUR gemergte fix/*-PRs (Beta-Fix). Der reguläre Freeze-Promo-
     # Merge (dev/v* → release/v*) wird exklusiv von basic.yml (= Consumer-
     # release.yml) verarbeitet — ohne den head-ref-Filter würden beide
