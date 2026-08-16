@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Alpha Release Pipeline
-# version: v1.15.0
-# commit: 144325e
-# updated: 2026-08-09
-# content-hash: B52081F5
+# version: v1.18.0
+# commit: d22c650
+# updated: 2026-08-16
+# content-hash: BC23FDD6
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -48,6 +48,9 @@ jobs:
        (startsWith(github.event.pull_request.head.ref, 'feature/') ||
         startsWith(github.event.pull_request.head.ref, 'fix/')))
     runs-on: ubuntu-latest
+    # Obergrenze gegen hängende Runs (#656): längster regulärer Lauf < 5 Min
+    # gemessen — ohne Limit gilt GitHubs Default von 360 Minuten.
+    timeout-minutes: 15
     # Concurrency backstop (#523): serializes runs per target branch in addition
     # to the API-based tag reservation in New-PreReleaseTag (atomare gh-api-
     # Reservierung + Retry). GitHub keeps at most ONE pending run queued per

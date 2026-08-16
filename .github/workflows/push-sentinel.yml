@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Push Sentinel (Audit)
-# version: v1.15.0
-# commit: 144325e
-# updated: 2026-08-09
-# content-hash: A5E6A829
+# version: v1.18.0
+# commit: d22c650
+# updated: 2026-08-16
+# content-hash: 9DFD8E9A
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -19,8 +19,10 @@
 # Unexpected pushes create an audit issue + dispatch the release workflow.
 #
 # Requires: Label "security:unaudited-push" must exist in the repository.
+# The loop-breaker label "security:push-loop" is created on demand.
 #
 # Issue: https://github.com/GrexyLoco/K.Actions.ReleaseFlow/issues/178
+#        https://github.com/GrexyLoco/K.Actions.ReleaseFlow/issues/621
 # ═══════════════════════════════════════════════════════════════════════════════
 
 name: "RF: Push Sentinel"
@@ -36,6 +38,9 @@ on:
 permissions:
   contents: read
   issues: write
+  # Loop-breaker (#621) only — used for workflow attribution in the alarm
+  # path. If unavailable the attribution degrades, the alarm still fires.
+  actions: read
 
 jobs:
   sentinel:
@@ -44,7 +49,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          # Covers the loop-breaker scan (#621): 20 scanned commits plus
+          # margin to the shallow boundary, where `git log` would report
+          # commits as parentless.
+          fetch-depth: 30
 
       - name: Classify push
         id: classify
@@ -105,10 +113,24 @@ jobs:
                   $reason = "Foreign bot: $botIdentity (not in push_sentinel.allowed_bots)"
               }
           }
+          # Rule 3: version-bump (#581) and ReleaseFlow seed commits (#620).
+          # Neither carries a CI-skip marker any more (#610 / #620), so the
+          # subject prefixes are the load-bearing criteria; the marker check
+          # only covers legacy history. Without the seed criterion a seed
+          # pushed under a non-bot identity falls through to 'unknown', which
+          # dispatches a release workflow. The trailing '\(' is deliberate
+          # (#602) so prose starting with the same words does not match.
+          # Rule 2 intentionally comes first: a foreign bot must not talk its
+          # way past the allowlist via the commit subject (#382).
           elseif ($env:COMMIT_MESSAGE -match '\[skip ci\]' -or
-                  $subject -match '^chore\(version\): update to ') {
+                  $subject -match '^chore\(version\): update to ' -or
+                  $subject -match '^ReleaseFlow-Workflows (installiert|aktualisiert) \(') {
               $classification = 'bot-commit'
-              $reason = "Version bump detected: $subject"
+              $reason = if ($subject -match '^ReleaseFlow-Workflows (installiert|aktualisiert) \(') {
+                  "ReleaseFlow seed detected: $subject"
+              } else {
+                  "Version bump detected: $subject"
+              }
           }
           elseif ($subject -match '\(#\d+\)$') {
               $classification = 'pr-merge'
@@ -166,6 +188,285 @@ jobs:
           | **Grund** | $reason |
           "@ >> $env:GITHUB_STEP_SUMMARY
 
+      - name: Loop-breaker — detect bot push chains (#621)
+        id: loopbreak
+        shell: pwsh
+        run: |
+          # Since #610/#620 no ReleaseFlow commit carries a CI-skip marker.
+          # That marker was the only brake against push loops, and GitHub's
+          # built-in recursion guard does not apply because ReleaseFlow
+          # pushes with an App token instead of GITHUB_TOKEN.
+          #
+          # What separates a loop from normal operation is not frequency but
+          # the ABSENCE of PR merges: normally every automation commit has a
+          # PR merge within one position (one merge commit + one bump per
+          # merge). A loop produces automation commits only — and from the
+          # same code path, so their subjects share one signature that
+          # differs in numbers alone.
+          #
+          # Cost: 0 additional API calls. The history is already checked out.
+
+          # Calibrated on 214 commits of real history, measured at every
+          # commit position:
+          #   signature chain: observed legit max 1 (never 2), plausible
+          #     max 2 (bump push race) -> threshold 4 = plausible max + 2
+          #   broad chain: observed legit max 7 (one pre-ruleset direct-push
+          #     series) -> threshold 9 = observed max + 2
+          # The broad chain is the backstop for ping-pong loops whose
+          # signatures alternate.
+          $LoopWindowMinutes  = 60
+          $SignatureThreshold = 4
+          $BroadThreshold     = 9
+          $ScanDepth          = 20
+
+          # The window is scope, not a detection criterion — on real history
+          # it changes no result (max 7 both unbounded and at 60 min). It
+          # only stops automation commits from long-past runs from growing
+          # into a phantom chain.
+
+          function Get-NormalizedSubject {
+              # Masks the parts that vary between loop iterations, so two
+              # commits from the same code path collapse to one string.
+              param([string]$Subject)
+              $s = $Subject.ToLowerInvariant()
+              $s = $s -replace '\b[0-9a-f]{7,40}\b', '<sha>'
+              $s = $s -replace '\d+', '<n>'
+              $s = $s -replace '[^\p{L}<>]+', ' '
+              return $s.Trim()
+          }
+
+          function Test-IsAutomationCommit {
+              # Generic on purpose: consumer-owned workflows push as
+              # github-actions[bot] or a custom app, which is what makes the
+              # detection workflow-agnostic.
+              param([hashtable]$Commit)
+              $identity = "$($Commit.AuthorName) <$($Commit.AuthorEmail)> $($Commit.CommitterName) <$($Commit.CommitterEmail)>"
+              if ($identity -match '\[bot\]') { return $true }
+              if ($Commit.Subject -match '^chore\(version\): update to ') { return $true }
+              if ($Commit.Subject -match '^ReleaseFlow-Workflows (installiert|aktualisiert) \(') { return $true }
+              return $false
+          }
+
+          function Test-IsChainBreaker {
+              # Anything proving a human or a PR was involved ends the chain.
+              param([hashtable]$Commit)
+              if ($Commit.ParentCount -ge 2) { return $true }
+              if ($Commit.Subject -match '^Merge pull request #\d+') { return $true }
+              if ($Commit.Subject -match '\(#\d+\)$') { return $true }
+              return (-not (Test-IsAutomationCommit -Commit $Commit))
+          }
+
+          # --first-parent is mandatory: without it `git log` descends into a
+          # merged branch and lists its commits BEFORE the merge, so the
+          # chain would count feature commits. Squash merges hide this;
+          # repos using merge commits would false-alarm immediately.
+          $fmt = '%H%x1f%P%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%cI%x1f%s'
+          $raw = & git log --first-parent -n $ScanDepth --pretty=format:$fmt HEAD 2>$null
+          $global:LASTEXITCODE = 0
+
+          $commits = [System.Collections.Generic.List[hashtable]]::new()
+          foreach ($line in @($raw)) {
+              if ([string]::IsNullOrWhiteSpace($line)) { continue }
+              $p = $line -split "`u{1f}"
+              if ($p.Count -lt 8) { continue }
+              $commits.Add(@{
+                  Sha           = $p[0]
+                  ParentSha     = (@($p[1] -split ' ' | Where-Object { $_ }) | Select-Object -First 1)
+                  ParentCount   = @($p[1] -split ' ' | Where-Object { $_ }).Count
+                  AuthorName    = $p[2]
+                  AuthorEmail   = $p[3]
+                  CommitterName = $p[4]
+                  CommitterEmail= $p[5]
+                  CommitTime    = [datetimeoffset]::Parse($p[6]).UtcDateTime
+                  Subject       = $p[7]
+              })
+          }
+
+          $chain = [System.Collections.Generic.List[hashtable]]::new()
+          if ($commits.Count -gt 0) {
+              $headTime = $commits[0].CommitTime
+              foreach ($c in $commits) {
+                  if (Test-IsChainBreaker -Commit $c) { break }
+                  if (($headTime - $c.CommitTime).TotalMinutes -gt $LoopWindowMinutes) { break }
+                  $chain.Add($c)
+              }
+          }
+
+          $signature = ''
+          $signatureRun = 0
+          foreach ($c in $chain) {
+              $t = Get-NormalizedSubject -Subject $c.Subject
+              if ($signatureRun -eq 0) { $signature = $t }
+              elseif ($t -ne $signature) { break }
+              $signatureRun++
+          }
+
+          $loopKind = ''
+          if ($signatureRun -ge $SignatureThreshold) { $loopKind = 'signature' }
+          elseif ($chain.Count -ge $BroadThreshold)  { $loopKind = 'broad' }
+          $loopDetected = [bool]$loopKind
+
+          # Below threshold the sentinel stays silent: no annotation, no
+          # step-summary row.
+          Write-Host "Loop-breaker: chain=$($chain.Count) (threshold $BroadThreshold), signature run=$signatureRun (threshold $SignatureThreshold), window=$LoopWindowMinutes min"
+
+          "loop_detected=$($loopDetected.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          "loop_kind=$loopKind"                                 >> $env:GITHUB_OUTPUT
+          "loop_chain_length=$($chain.Count)"                   >> $env:GITHUB_OUTPUT
+          "loop_signature_run=$signatureRun"                    >> $env:GITHUB_OUTPUT
+          "loop_window_minutes=$LoopWindowMinutes"              >> $env:GITHUB_OUTPUT
+
+          if ($loopDetected) {
+              # Compressed JSON stays single-line and needs no heredoc.
+              $payload = @($chain | ForEach-Object {
+                  @{ sha = $_.Sha; parent = $_.ParentSha; author = $_.AuthorName; time = $_.CommitTime.ToString('o'); subject = $_.Subject }
+              })
+              "loop_chain_json=$(ConvertTo-Json -InputObject $payload -Depth 4 -Compress)" >> $env:GITHUB_OUTPUT
+              Write-Host "::error::Push loop suspected on '$($env:GITHUB_REF_NAME)' (chain=$($chain.Count), signature run=$signatureRun). No foreign workflow was stopped; only ReleaseFlow's own release dispatch is suppressed (#624) — please check."
+          }
+
+      - name: Create loop alarm issue (#621)
+        if: steps.loopbreak.outputs.loop_detected == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          LOOP_KIND: ${{ steps.loopbreak.outputs.loop_kind }}
+          CHAIN_LENGTH: ${{ steps.loopbreak.outputs.loop_chain_length }}
+          SIGNATURE_RUN: ${{ steps.loopbreak.outputs.loop_signature_run }}
+          WINDOW_MINUTES: ${{ steps.loopbreak.outputs.loop_window_minutes }}
+          CHAIN_JSON: ${{ steps.loopbreak.outputs.loop_chain_json }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: pwsh
+        run: |
+          $label = 'security:push-loop'
+
+          # Idempotency: during a real loop this step runs once per iteration.
+          # Without dedupe the alarm replaces a loop with an issue flood.
+          # Filter client-side — free-text --search is fuzzy.
+          #
+          # .Contains() rather than -like: the dedupe key contains square
+          # brackets, which -like reads as a wildcard character class. The
+          # pattern "*[dev/v1.16.0]*" would match any title containing any one
+          # of those characters, so a single open alarm would permanently
+          # suppress every further alarm on every branch.
+          $existing = @()
+          try {
+              $listJson = & gh issue list --repo $env:REPO --label $label --state open --limit 100 --json number,title 2>$null
+              if ($LASTEXITCODE -eq 0 -and $listJson) {
+                  $existing = @($listJson | ConvertFrom-Json | Where-Object { $_.title.Contains("[$($env:BRANCH)]") })
+              }
+              $global:LASTEXITCODE = 0
+          }
+          catch {
+              Write-Host "::warning::Could not query open loop alarms: $_"
+          }
+
+          if ($existing.Count -gt 0) {
+              $nums = ($existing | ForEach-Object { "#$($_.number)" }) -join ', '
+              Write-Host "::warning::Push loop still suspected on '$($env:BRANCH)' — open alarm $nums, no new issue created."
+              return
+          }
+
+          # `gh issue create --label` fails hard when the label is missing, and
+          # this workflow may be seeded before deploy-rulesets runs again.
+          # Deliberately after the dedupe so a running loop costs no extra call
+          # per iteration.
+          $labelBody = @{ name = $label; color = 'b60205'; description = 'Push loop suspected' } | ConvertTo-Json -Compress
+          $null = $labelBody | gh api "repos/$env:REPO/labels" --method POST --input - 2>&1
+          $global:LASTEXITCODE = 0
+
+          $chain = @($env:CHAIN_JSON | ConvertFrom-Json)
+
+          # Precise attribution: the run on the PARENT commit produced the
+          # chain link. Needs actions:read; degrades to commit identities.
+          $drivers = @()
+          try {
+              $runsJson = & gh api "repos/$env:REPO/actions/runs?branch=$($env:BRANCH)&per_page=100" --jq '[.workflow_runs[] | {name, head_sha}]' 2>$null
+              if ($LASTEXITCODE -eq 0 -and $runsJson) {
+                  $parents = @($chain | ForEach-Object { $_.parent })
+                  $drivers = @(@($runsJson | ConvertFrom-Json) |
+                      Where-Object { $parents -contains $_.head_sha } |
+                      Group-Object -Property name | Sort-Object Count -Descending |
+                      ForEach-Object { "``$($_.Name)`` ($($_.Count)x)" })
+              }
+              $global:LASTEXITCODE = 0
+          }
+          catch {
+              Write-Host "::warning::Workflow attribution failed: $_"
+          }
+
+          $driverText = if ($drivers.Count -gt 0) {
+              "Driving workflows (runs on the chain's parent commits): " + ($drivers -join ', ')
+          } else {
+              "Workflow attribution unavailable (Actions API not readable). Commit identities instead: " +
+              ((@($chain | ForEach-Object { $_.author } | Select-Object -Unique) | ForEach-Object { "``$_``" }) -join ', ')
+          }
+
+          $rows = ($chain | ForEach-Object {
+              "| ``$($_.sha.Substring(0,7))`` | $($_.time) | ``$($_.author)`` | $($_.subject) |"
+          }) -join "`n"
+
+          $kindText = if ($env:LOOP_KIND -eq 'signature') {
+              "**$($env:SIGNATURE_RUN) consecutive automation commits sharing one subject signature** — they come from the same code path."
+          } else {
+              "**$($env:CHAIN_LENGTH) consecutive automation commits without a single PR merge in between.**"
+          }
+
+          $title = "security: Push loop suspected [$($env:BRANCH)] — $($env:CHAIN_LENGTH) automation commits without a PR merge"
+          $body = @"
+          ## Loop-breaker alarm
+
+          On ``$($env:BRANCH)`` the sentinel found $kindText
+
+          In normal operation every automation commit has a PR merge within one position (one merge commit plus one bump per merge). A chain without a merge suggests a workflow is reacting to its own push.
+
+          | Field | Value |
+          |-------|-------|
+          | **Branch** | ``$($env:BRANCH)`` |
+          | **Chain length** | $($env:CHAIN_LENGTH) |
+          | **Signature run** | $($env:SIGNATURE_RUN) |
+          | **Window** | $($env:WINDOW_MINUTES) min |
+          | **Trigger** | ``$($env:LOOP_KIND)`` |
+          | **Workflow run** | [Open run]($($env:RUN_URL)) |
+
+          $driverText
+
+          ## Chain (newest first)
+
+          | Commit | Time (UTC) | Author | Subject |
+          |--------|-----------|--------|---------|
+          $rows
+
+          ## Recommended actions
+
+          1. Open the workflow named above and check whether it triggers on ``push`` to this branch **and** writes back to the repository.
+          2. If so, add an actor condition to the job that excludes pushes by the ReleaseFlow bot.
+          3. To stop it immediately, disable the driving workflow via *Actions -> Workflow -> Disable*.
+          4. Close this issue once the chain is broken — only then will the loop-breaker alarm again for this branch.
+
+          ## Trigger a release workflow manually
+
+          While this suspicion stands, the Push Sentinel suppresses its own release dispatch (#624) — otherwise it would keep driving the very loop reported here. The break-glass path is **not gone, just no longer automatic**:
+
+          ``gh workflow run <workflow> --repo $($env:REPO) --ref $($env:BRANCH)``
+
+          For ``<workflow>`` the same mapping applies that the dispatch step uses:
+
+          | Branch | Workflow |
+          |--------|----------|
+          | ``dev/v*`` | ``alpha-release.yml`` |
+          | ``release/v*`` | ``beta-release.yml`` |
+          | ``main`` / ``master`` | ``release.yml`` |
+
+          > **Note:** No foreign workflow was stopped or disabled. Only ReleaseFlow's own release dispatch is suppressed — if another workflow drives the chain, it keeps running.
+
+          ---
+          *Created automatically by the Push Sentinel loop-breaker (#621)*
+          "@
+
+          gh issue create --repo $env:REPO --title $title --body $body --label $label
+
       - name: Create audit issue (unknown or foreign bot)
         if: steps.classify.outputs.classification == 'unknown' || steps.classify.outputs.classification == 'bot-commit-foreign'
         env:
@@ -187,7 +488,17 @@ jobs:
 
       - name: Dispatch release workflow (only on true unknown)
         # Foreign bots get an audit issue but NO release dispatch. (#382)
-        if: steps.classify.outputs.classification == 'unknown'
+        #
+        # Loop guard (#624): while the loop-breaker reports a suspected push
+        # loop, this dispatch stays silent — otherwise it would feed the very
+        # loop it just alarmed about. Trade-off: a false positive suppresses a
+        # legitimate break-glass dispatch too. The alarm issue therefore spells
+        # out the manual `gh workflow run` command.
+        #
+        # `!= 'true'` rather than `== 'false'`: an output a step never wrote is
+        # the empty string, not `false`. `!= 'true'` falls open, so without a
+        # detected loop the dispatch behaves exactly as before.
+        if: steps.classify.outputs.classification == 'unknown' && steps.loopbreak.outputs.loop_detected != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh

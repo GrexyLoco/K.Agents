@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════
 # K.Actions.ReleaseFlow — Auto-PR Pipeline
-# version: v1.15.0
-# commit: 144325e
-# updated: 2026-08-09
-# content-hash: 13070619
+# version: v1.18.0
+# commit: d22c650
+# updated: 2026-08-16
+# content-hash: A245988F
 #
 # ⚠️  DIESE DATEI WIRD AUTOMATISCH VERWALTET.
 # Änderungen werden beim nächsten ReleaseFlow-Update überschrieben.
@@ -23,6 +23,17 @@ name: "RF: 🔧 Auto-PR"
 # workflow_dispatch erlaubt Consumer/Maintainer das manuelle Nachtriggern
 # per 'gh workflow run auto-pr.yml --ref <branch>' ohne weiteren Push.
 #
+# Zweite belegte Ausfallursache (#652): Runner-Knappheit. Das Concurrency-
+# Limit gilt ACCOUNT-weit über alle Repos; am Limit bleibt der Run in der
+# Warteschlange und wird nach ~15 Minuten ohne Ausführung abgebrochen
+# (gemessen 2026-08-06 in K.Buddy: 6 Auto-PR-Läufe, Peak 20 parallele
+# Jobs). Erkennungsmerkmal am Job: leerer runner_name UND leere steps —
+# das unterscheidet Runner-Knappheit von einem verlorenen Push-Event.
+# WICHTIG: In diesem Fall hilft der Dispatch-Retry NICHT — ein Dispatch
+# landet bei ausgelasteter Kapazität genauso in der Warteschlange (4 der
+# 6 gemessenen Ausfälle WAREN Dispatches). Abhilfe: warten, bis die
+# parallele Last abgeflossen ist, dann erneut dispatchen.
+#
 # Voraussetzungen:
 #   vars.RELEASEFLOW_APP_ID            — GitHub App ID
 #   secrets.RELEASEFLOW_APP_PRIVATE_KEY — GitHub App Private Key (PEM)
@@ -37,6 +48,9 @@ jobs:
   auto-pr:
     name: 🤖 Auto-PR erstellen
     runs-on: ubuntu-latest
+    # Obergrenze gegen hängende Runs (#656): längster regulärer Lauf < 5 Min
+    # gemessen — ohne Limit gilt GitHubs Default von 360 Minuten.
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
